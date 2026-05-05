@@ -42,6 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/color_theme.h"
 #include <iomanip>
 #include <optional>
+#include <random>
 #include <sstream>
 #include <unordered_map>
 
@@ -253,6 +254,16 @@ static std::string joinChatColorStops(const std::vector<std::string> &stops)
 	return oss.str();
 }
 
+static video::SColor randomChatColor()
+{
+	static std::mt19937 rng(std::random_device{}());
+	static std::uniform_int_distribution<int> channel_dist(0, 255);
+	return video::SColor(255,
+		static_cast<u8>(channel_dist(rng)),
+		static_cast<u8>(channel_dist(rng)),
+		static_cast<u8>(channel_dist(rng)));
+}
+
 static std::vector<video::SColor> parseColorPreviewSwatches(const std::string &value)
 {
 	std::vector<video::SColor> colors;
@@ -320,6 +331,19 @@ static std::string appendChatColorStop(const std::string &value)
 static std::string clearChatColorStops()
 {
 	return "rainbow";
+}
+
+static std::string randomChatColorStops()
+{
+	static std::mt19937 rng(std::random_device{}());
+	static std::uniform_int_distribution<int> stop_dist(2, 5);
+
+	const int stop_count = stop_dist(rng);
+	std::vector<std::string> stops;
+	stops.reserve(stop_count);
+	for (int i = 0; i < stop_count; ++i)
+		stops.push_back(colorToHex(randomChatColor()));
+	return joinChatColorStops(stops);
 }
 
 static std::string setChatColorStop(const std::string &value, size_t index, const video::SColor &color)
@@ -447,7 +471,7 @@ static core::rect<s32> getChatColorSwatchRect(const core::rect<s32> &setting_rec
 {
 	const s32 button_size = category_height - (setting_bar_padding * 2);
 	const s32 left = setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width;
-	const s32 right = setting_rect.LowerRightCorner.X - setting_bar_padding - (button_size * 2) - (setting_bar_padding * 2);
+	const s32 right = setting_rect.LowerRightCorner.X - setting_bar_padding - (button_size * 3) - (setting_bar_padding * 3);
 	const s32 top = setting_rect.UpperLeftCorner.Y + category_height + setting_bar_padding;
 	return core::rect<s32>(left, top, std::max(left + 1, right), top + button_size);
 }
@@ -470,12 +494,21 @@ static core::rect<s32> getChatColorClearRect(const core::rect<s32> &setting_rect
 	return core::rect<s32>(left, top, left + button_size, top + button_size);
 }
 
+static core::rect<s32> getChatColorRandomRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const core::rect<s32> clear_rect = getChatColorClearRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
+	const s32 left = clear_rect.LowerRightCorner.X + setting_bar_padding;
+	const s32 top = clear_rect.UpperLeftCorner.Y;
+	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
 static core::rect<s32> getChatColorTextRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
 {
-	const core::rect<s32> clear_rect = getChatColorClearRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
+	const core::rect<s32> random_rect = getChatColorRandomRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
 	return core::rect<s32>(
 		setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width,
-		clear_rect.LowerRightCorner.Y + setting_bar_padding,
+		random_rect.LowerRightCorner.Y + setting_bar_padding,
 		setting_rect.LowerRightCorner.X - setting_bar_padding,
 		setting_rect.LowerRightCorner.Y - setting_bar_padding);
 }
@@ -1134,6 +1167,7 @@ void NewMenu::create()
         cheatSettingColorRects.resize(script->m_cheat_categories.size());
         cheatSettingPlusRects.resize(script->m_cheat_categories.size());
         cheatSettingClearRects.resize(script->m_cheat_categories.size());
+        cheatSettingRandomRects.resize(script->m_cheat_categories.size());
         cheatSettingTextFields.resize(script->m_cheat_categories.size());
         cheatSettingTextLasts.resize(script->m_cheat_categories.size());
         cheatSettingTextHovered.resize(script->m_cheat_categories.size());
@@ -1179,6 +1213,7 @@ void NewMenu::create()
             cheatSettingColorRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingPlusRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingClearRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
+            cheatSettingRandomRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextFields[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextLasts[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextHovered[i].resize(script->m_cheat_categories[i]->m_cheats.size());
@@ -1200,6 +1235,7 @@ void NewMenu::create()
                 cheatSettingColorRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingPlusRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingClearRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
+                cheatSettingRandomRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextFields[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextLasts[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextHovered[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size(), false);
@@ -1387,6 +1423,8 @@ s32 NewMenu::respaceMenu(size_t i)
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
                             cheatSettingClearRects[i][c][s] = getChatColorClearRect(
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            cheatSettingRandomRects[i][c][s] = getChatColorRandomRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
                             cheatSettingTextRects[i][c][s] = getChatColorTextRect(
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
                             cheatSettingTextFields[i][c][s]->setRelativePosition(cheatSettingTextRects[i][c][s]);
@@ -1549,6 +1587,7 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                             const core::rect<s32> color_rect = cheatSettingColorRects[i][c][s];
                             const core::rect<s32> plus_rect = cheatSettingPlusRects[i][c][s];
                             const core::rect<s32> clear_rect = cheatSettingClearRects[i][c][s];
+                            const core::rect<s32> random_rect = cheatSettingRandomRects[i][c][s];
                             const core::vector2d<s32> pointer(event.MouseInput.X, event.MouseInput.Y);
                             if (color_rect.isPointInside(pointer)) {
                                 selectingColorStopIndex = pickChatColorStopIndex(g_settings->get(setting_id), color_rect, pointer);
@@ -1582,6 +1621,17 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                             }
                             if (clear_rect.isPointInside(pointer)) {
                                 const std::string new_value = clearChatColorStops();
+                                g_settings->set(setting_id, new_value);
+                                if (cheatSettingTextFields[i][c][s] != nullptr) {
+                                    const std::wstring wide_value = utf8_to_wide(new_value);
+                                    cheatSettingTextFields[i][c][s]->setText(wide_value.c_str());
+                                    cheatSettingTextLasts[i][c][s] = wide_value;
+                                }
+                                selectingColorStopIndex = 0;
+                                return true;
+                            }
+                            if (random_rect.isPointInside(pointer)) {
+                                const std::string new_value = randomChatColorStops();
                                 g_settings->set(setting_id, new_value);
                                 if (cheatSettingTextFields[i][c][s] != nullptr) {
                                     const std::wstring wide_value = utf8_to_wide(new_value);
@@ -2070,6 +2120,7 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
                                 const core::rect<s32> color_rect = cheatSettingColorRects[i][cheat_index][s];
                                 const core::rect<s32> plus_rect = cheatSettingPlusRects[i][cheat_index][s];
                                 const core::rect<s32> clear_rect = cheatSettingClearRects[i][cheat_index][s];
+                                const core::rect<s32> random_rect = cheatSettingRandomRects[i][cheat_index][s];
                                 const std::string value = g_settings->get(setting_id);
                                 driver->draw2DRectangle(current_theme.background_bottom, color_rect);
                                 drawColorPreview(driver, color_rect, value, video::SColor(255, 255, 255, 255));
@@ -2097,6 +2148,18 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
                                     clear_x, clear_y,
                                     clear_x + static_cast<s32>(clear_size.Width),
                                     clear_y + static_cast<s32>(clear_size.Height)),
+                                    current_theme.text);
+
+                                driver->draw2DRectangle(current_theme.background_bottom, random_rect);
+                                driver->draw2DRectangleOutline(random_rect, current_theme.primary, 2);
+                                const std::wstring random_wide = L"R";
+                                const core::dimension2d<u32> random_size = cachedTextDimension(font, random_wide);
+                                const s32 random_x = random_rect.UpperLeftCorner.X + (random_rect.getWidth() - static_cast<s32>(random_size.Width)) / 2;
+                                const s32 random_y = random_rect.UpperLeftCorner.Y + (random_rect.getHeight() - static_cast<s32>(random_size.Height)) / 2;
+                                font->draw(random_wide.c_str(), core::rect<s32>(
+                                    random_x, random_y,
+                                    random_x + static_cast<s32>(random_size.Width),
+                                    random_y + static_cast<s32>(random_size.Height)),
                                     current_theme.text);
 
                                 if (cheatSettingTextFields[i][cheat_index][s] != nullptr) {

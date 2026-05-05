@@ -160,6 +160,7 @@ private:
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingColorRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingPlusRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingClearRects;
+    std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingRandomRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> selectionBoxRects;
     std::vector<std::vector<core::rect<s32>>> cheatTextRects;
     std::vector<std::vector<core::rect<s32>>> cheatDropdownRects;
