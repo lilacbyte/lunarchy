@@ -16,6 +16,9 @@ Difference from CloakV4:
     - NoArmor - hides player's armor
 - Extra Modules
     - HandView - change position and scale of hand
+    - NoFire - disables fire effect
+    - NoFog - disables fog effect
+    - NoClouds - disables clouds
     - EquipmentHUD - shows equipment durability
     - Client List - shows clients connected to the server and nearby clients
     - Ping - shows your ping to the server

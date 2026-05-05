@@ -136,6 +136,7 @@ private:
     int selectingColorCategoryIndex = 0;
     int selectingColorCheatIndex = 0;
     int selectingColorSettingIndex = 0;
+    int selectingColorStopIndex = 0;
     std::vector<bool> selectedCategory;
     std::vector<std::vector<bool>> selectedCheat;
     std::vector<bool> dropdownHovered;
@@ -156,6 +157,9 @@ private:
     std::vector<std::vector<std::vector<std::wstring>>> cheatSettingTextLasts;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSliderBarRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingTextRects;
+    std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingColorRects;
+    std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingPlusRects;
+    std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingClearRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> selectionBoxRects;
     std::vector<std::vector<core::rect<s32>>> cheatTextRects;
     std::vector<std::vector<core::rect<s32>>> cheatDropdownRects;

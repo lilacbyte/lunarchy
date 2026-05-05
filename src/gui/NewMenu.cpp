@@ -215,8 +215,134 @@ static bool isColorTextSetting(const std::string &setting_id)
 static bool isColorCheatSetting(const ScriptApiCheatsCheatSetting *setting)
 {
 	return setting != nullptr &&
-		(setting->m_type == "color" ||
-			(setting->m_type == "text" && isColorTextSetting(setting->m_setting)));
+		(setting->m_type == "text" && isColorTextSetting(setting->m_setting));
+}
+
+static bool isChatColorSetting(const ScriptApiCheatsCheatSetting *setting)
+{
+	return setting != nullptr &&
+		setting->m_type == "text" &&
+		setting->m_setting == "chat_color";
+}
+
+static std::vector<std::string> splitChatColorStops(const std::string &value)
+{
+	std::vector<std::string> stops;
+	const std::string trimmed = std::string(trim(value));
+	if (trimmed.empty() || trimmed == "rainbow")
+		return stops;
+
+	std::string token;
+	std::istringstream stream(trimmed);
+	while (std::getline(stream, token, ',')) {
+		const std::string stop = std::string(trim(token));
+		if (!stop.empty())
+			stops.push_back(stop);
+	}
+	return stops;
+}
+
+static std::string joinChatColorStops(const std::vector<std::string> &stops)
+{
+	std::ostringstream oss;
+	for (size_t i = 0; i < stops.size(); ++i) {
+		if (i > 0)
+			oss << ",";
+		oss << stops[i];
+	}
+	return oss.str();
+}
+
+static std::vector<video::SColor> parseColorPreviewSwatches(const std::string &value)
+{
+	std::vector<video::SColor> colors;
+	for (const std::string &token : splitChatColorStops(value)) {
+		if (token == "rainbow")
+			continue;
+
+		video::SColor color(255, 255, 255, 255);
+		if (parseColorString(token, color, true, 0xff)) {
+			colors.push_back(color);
+			continue;
+		}
+
+		const std::optional<std::string> normalized = normalizeHexColorInput(token);
+		if (normalized && parseColorString(*normalized, color, true, 0xff))
+			colors.push_back(color);
+	}
+	return colors;
+}
+
+static void drawColorPreview(video::IVideoDriver *driver, const core::rect<s32> &rect,
+		const std::string &value, const video::SColor &fallback)
+{
+	const std::vector<video::SColor> colors = parseColorPreviewSwatches(value);
+	if (colors.empty()) {
+		driver->draw2DRectangle(fallback, rect);
+		return;
+	}
+
+	if (colors.size() == 1) {
+		driver->draw2DRectangle(colors.front(), rect);
+		return;
+	}
+
+	const s32 width = std::max<s32>(rect.getWidth(), 1);
+	for (size_t i = 0; i < colors.size(); ++i) {
+		const s32 left = rect.UpperLeftCorner.X + static_cast<s32>((width * i) / colors.size());
+		const s32 right = rect.UpperLeftCorner.X + static_cast<s32>((width * (i + 1)) / colors.size());
+		driver->draw2DRectangle(colors[i], core::rect<s32>(left, rect.UpperLeftCorner.Y, right, rect.LowerRightCorner.Y));
+		if (i > 0) {
+			driver->draw2DLine(
+				core::position2d<s32>(left, rect.UpperLeftCorner.Y),
+				core::position2d<s32>(left, rect.LowerRightCorner.Y),
+				video::SColor(255, 0, 0, 0));
+		}
+	}
+}
+
+static std::string colorToHex(const video::SColor &color);
+
+static std::string appendChatColorStop(const std::string &value)
+{
+	const std::vector<std::string> stops = splitChatColorStops(value);
+	std::vector<video::SColor> colors = parseColorPreviewSwatches(value);
+	const std::string next_color = colors.empty()
+		? "#FFFFFF"
+		: colorToHex(colors.back());
+
+	if (stops.empty())
+		return next_color;
+
+	return joinChatColorStops(stops) + "," + next_color;
+}
+
+static std::string clearChatColorStops()
+{
+	return "rainbow";
+}
+
+static std::string setChatColorStop(const std::string &value, size_t index, const video::SColor &color)
+{
+	std::vector<std::string> stops = splitChatColorStops(value);
+	if (stops.empty())
+		stops.push_back("#FFFFFF");
+	if (index >= stops.size())
+		index = stops.size() - 1;
+	stops[index] = colorToHex(color);
+	return joinChatColorStops(stops);
+}
+
+static size_t pickChatColorStopIndex(const std::string &value, const core::rect<s32> &rect, const core::position2d<s32> &pointer)
+{
+	const std::vector<video::SColor> colors = parseColorPreviewSwatches(value);
+	if (colors.size() <= 1)
+		return 0;
+
+	const s32 width = std::max<s32>(rect.getWidth(), 1);
+	const s32 rel_x = std::clamp(pointer.X - rect.UpperLeftCorner.X, 0, width - 1);
+	const size_t index = static_cast<size_t>((rel_x * colors.size()) / width);
+	return std::min(index, colors.size() - 1);
 }
 
 struct HSVColor {
@@ -313,6 +439,43 @@ static core::rect<s32> getColorValueRect(const core::rect<s32> &setting_rect, s3
 	return core::rect<s32>(
 		setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width,
 		setting_rect.UpperLeftCorner.Y + category_height,
+		setting_rect.LowerRightCorner.X - setting_bar_padding,
+		setting_rect.LowerRightCorner.Y - setting_bar_padding);
+}
+
+static core::rect<s32> getChatColorSwatchRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const s32 left = setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width;
+	const s32 right = setting_rect.LowerRightCorner.X - setting_bar_padding - (button_size * 2) - (setting_bar_padding * 2);
+	const s32 top = setting_rect.UpperLeftCorner.Y + category_height + setting_bar_padding;
+	return core::rect<s32>(left, top, std::max(left + 1, right), top + button_size);
+}
+
+static core::rect<s32> getChatColorPlusRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const core::rect<s32> swatch_rect = getChatColorSwatchRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
+	const s32 left = swatch_rect.LowerRightCorner.X + setting_bar_padding;
+	const s32 top = swatch_rect.UpperLeftCorner.Y;
+	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
+static core::rect<s32> getChatColorClearRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const core::rect<s32> plus_rect = getChatColorPlusRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
+	const s32 left = plus_rect.LowerRightCorner.X + setting_bar_padding;
+	const s32 top = plus_rect.UpperLeftCorner.Y;
+	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
+static core::rect<s32> getChatColorTextRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const core::rect<s32> clear_rect = getChatColorClearRect(setting_rect, category_height, setting_bar_padding, setting_bar_width);
+	return core::rect<s32>(
+		setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width,
+		clear_rect.LowerRightCorner.Y + setting_bar_padding,
 		setting_rect.LowerRightCorner.X - setting_bar_padding,
 		setting_rect.LowerRightCorner.Y - setting_bar_padding);
 }
@@ -430,7 +593,13 @@ void NewMenu::commitColorSetting(size_t category_index, size_t cheat_index, size
 	GET_SCRIPT_POINTER
 
 	const std::string setting_id = script->m_cheat_categories[category_index]->m_cheats[cheat_index]->m_cheat_settings[setting_index]->m_setting;
-	const std::string next_color = colorToHex(color);
+	std::string next_color;
+	if (setting_id == "chat_color") {
+		const std::string current_value = g_settings->get(setting_id);
+		next_color = setChatColorStop(current_value, static_cast<size_t>(std::max(0, selectingColorStopIndex)), color);
+	} else {
+		next_color = colorToHex(color);
+	}
 	g_settings->set(setting_id, next_color);
 
 	if (cheatSettingTextFields[category_index][cheat_index][setting_index] != nullptr) {
@@ -488,7 +657,14 @@ bool NewMenu::handleColorPickerEvent(const irr::SEvent& event)
 
 	if (event.MouseInput.Event == irr::EMIE_LMOUSE_PRESSED_DOWN ||
 			(event.MouseInput.Event == irr::EMIE_MOUSE_MOVED && event.MouseInput.isLeftPressed())) {
-		const video::SColor current_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
+		video::SColor current_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
+		if (setting_id == "chat_color") {
+			const std::vector<video::SColor> preview_colors = parseColorPreviewSwatches(g_settings->get(setting_id));
+			if (!preview_colors.empty()) {
+				const size_t stop_index = std::min<size_t>(selectingColorStopIndex, preview_colors.size() - 1);
+				current_color = preview_colors[stop_index];
+			}
+		}
 		HSVColor hsv = colorToHSV(current_color);
 
 		if (square_rect.isPointInside(pointer)) {
@@ -532,7 +708,14 @@ void NewMenu::drawColorPicker(video::IVideoDriver* driver, gui::IGUIFont* font, 
 	const core::rect<s32> frame_rect = getColorPickerFrameRect(anchor, driver->getScreenSize());
 	const core::rect<s32> square_rect = getColorPickerSquareRect(frame_rect);
 	const core::rect<s32> hue_rect = getColorPickerHueRect(frame_rect);
-	const video::SColor current_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
+	video::SColor current_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
+	if (setting_id == "chat_color") {
+		const std::vector<video::SColor> preview_colors = parseColorPreviewSwatches(g_settings->get(setting_id));
+		if (!preview_colors.empty()) {
+			const size_t stop_index = std::min<size_t>(selectingColorStopIndex, preview_colors.size() - 1);
+			current_color = preview_colors[stop_index];
+		}
+	}
 	const HSVColor hsv = colorToHSV(current_color);
 	const std::string hex = colorToHex(current_color);
 
@@ -948,6 +1131,9 @@ void NewMenu::create()
         cheatSliderRects.resize(script->m_cheat_categories.size());
         cheatSliderBarRects.resize(script->m_cheat_categories.size());
         cheatSettingTextRects.resize(script->m_cheat_categories.size());
+        cheatSettingColorRects.resize(script->m_cheat_categories.size());
+        cheatSettingPlusRects.resize(script->m_cheat_categories.size());
+        cheatSettingClearRects.resize(script->m_cheat_categories.size());
         cheatSettingTextFields.resize(script->m_cheat_categories.size());
         cheatSettingTextLasts.resize(script->m_cheat_categories.size());
         cheatSettingTextHovered.resize(script->m_cheat_categories.size());
@@ -990,6 +1176,9 @@ void NewMenu::create()
             cheatSliderBarRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             selectionBoxRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
+            cheatSettingColorRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
+            cheatSettingPlusRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
+            cheatSettingClearRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextFields[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextLasts[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextHovered[i].resize(script->m_cheat_categories[i]->m_cheats.size());
@@ -1008,6 +1197,9 @@ void NewMenu::create()
                 selectionBoxRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSliderBarRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
+                cheatSettingColorRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
+                cheatSettingPlusRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
+                cheatSettingClearRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextFields[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextLasts[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextHovered[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size(), false);
@@ -1025,8 +1217,6 @@ void NewMenu::create()
                         cheatSettingTextFields[i][c][s]->setWordWrap(true);
                         cheatSettingTextFields[i][c][s]->setOverrideColor(video::SColor(173, 35, 45, 56));
                         cheatSettingTextFields[i][c][s]->setVisible(false);
-                    } else if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "color") {
-                        cheatSettingTextFields[i][c][s] = nullptr;
                     } else if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "selectionbox") {
                         for (size_t o = 0; o < script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_options.size(); ++o) {
                             cheatSettingOptionHovered[i][c][s].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_options.size(), false);
@@ -1187,11 +1377,20 @@ s32 NewMenu::respaceMenu(size_t i)
                     if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "selectionbox" || script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "slider_int" || script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "slider_float") {
                         cheatSettingRects[i][c][s] = core::rect<s32>(cheat_setting_positions[i][c][s].X,                  cheat_setting_positions[i][c][s].Y, 
                                                                     cheat_setting_positions[i][c][s].X + category_width, cheat_setting_positions[i][c][s].Y + category_height * 2);
-                    } else if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "text" ||
-                            script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "color") {
+                    } else if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "text") {
                         cheatSettingRects[i][c][s] = core::rect<s32>(cheat_setting_positions[i][c][s].X,                  cheat_setting_positions[i][c][s].Y, 
                                                                     cheat_setting_positions[i][c][s].X + category_width, cheat_setting_positions[i][c][s].Y + category_height * 4);
-                        if (isColorCheatSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                        if (isChatColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            cheatSettingColorRects[i][c][s] = getChatColorSwatchRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            cheatSettingPlusRects[i][c][s] = getChatColorPlusRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            cheatSettingClearRects[i][c][s] = getChatColorClearRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            cheatSettingTextRects[i][c][s] = getChatColorTextRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            cheatSettingTextFields[i][c][s]->setRelativePosition(cheatSettingTextRects[i][c][s]);
+                        } else if (isColorCheatSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
                             cheatSettingTextFields[i][c][s] = nullptr;
                             cheatSettingTextRects[i][c][s] = getColorValueRect(
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
@@ -1345,9 +1544,14 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
 
                         for (size_t s = 0; s < script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size(); ++s) {
                             if (selectedCheat[i][c]) {
-                        if (isColorCheatSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
-                            const core::rect<s32> color_rect = cheatSettingTextRects[i][c][s];
-                            if (color_rect.isPointInside(core::vector2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
+                        const std::string setting_id = script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_setting;
+                        if (isChatColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            const core::rect<s32> color_rect = cheatSettingColorRects[i][c][s];
+                            const core::rect<s32> plus_rect = cheatSettingPlusRects[i][c][s];
+                            const core::rect<s32> clear_rect = cheatSettingClearRects[i][c][s];
+                            const core::vector2d<s32> pointer(event.MouseInput.X, event.MouseInput.Y);
+                            if (color_rect.isPointInside(pointer)) {
+                                selectingColorStopIndex = pickChatColorStopIndex(g_settings->get(setting_id), color_rect, pointer);
                                 if (isColorSelecting &&
                                         selectingColorCategoryIndex == static_cast<int>(i) &&
                                         selectingColorCheatIndex == static_cast<int>(c) &&
@@ -1364,6 +1568,27 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                                     colorPickerAnchor = core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y);
                                     colorPickerAnchorValid = true;
                                 }
+                                return true;
+                            }
+                            if (plus_rect.isPointInside(pointer)) {
+                                const std::string new_value = appendChatColorStop(g_settings->get(setting_id));
+                                g_settings->set(setting_id, new_value);
+                                if (cheatSettingTextFields[i][c][s] != nullptr) {
+                                    const std::wstring wide_value = utf8_to_wide(new_value);
+                                    cheatSettingTextFields[i][c][s]->setText(wide_value.c_str());
+                                    cheatSettingTextLasts[i][c][s] = wide_value;
+                                }
+                                return true;
+                            }
+                            if (clear_rect.isPointInside(pointer)) {
+                                const std::string new_value = clearChatColorStops();
+                                g_settings->set(setting_id, new_value);
+                                if (cheatSettingTextFields[i][c][s] != nullptr) {
+                                    const std::wstring wide_value = utf8_to_wide(new_value);
+                                    cheatSettingTextFields[i][c][s]->setText(wide_value.c_str());
+                                    cheatSettingTextLasts[i][c][s] = wide_value;
+                                }
+                                selectingColorStopIndex = 0;
                                 return true;
                             }
                         }
@@ -1841,7 +2066,51 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
 
                             font->draw(wSettingName.c_str(), core::rect<s32>(textX, textY, textX + textSize.Width, textY + textSize.Height), text_color);
 
-                            if (isColorCheatSetting(cheatSetting)) {
+                            if (isChatColorSetting(cheatSetting)) {
+                                const core::rect<s32> color_rect = cheatSettingColorRects[i][cheat_index][s];
+                                const core::rect<s32> plus_rect = cheatSettingPlusRects[i][cheat_index][s];
+                                const core::rect<s32> clear_rect = cheatSettingClearRects[i][cheat_index][s];
+                                const std::string value = g_settings->get(setting_id);
+                                driver->draw2DRectangle(current_theme.background_bottom, color_rect);
+                                drawColorPreview(driver, color_rect, value, video::SColor(255, 255, 255, 255));
+                                driver->draw2DRectangleOutline(color_rect, current_theme.primary, 2);
+
+                                driver->draw2DRectangle(current_theme.background_bottom, plus_rect);
+                                driver->draw2DRectangleOutline(plus_rect, current_theme.primary, 2);
+                                const std::wstring plus_wide = L"+";
+                                const core::dimension2d<u32> plus_size = cachedTextDimension(font, plus_wide);
+                                const s32 plus_x = plus_rect.UpperLeftCorner.X + (plus_rect.getWidth() - static_cast<s32>(plus_size.Width)) / 2;
+                                const s32 plus_y = plus_rect.UpperLeftCorner.Y + (plus_rect.getHeight() - static_cast<s32>(plus_size.Height)) / 2;
+                                font->draw(plus_wide.c_str(), core::rect<s32>(
+                                    plus_x, plus_y,
+                                    plus_x + static_cast<s32>(plus_size.Width),
+                                    plus_y + static_cast<s32>(plus_size.Height)),
+                                    current_theme.text);
+
+                                driver->draw2DRectangle(current_theme.background_bottom, clear_rect);
+                                driver->draw2DRectangleOutline(clear_rect, current_theme.primary, 2);
+                                const std::wstring clear_wide = L"x";
+                                const core::dimension2d<u32> clear_size = cachedTextDimension(font, clear_wide);
+                                const s32 clear_x = clear_rect.UpperLeftCorner.X + (clear_rect.getWidth() - static_cast<s32>(clear_size.Width)) / 2;
+                                const s32 clear_y = clear_rect.UpperLeftCorner.Y + (clear_rect.getHeight() - static_cast<s32>(clear_size.Height)) / 2;
+                                font->draw(clear_wide.c_str(), core::rect<s32>(
+                                    clear_x, clear_y,
+                                    clear_x + static_cast<s32>(clear_size.Width),
+                                    clear_y + static_cast<s32>(clear_size.Height)),
+                                    current_theme.text);
+
+                                if (cheatSettingTextFields[i][cheat_index][s] != nullptr) {
+                                    std::wstring currentText = cheatSettingTextFields[i][cheat_index][s]->getText();
+                                    if (currentText != cheatSettingTextLasts[i][cheat_index][s]) {
+                                        const std::string new_value = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(cheatSettingTextFields[i][cheat_index][s]->getText());
+                                        g_settings->set(setting_id, new_value);
+                                        cheatSettingTextLasts[i][cheat_index][s] = cheatSettingTextFields[i][cheat_index][s]->getText();
+                                    }
+                                    cheatSettingTextFields[i][cheat_index][s]->setOverrideColor(
+                                        colorForTextField(cheatSetting->m_setting, current_theme.text)
+                                    );
+                                }
+                            } else if (isColorCheatSetting(cheatSetting)) {
                                 const core::rect<s32> color_rect = cheatSettingTextRects[i][cheat_index][s];
                                 const video::SColor swatch_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
                                 const core::rect<s32> inner_rect(
