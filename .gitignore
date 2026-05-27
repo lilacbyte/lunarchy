@@ -166,3 +166,4 @@ personality_profiles/*
 !/personality_profiles/551.profile
 !/personality_profiles/561.profile
 !/personality_profiles/591.profile
+/client/
