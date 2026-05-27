@@ -58,11 +58,11 @@ jobs:
         run: |
           dest=$(mktemp -d)
           unzip -q -d "$dest" B/build/*.zip
-          cd "$dest"/cloakv4-*-win*
-          wine bin/cloakv4.exe --version
+          cd "$dest"/lunarchy-*-win*
+          wine bin/lunarchy.exe --version
 
       - uses: actions/upload-artifact@v4
         with:
-          name: "CloakV4-Windows-${{ matrix.bits }}bit"
+          name: "Lunarchy-Windows-${{ matrix.bits }}bit"
           path: B/build/*.zip
           if-no-files-found: error

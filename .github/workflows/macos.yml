@@ -59,7 +59,7 @@ jobs:
 
       - name: Test
         run: |
-          ./build/macos/cloakv4.app/Contents/MacOS/cloakv4 --run-unittests
+          ./build/macos/Lunarchy.app/Contents/MacOS/lunarchy --run-unittests
 
       - name: Create Artifact
         uses: actions/upload-artifact@v4
@@ -96,7 +96,7 @@ jobs:
         run: |
           mkdir -p "${HOME}/Library/Application Support/minetest/games/"
           ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
-          ./build/macos/cloakv4.app/Contents/MacOS/cloakv4 --run-unittests
+          ./build/macos/Lunarchy.app/Contents/MacOS/lunarchy --run-unittests
 
       - name: Create Artifact
         uses: actions/upload-artifact@v4

@@ -56,7 +56,7 @@ jobs:
           mkdir nowrite
           chmod a-w nowrite
           cd nowrite
-          ../bin/cloakv4 --run-unittests
+          ../bin/lunarchy --run-unittests
 
   # Current clang version # this is the main one for linux
   clang_18:
@@ -77,7 +77,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/cloakv4 --run-unittests
+          ./bin/lunarchy --run-unittests
 
       - name: Integration test + devtest
         run: |
