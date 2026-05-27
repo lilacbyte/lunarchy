@@ -107,9 +107,18 @@ void set_default_settings()
 	settings->setDefault("mesh_buffer_min_vertices", "300");
 	settings->setDefault("free_move", "false");
 	settings->setDefault("free_move.speed", "1.0");
+	settings->setDefault("jump", "false");
+	settings->setDefault("jump.multiplier", "1.0");
+	settings->setDefault("fastfall", "false");
+	settings->setDefault("fastfall.multiplier", "1.0");
 	settings->setDefault("pitch_move", "false");
 	settings->setDefault("fast_move", "false");
+	settings->setDefault("BHOP", "false");
+	settings->setDefault("BHOP.jump", "false");
+	settings->setDefault("BHOP.sprint", "false");
+	settings->setDefault("BHOP.speed", "false");
 	settings->setDefault("noclip", "false");
+	settings->setDefault("detached_camera", "false");
 	settings->setDefault("screenshot_path", "screenshots");
 	settings->setDefault("screenshot_format", "png");
 	settings->setDefault("screenshot_quality", "0");
@@ -125,6 +134,7 @@ void set_default_settings()
 	settings->setDefault("max_out_chat_queue_size", "20");
 	settings->setDefault("pause_on_lost_focus", "false");
 	settings->setDefault("enable_split_login_register", "true");
+	settings->setDefault("account_manager.pending_register_save", "false");
 	settings->setDefault("occlusion_culler", "bfs");
 	settings->setDefault("enable_raytraced_culling", "true");
 	settings->setDefault("chat_weblink_color", "#8888FF");
@@ -135,12 +145,18 @@ void set_default_settings()
 	settings->setDefault("cheat_menu_active_bg_color_alpha", "210");
 	settings->setDefault("cheat_menu_font_color", "(255, 255, 255)"); //white
 	settings->setDefault("cheat_menu_font_color_alpha", "195");
-	settings->setDefault("cheat_menu_selected_font_color", "(0, 0, 0)"); //black
+	settings->setDefault("cheat_menu_selected_font_color", "(200, 200, 200)"); // light grey
 	settings->setDefault("cheat_menu_selected_font_color_alpha", "235");
-	settings->setDefault("hud_color", "false");
-	settings->setDefault("globalcolor", "#a8c2ff");
-	settings->setDefault("global_color", "#a8c2ff");
-	settings->setDefault("cheat_hud.order", "Ascending");
+	settings->setDefault("hud.enabled", "false");
+	settings->setDefault("hud.accent_color", "#a8c2ff");
+	settings->setDefault("hud.text_color", "#ffffff");
+	settings->setDefault("hud.background_color", "#191919");
+	settings->setDefault("hud.background_alpha", "180");
+	settings->setDefault("hud.border_color", "#000000");
+	settings->setDefault("hud.border_alpha", "255");
+	settings->setDefault("hud.padding", "5");
+	settings->setDefault("hud.tooltips_theme", "false");
+	settings->setDefault("cheat_hud.order", "ascending");
 	settings->setDefault("cheat_hud.by_length", "true");
 	settings->setDefault("cheat_menu_head_height", "40");
 	settings->setDefault("cheat_menu_entry_height", "25");
@@ -152,11 +168,17 @@ void set_default_settings()
 	settings->setDefault("mainmenu_last_page", "mainmenu");
 	settings->setDefault("ColorTheme", "Modern");
 	settings->setDefault("WidthMultiplier", "10");
+	settings->setDefault("profiles.enabled", "true");
+	settings->setDefault("profiles.selected", "");
+	settings->setDefault("profiles.save", "false");
 	
 	//============CHEATS============//
 
 	//COMBAT
 	settings->setDefault("friends", "{}");
+	settings->setDefault("friends.middle_click", "true");
+	settings->setDefault("friends.list", "");
+	settings->setDefault("friends.ignore", "false");
 	settings->setDefault("enemies", "{}");
 	settings->setDefault("allies", "{}");
 	settings->setDefault("entity_esp_color", "(255, 255, 255)");
@@ -175,6 +197,18 @@ void set_default_settings()
 	settings->setDefault("killaura.doubletap", "false"); // not used
 	settings->setDefault("killaura.mode", "Silent");
 	settings->setDefault("killaura.simtime", "false");
+	settings->setDefault("killaura.mace", "false");
+	settings->setDefault("killaura.mace_jump_suppress", "false");
+	settings->setDefault("killaura.mace_suppress_jump_multiplier", "false");
+	settings->setDefault("chatplus_offset_x", "0");
+	settings->setDefault("chatplus_offset_y", "0");
+	settings->setDefault("chatplus_background", "false");
+	settings->setDefault("chatplus_background_color", "#3f3f3f");
+	settings->setDefault("chatplus_background_alpha", "180");
+	settings->setDefault("chatplus_border", "false");
+	settings->setDefault("chatplus_border_color", "#000000");
+	settings->setDefault("chatplus_border_alpha", "255");
+	settings->setDefault("chatplus_padding", "0");
 	settings->setDefault("autoaim", "false");
 	settings->setDefault("autoaim.y_offset", "5");
 	settings->setDefault("orbit", "false");
@@ -221,6 +255,7 @@ void set_default_settings()
 	settings->setDefault("antislip", "false");
 	settings->setDefault("airjump", "false");
 	settings->setDefault("freecam", "false");
+	settings->setDefault("freecam.disable_on_damage", "false");
 	settings->setDefault("invmove", "false");
 	settings->setDefault("step", "false");
 	settings->setDefault("step.mult", "2.0");
@@ -268,11 +303,6 @@ void set_default_settings()
 	settings->setDefault("priv_bypass", "false");
 	settings->setDefault("no_force_rotate", "false");
 	settings->setDefault("nobob", "false");
-	settings->setDefault("welcome", "false");
-	settings->setDefault("welcome.message", "welcome, <%player%> :^)");
-	settings->setDefault("welcome.align", "Right");
-	settings->setDefault("welcome.color", "#ffffff");
-	settings->setDefault("welcome.background", "true");
 	settings->setDefault("strata", "false");
 
 	//INTERACT
@@ -334,7 +364,24 @@ void set_default_settings()
 	settings->setDefault("coords", "false");
 	settings->setDefault("coords.background", "true");
 	settings->setDefault("coords.nether_coords", "false");
+	settings->setDefault("luna_stats.enabled", "false");
+	settings->setDefault("luna_stats.hud", "false");
+	settings->setDefault("luna_stats.hud.background", "true");
+	settings->setDefault("luna_stats.hud.pvp", "true");
+	settings->setDefault("luna_stats.hud.messages", "false");
+	settings->setDefault("luna_stats.hud.joined", "false");
+	settings->setDefault("luna_stats.hud.joins", "false");
+	settings->setDefault("luna_stats.hud.leaves", "false");
+	settings->setDefault("luna_stats.nametags", "false");
+	settings->setDefault("luna_stats.client_list.online", "false");
+	settings->setDefault("fps", "false");
+	settings->setDefault("fps.background", "true");
+	settings->setDefault("totems", "false");
+	settings->setDefault("totems.background", "true");
+	settings->setDefault("waila", "false");
+	settings->setDefault("waila.background", "true");
 	settings->setDefault("clients", "false");
+	settings->setDefault("clients.mode", "both");
 	settings->setDefault("clients.background", "true");
 	settings->setDefault("ping", "false");
 	settings->setDefault("ping.background", "true");
@@ -347,6 +394,15 @@ void set_default_settings()
 	settings->setDefault("nearby_clients.background", "true");
 	settings->setDefault("nearby_clients.distance", "true");
 	settings->setDefault("nearby_clients.health", "true");
+	settings->setDefault("nearby_clients.range", "132");
+	settings->setDefault("logoutspots", "false");
+	settings->setDefault("logoutspots.range", "132");
+	settings->setDefault("logoutspots.limit", "20");
+	settings->setDefault("logoutspots.scale", "1.0");
+	settings->setDefault("deathmarker", "false");
+	settings->setDefault("avoid", "false");
+	settings->setDefault("avoid.players", "");
+	settings->setDefault("avoid.players_by_server", "{}");
 	settings->setDefault("enable_combat_target_hud", "false");
 	settings->setDefault("enable_combat_target_hud.target_highlight", "true");
 	settings->setDefault("hud_elements_advice", "true");
@@ -356,6 +412,7 @@ void set_default_settings()
 	settings->setDefault("hand_view.y", "0.0");
 	settings->setDefault("hand_view.z", "0.0");
 	settings->setDefault("hand_view.scale", "1.0");
+	settings->setDefault("hand_view.color", "#ffffff");
 	settings->setDefault("nametags", "false");
 	settings->setDefault("nametags.hp", "true");
 	settings->setDefault("nametags.status", "true");
@@ -393,12 +450,6 @@ void set_default_settings()
 	settings->setDefault("can_delete_nametags", "true"); // not used yet, can be useful
 
 
-	//SKY
-	settings->setDefault("custom_skybox", "false");
-	settings->setDefault("display_sunrise", "true");
-	settings->setDefault("force_custom_skybox", "false");
-	settings->setDefault("force_render_skybox", "true");
-
 	// Keymap
 #if USE_SDL2
 #define USEKEY2(name, value, _) settings->setDefault(name, value)
@@ -433,6 +484,7 @@ void set_default_settings()
 	USEKEY2("keymap_rangeselect", has_touch ? "SYSTEM_SCANCODE_21" : "", has_touch ? "KEY_KEY_R" : "");
 	
 	USEKEY2("keymap_toggle_freecam", "SYSTEM_SCANCODE_10", "KEY_KEY_G");
+	USEKEY2("keymap_friend_toggle", "KEY_MBUTTON", "KEY_MBUTTON");
 	USEKEY2("keymap_toggle_crystalspam", "SYSTEM_SCANCODE_6", "KEY_KEY_C");
 	USEKEY2("keymap_toggle_autowither", "KEY_MINUS", "KEY_MINUS");
 	USEKEY2("keymap_toggle_killaura", "SYSTEM_SCANCODE_27", "KEY_KEY_X");
@@ -573,11 +625,13 @@ void set_default_settings()
 	settings->setDefault("console_height", "0.6");
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
+	settings->setDefault("chatplus.enabled", "true");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "140");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
 	settings->setDefault("node_highlighting", "box");
+	settings->setDefault("nodehighlight", "false");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("recent_chat_messages", "6");
@@ -604,9 +658,23 @@ void set_default_settings()
 	settings->setDefault("post_processing_texture_bits", "16");
 	settings->setDefault("directional_colored_fog", "true");
 	settings->setDefault("inventory_items_animations", "false");
+	settings->setDefault("lag_optimizer", "false");
 	settings->setDefault("lag_optimizer.no_inventory_animations", "true");
-	settings->setDefault("lag_optimizer.no_item_spin", "false");
+	settings->setDefault("lag_optimizer.no_item_spin", "true");
 	settings->setDefault("lag_optimizer.no_hand_animation", "true");
+	settings->setDefault("lag_optimizer.no_particles", "true");
+	settings->setDefault("lag_optimizer.no_ground_items", "true");
+	settings->setDefault("lag_optimizer.no_clouds", "true");
+	settings->setDefault("lag_optimizer.no_fog", "true");
+	settings->setDefault("lag_optimizer.no_view_bobbing", "true");
+	settings->setDefault("lag_optimizer.no_break_particles", "true");
+	settings->setDefault("lag_optimizer.no_water_animation", "true");
+	settings->setDefault("lag_optimizer.no_lava_animation", "true");
+	settings->setDefault("lag_optimizer.clearer_water", "true");
+	settings->setDefault("lag_optimizer.low_fx", "true");
+	settings->setDefault("lag_optimizer.no_minimap", "false");
+	settings->setDefault("lag_optimizer.no_achievement_overlay", "true");
+	settings->setDefault("lag_optimizer.no_bossbar", "true");
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("bilinear_filter", "false");
 	settings->setDefault("trilinear_filter", "false");
@@ -730,7 +798,6 @@ void set_default_settings()
 	settings->setDefault("multicraft_compatibility", "false");
 	settings->setDefault("declared_platform_name", porting::getPlatformName());
 	settings->setDefault("selected_profile", "1");
-	settings->setDefault("announce_join", "true");
 	
 	settings->setDefault("enable_ipv6", "true");
 	settings->setDefault("ipv6_server", "true");
@@ -853,6 +920,12 @@ void set_default_settings()
 	settings->setDefault("touch_interaction_style", "tap");
 	settings->setDefault("touch_punch_gesture", "short_tap");
 	settings->setDefault("clickable_chat_weblinks", "true");
+	settings->setDefault("betterdrop", "false");
+	settings->setDefault("betterdrop_distance", "0");
+	settings->setDefault("betterdrop_whitelist", "");
+	settings->setDefault("betterdrop_antidrop", "");
+	settings->setDefault("betterdrop_blacklist", "");
+	settings->setDefault("betterdrop_no_incoming", "false");
 
 	// Altered settings for Android
 #ifdef __ANDROID__

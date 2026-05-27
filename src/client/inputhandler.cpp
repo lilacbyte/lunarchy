@@ -88,6 +88,7 @@ void MyEventReceiver::reloadKeybindings()
 	keybindings[KeyType::RANGESELECT] = getKeySetting("keymap_rangeselect");
 	keybindings[KeyType::ZOOM] = getKeySetting("keymap_zoom");
 	keybindings[KeyType::FREECAM] = getKeySetting("keymap_toggle_freecam");
+	keybindings[KeyType::FRIEND_TOGGLE] = getKeySetting("keymap_friend_toggle");
 	keybindings[KeyType::CRYSTALSPAM] = getKeySetting("keymap_toggle_crystalspam");
 	keybindings[KeyType::AUTOWITHER] = getKeySetting("keymap_toggle_autowither");
 	keybindings[KeyType::KILLAURA] = getKeySetting("keymap_toggle_killaura");

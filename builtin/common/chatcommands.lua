@@ -268,7 +268,7 @@ if INIT == "client" then
 			if not server_url then
 				return false, "This command does not work in singleplayer mode."
 			end
-			local data = minetest.settings:get_json(setting)
+			local data = minetest.settings:get_json(setting) or {}
 			local list = (data[server_url] or ""):split(",")
 			if param == "list" then
 				return true, table.concat(list, ", ")

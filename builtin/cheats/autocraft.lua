@@ -416,5 +416,5 @@ end)
 --------------------------------------------------------------------------------
 -- Register a cheat command (optional) to enable the mod via settings
 --------------------------------------------------------------------------------
-core.register_cheat("AutoCraft", "Bots", "autocraft")
-core.register_cheat("AutoCraft_Menu", "Bots", "autocraft_menu")
+core.register_cheat("autocraft", "Bots", "autocraft")
+core.register_cheat("autocraft_menu", "Bots", "autocraft_menu")

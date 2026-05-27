@@ -73,6 +73,7 @@ public:
 	void setSelectionPos(const v3f &pos, const v3s16 &camera_offset);
 
 	v3f getSelectionPos() const { return m_selection_pos; }
+	void setNodeHighlightInReach(bool in_reach) { m_node_highlight_in_reach = in_reach; }
 
 	void setSelectionRotationRadians(v3f rotation)
 	{
@@ -140,6 +141,7 @@ private:
 	scene::IMesh *m_selection_mesh = nullptr;
 	video::SColor m_selection_mesh_color;
 	v3f m_selected_face_normal;
+	bool m_node_highlight_in_reach = false;
 
 	video::SMaterial m_selection_material;
 	video::SMaterial m_block_bounds_material;

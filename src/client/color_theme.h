@@ -29,7 +29,7 @@ public:
 
 class ThemeManager {
 public:
-	// Load all .theme files in a folder
+	// Load the built-in theme palette.
 	void LoadThemes(const std::string &folderpath);
 
 	// Return available theme names

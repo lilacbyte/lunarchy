@@ -34,10 +34,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <chrono>
 #include "gui/targetHUD.h"
 #include "gui/coordsHUD.h"
+#include "gui/statsHUD.h"
 #include "gui/clientsHUD.h"
 #include "gui/pingHUD.h"
-#include "gui/welcomeHUD.h"
+#include "gui/fpsHUD.h"
+#include "gui/totemsHUD.h"
+#include "gui/wailaHUD.h"
 #include "gui/cheatHUD.h"
+#include "gui/chatHUD.h"
 #include "gui/equipmentHUD.h"
 #include "client/color_theme.h"
 
@@ -66,6 +70,7 @@ public:
 
     void create();
     void close();
+    void applyAppearanceOverrides();
 
     virtual bool OnEvent(const irr::SEvent& event) override;
     virtual void draw() override;
@@ -91,7 +96,6 @@ private:
     bool colorPickerAnchorValid = false;
 
     void setColorsFromTheme(const ColorTheme theme);
-    void applyAppearanceOverrides();
     void setWidthFromMultiplier(const s32 multiplier);
     void adjustCategoryPositions();
     
@@ -161,6 +165,7 @@ private:
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingPlusRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingClearRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingRandomRects;
+    std::vector<std::vector<std::vector<core::rect<s32>>>> cheatSettingSyncRects;
     std::vector<std::vector<std::vector<core::rect<s32>>>> selectionBoxRects;
     std::vector<std::vector<core::rect<s32>>> cheatTextRects;
     std::vector<std::vector<core::rect<s32>>> cheatDropdownRects;

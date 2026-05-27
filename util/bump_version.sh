@@ -36,7 +36,7 @@ read_versions() {
 	fi
 	CURRENT_VERSION="$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH"
 
-	echo "Current Luanti version: $CURRENT_VERSION"
+	echo "Current Lunarchy version: $CURRENT_VERSION"
 }
 
 # Retrieves protocol version from header

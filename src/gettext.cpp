@@ -203,7 +203,7 @@ void init_gettext(const char *path, const std::string &configured_language,
 #endif
 #endif
 
-	std::string name = lowercase(PROJECT_NAME);
+	std::string name = lowercase(GETTEXT_DOMAIN);
 	infostream << "Gettext: domainname=\"" << name
 		<< "\" path=\"" << path << "\"" << std::endl;
 

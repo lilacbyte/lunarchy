@@ -17,8 +17,10 @@ private:
 
 	static int getDurabilityUses(const ItemStack &item, Client *client);
 	static int getRemainingDurability(const ItemStack &item, int max_uses);
-	static std::wstring getItemLabel(const ItemStack &item, Client *client);
+	static video::SColor getDurabilityBarColor(const ItemStack &item, Client *client);
+	static std::wstring getItemNameLabel(const ItemStack &item, Client *client);
+	static std::wstring getDurabilityLabel(const ItemStack &item, Client *client);
 	static void drawEntry(video::IVideoDriver *driver, gui::IGUIFont *font,
 		Client *client, const ItemStack &item, const std::wstring &fallback_label,
-		const core::rect<s32> &entry_rect, bool editing);
+		const core::rect<s32> &entry_rect, s32 icon_size, bool editing);
 };

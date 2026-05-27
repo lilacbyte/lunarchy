@@ -41,6 +41,7 @@ public:
 	void acceptInput();
 
 	bool processInput();
+	void generateRandomPassword();
 
 	bool OnEvent(const SEvent &event);
 #ifdef __ANDROID__
@@ -53,7 +54,7 @@ protected:
 
 private:
 	Client *m_client;
-	std::wstring m_oldpass = L"";
+	std::wstring m_oldpass;
 	std::wstring m_newpass = L"";
 	std::wstring m_newpass_confirm = L"";
 	ISimpleTextureSource *m_tsrc;

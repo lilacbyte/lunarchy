@@ -1,4 +1,4 @@
-project(cloakv4)
+project(lunarchy)
 
 INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
@@ -508,7 +508,7 @@ endif()
 # This gives us the icon and file version information
 if(WIN32)
 	set(WINRESOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/winresource.rc")
-	set(EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/luanti.exe.manifest")
+	set(EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/lunarchy.exe.manifest")
 	if(MINGW)
 		if(NOT CMAKE_RC_COMPILER)
 			set(CMAKE_RC_COMPILER "windres.exe")
@@ -575,7 +575,7 @@ include_directories(SYSTEM
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
-	# on Android, Luanti depends on SDL2 directly
+	# on Android, Lunarchy depends on SDL2 directly
 	# on other platforms, only IrrlichtMt depends on SDL2
 	"$<$<PLATFORM_ID:Android>:${SDL2_INCLUDE_DIRS}>"
 )
@@ -598,7 +598,7 @@ endif()
 
 # When cross-compiling place the executable in <build dir>/bin so that multiple
 # targets can be built from the same source folder. Otherwise, place it in
-# <source dir>/bin/ since Luanti can only run from there.
+# <source dir>/bin/ since Lunarchy can only run from there.
 if(CMAKE_CROSSCOMPILING)
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 else()
@@ -655,7 +655,7 @@ if(BUILD_CLIENT)
 			MACOSX_BUNDLE TRUE
 			MACOSX_BUNDLE_INFO_PLIST "${CMAKE_BINARY_DIR}/Info.plist"
 			RESOURCE "${client_RESOURCES}"
-			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.luanti.luanti"
+			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.lunarchy.lunarchy"
 			XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
 			XCODE_ATTRIBUTE_INSTALL_PATH "/Applications"
 			XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
@@ -700,7 +700,7 @@ if(BUILD_CLIENT)
 		sha256
 		${FREETYPE_LIBRARY}
 		${PLATFORM_LIBS}
-		# on Android, Luanti depends on SDL2 directly
+		# on Android, Lunarchy depends on SDL2 directly
 		# on other platforms, only IrrlichtMt depends on SDL2
 		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
 	)
@@ -1095,7 +1095,7 @@ if(BUILD_CLIENT AND NOT ANDROID)
 	if(USE_GETTEXT)
 		foreach(LOCALE ${GETTEXT_USED_LOCALES})
 			set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
+			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${GETTEXT_DOMAIN}.mo")
 			install(FILES ${MO_BUILD_PATH} DESTINATION ${MO_DEST_PATH})
 		endforeach()
 	endif()
@@ -1118,9 +1118,9 @@ elseif (USE_GETTEXT)
 	set(MO_FILES)
 
 	foreach(LOCALE ${GETTEXT_USED_LOCALES})
-		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME}.po")
+		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${GETTEXT_DOMAIN}.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
+		set(MO_FILE_PATH "${MO_BUILD_PATH}/${GETTEXT_DOMAIN}.mo")
 
 		add_custom_command(
 			OUTPUT ${MO_FILE_PATH}

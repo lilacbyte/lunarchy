@@ -237,6 +237,8 @@ public:
 	void clearOutChatQueue();
 	void sendChangePassword(const std::string &oldpassword,
 		const std::string &newpassword);
+	const std::string &getPassword() const { return m_login_password; }
+	void savePendingRegisteredAccount();
 	void sendDamage(u16 damage);
 	void sendRespawnLegacy();
 	void sendReady();
@@ -497,7 +499,6 @@ private:
 	float m_avg_rtt_timer = 0.0f;
 	float m_playerpos_send_timer = 0.0f;
 	IntervalLimiter m_map_timer_and_unload_interval;
-
 	IWritableTextureSource *m_tsrc;
 	IWritableShaderSource *m_shsrc;
 	IWritableItemDefManager *m_itemdef;
@@ -546,9 +547,14 @@ private:
 
 	// Auth data
 	std::string m_playername;
+	// Raw password entered for the active account, retained for account-management UI.
+	std::string m_login_password;
 	std::string m_password;
 	// If set, this will be sent (and cleared) upon a TOCLIENT_ACCEPT_SUDO_MODE
 	std::string m_new_password;
+	// Written to the account manager file after server-side confirmation.
+	std::string m_pending_account_password;
+	void updateSavedAccountPassword(const std::string &password);
 	// Usable by auth mechanisms.
 	AuthMechanism m_chosen_auth_mech;
 	void *m_auth_data = nullptr;

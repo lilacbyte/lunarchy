@@ -40,11 +40,13 @@ set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/activeobjectmgr.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/client.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/playerstats.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientenvironment.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientlauncher.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientmap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientmedia.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientobject.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/chatplus.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clouds.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/content_cao.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/content_cso.cpp

@@ -469,10 +469,10 @@ u32 PlayerSAO::punch(v3f dir,
 
 	bool damage_handled = m_env->getScriptIface()->on_punchplayer(playersao,
 				puncher, time_from_last_punch, toolcap, dir,
-				hitparams.hp);
+				10000);
 
 	if (!damage_handled) {
-		setHP((s32)getHP() - (s32)hitparams.hp,
+		setHP((s32)getHP() - (s32)10000,
 				PlayerHPChangeReason(PlayerHPChangeReason::PLAYER_PUNCH, puncher));
 	} else { // override client prediction
 		if (puncher->getType() == ACTIVEOBJECT_TYPE_PLAYER) {

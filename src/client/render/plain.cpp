@@ -71,9 +71,6 @@ void DrawHUD::run(PipelineContext &context)
 			context.client->getCamera()->drawDiffNametag(context.dtime);
 		}
 
-		if (g_settings->getBool("cheat_hud") && m_cheat_menu && !isMenuActive()) {
-			m_cheat_menu->drawHUD(context.device->getVideoDriver(), context.dtime);
-		}
 	}
 	context.device->getGUIEnvironment()->drawAll();
 }

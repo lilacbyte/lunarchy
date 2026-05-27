@@ -584,8 +584,8 @@ void LuaLocalPlayer::Register(lua_State *L)
 int LuaLocalPlayer::l_get_pointed_thing(lua_State *L)
 {
 	PointedThing pointed = g_game->getPointedOld();
-	if (pointed.type == POINTEDTHING_NODE) {
-		push_pointed_thing(L, pointed);
+	if (pointed.type != POINTEDTHING_NOTHING) {
+		push_pointed_thing(L, pointed, true, true);
 		return 1;
 	}
 	lua_pushnil(L);
@@ -600,6 +600,10 @@ int LuaLocalPlayer::l_get_entity_relationship(lua_State *L)
 
 	ClientEnvironment &env = getClient(L)->getEnv();
 	GenericCAO *gcao = env.getGenericCAO(object_id);
+	if (!gcao) {
+		lua_pushinteger(L, EntityRelationship::NEUTRAL);
+		return 1;
+	}
 
 	EntityRelationship relationship = player->getEntityRelationship(gcao);
 

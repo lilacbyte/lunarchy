@@ -1,4 +1,5 @@
 #include "l_cheats.h"
+#include "client/game.h"
 #include "client/render/core.h"
 
 int l_cheats::l_setPlayerColorESP(lua_State *L)
@@ -66,6 +67,28 @@ int l_cheats::l_clear_combat_target(lua_State *L)
     return 0;
 }
 
+int l_cheats::l_close_cheat_menu(lua_State *L)
+{
+    Game *game = getGame(L);
+    if (game)
+        game->closeCheatMenu();
+
+    return 0;
+}
+
+int l_cheats::l_refresh_cheat_settings(lua_State *L)
+{
+    Client *client = getClient(L);
+    if (client && client->getScript()) {
+        client->getScript()->reload_cheat_settings();
+    }
+    Game *game = getGame(L);
+    if (game)
+        game->refreshCheatMenuAppearance();
+
+    return 0;
+}
+
 
 void l_cheats::Initialize(lua_State *L, int top)
 {
@@ -73,4 +96,6 @@ void l_cheats::Initialize(lua_State *L, int top)
     API_FCT(set_target_esp_color);
     API_FCT(set_combat_target);
     API_FCT(clear_combat_target);
+    API_FCT(close_cheat_menu);
+    API_FCT(refresh_cheat_settings);
 }

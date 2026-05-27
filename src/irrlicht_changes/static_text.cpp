@@ -14,6 +14,8 @@
 #include "CGUITTFont.h"
 #include "util/string.h"
 
+#include <algorithm>
+
 namespace irr
 {
 
@@ -27,7 +29,8 @@ StaticText::StaticText(const EnrichedString &text, bool border,
 : IGUIStaticText(environment, parent, id, rectangle),
 	HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_UPPERLEFT),
 	Border(border), WordWrap(false), Background(background),
-	RestrainTextInside(true), RightToLeft(false),
+	TextPadding(0), RestrainTextInside(true), RightToLeft(false),
+	CustomBorderColor(false), BorderColor(255, 0, 0, 0),
 	OverrideFont(0), LastBreakFont(0)
 {
 	setText(text);
@@ -61,10 +64,29 @@ void StaticText::draw()
 
 	// draw the border
 
-	if (Border)
+if (Border)
 	{
-		skin->draw3DSunkenPane(this, 0, true, false, frameRect, &AbsoluteClippingRect);
-		frameRect.UpperLeftCorner.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
+		if (CustomBorderColor) {
+			driver->draw2DRectangleOutline(frameRect, BorderColor, 1);
+			frameRect.UpperLeftCorner.X += 2;
+			frameRect.UpperLeftCorner.Y += 2;
+			frameRect.LowerRightCorner.X -= 2;
+			frameRect.LowerRightCorner.Y -= 2;
+		} else {
+			skin->draw3DSunkenPane(this, 0, true, false, frameRect, &AbsoluteClippingRect);
+			frameRect.UpperLeftCorner.X += skin->getSize(EGDS_TEXT_DISTANCE_X);
+		}
+	}
+
+	if (TextPadding > 0) {
+		frameRect.UpperLeftCorner.X += TextPadding;
+		frameRect.UpperLeftCorner.Y += TextPadding;
+		frameRect.LowerRightCorner.X -= TextPadding;
+		frameRect.LowerRightCorner.Y -= TextPadding;
+		if (frameRect.LowerRightCorner.X < frameRect.UpperLeftCorner.X)
+			frameRect.LowerRightCorner.X = frameRect.UpperLeftCorner.X;
+		if (frameRect.LowerRightCorner.Y < frameRect.UpperLeftCorner.Y)
+			frameRect.LowerRightCorner.Y = frameRect.UpperLeftCorner.Y;
 	}
 
 	// draw the text
@@ -201,6 +223,18 @@ void StaticText::setDrawBorder(bool draw)
 	Border = draw;
 }
 
+void StaticText::setTextPadding(s32 padding)
+{
+	TextPadding = std::max<s32>(0, padding);
+}
+
+
+void StaticText::setBorderColor(video::SColor color)
+{
+	BorderColor = color;
+	CustomBorderColor = true;
+}
+
 
 //! Checks if border drawing is enabled
 bool StaticText::isDrawBorderEnabled() const
@@ -317,6 +351,7 @@ void StaticText::updateText()
 	s32 elWidth = RelativeRect.getWidth();
 	if (Border)
 		elWidth -= 2*skin->getSize(EGDS_TEXT_DISTANCE_X);
+	elWidth -= 2 * TextPadding;
 	wchar_t c;
 
 	//std::vector<irr::video::SColor> colors;

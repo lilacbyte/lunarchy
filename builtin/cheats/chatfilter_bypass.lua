@@ -568,8 +568,8 @@ end
 
 core.register_on_sending_chat_message(chateffects.send)
 
-core.register_cheat("ChatEffects", "Misc", "use_chat_effects")
-core.register_cheat_description("ChatEffects", "Misc", "use_chat_effects", "Custom chat effects, such as color, greentext, reverse text, and more.")
+core.register_cheat("chateffects", "Misc", "use_chat_effects")
+core.register_cheat_description("chateffects", "Misc", "use_chat_effects", "Custom chat effects, such as color, greentext, reverse text, and more.")
 core.register_cheat_setting("Colored", "Misc", "use_chat_effects", "use_chat_color", {type="bool"})
 core.register_cheat_setting("Chat Color", "Misc", "use_chat_effects", "chat_color", {type="text", size=18})
 core.register_cheat_setting("GreenText", "Misc", "use_chat_effects", "green_text", {type="bool"})

@@ -486,8 +486,8 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver, irr::f32 dtime)
     // Wave amplitude
     const float base_amplitude = 30.0f;
 
-	video::SColor start_color = current_theme.primary;
-	video::SColor end_color = current_theme.primary_muted;
+	video::SColor start_color(255, 255, 102, 178);
+	video::SColor end_color(255, 166, 93, 255);
 	video::SColor background_color = current_theme.background_bottom;
 
     video::SColor colors[layer_count];

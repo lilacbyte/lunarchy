@@ -27,6 +27,7 @@
 #include "util/enriched_string.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "gui/drawItemStack.h"
+#include "gui/moduleColor.h"
 
 #define OBJECT_CROSSHAIR_LINE_SIZE 8
 #define CROSSHAIR_LINE_SIZE 10
@@ -341,6 +342,11 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 {
 	const u32 text_height = g_fontengine->getTextHeight();
 	gui::IGUIFont *const font = g_fontengine->getFont();
+	const bool lag_optimizer = g_settings->getBool("lag_optimizer");
+	const bool hide_achievement_overlay = lag_optimizer &&
+			g_settings->getBool("lag_optimizer.no_achievement_overlay");
+	const bool hide_bossbar = lag_optimizer &&
+			g_settings->getBool("lag_optimizer.no_bossbar");
 
 	// Reorder elements by z_index
 	std::vector<HudElement*> elems;
@@ -374,6 +380,32 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 	}
 
 	for (HudElement *e : elems) {
+		if (hide_achievement_overlay && e->name.rfind("award_", 0) == 0)
+			continue;
+
+		if (hide_bossbar) {
+			if (e->type == HUD_ELEM_IMAGE &&
+					e->text.find("mcl_bossbars") != std::string::npos)
+				continue;
+
+			if (e->type == HUD_ELEM_TEXT) {
+				bool is_bossbar_text = false;
+				for (HudElement *candidate : elems) {
+					if (candidate->type != HUD_ELEM_IMAGE ||
+							candidate->text.find("mcl_bossbars") == std::string::npos)
+						continue;
+
+					if (candidate->pos == e->pos && candidate->align == e->align &&
+							candidate->offset.X == e->offset.X &&
+							candidate->offset.Y == e->offset.Y + 25.0f) {
+						is_bossbar_text = true;
+						break;
+					}
+				}
+				if (is_bossbar_text)
+					continue;
+			}
+		}
 
 		v2s32 pos(floor(e->pos.X * (float) m_screensize.X + 0.5),
 				floor(e->pos.Y * (float) m_screensize.Y + 0.5));
@@ -442,6 +474,15 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 					break;
 
 				pos += v2s32(e->offset.X, e->offset.Y);
+				gui::IGUIFont *waypoint_font = font;
+				u32 waypoint_text_height = text_height;
+				if (e->scale.X > 0.0f) {
+					const f32 scale = rangelim(e->scale.X, 0.1f, 2.0f);
+					const u32 font_size = std::max<u32>(1,
+						myround(g_fontengine->getDefaultFontSize() * scale));
+					waypoint_font = g_fontengine->getFont(font_size, FM_Unspecified);
+					waypoint_text_height = waypoint_font->getDimension(L"A").Height;
+				}
 				video::SColor color(255, (e->number >> 16) & 0xFF,
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
@@ -454,18 +495,19 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				float precision = (item == 0) ? 10.0f : (item - 1.f);
 				bool draw_precision = precision > 0;
 
-				core::rect<s32> bounds(0, 0, font->getDimension(text.c_str()).Width, (draw_precision ? 2:1) * text_height);
+				core::rect<s32> bounds(0, 0, waypoint_font->getDimension(text.c_str()).Width,
+					(draw_precision ? 2 : 1) * waypoint_text_height);
 				pos.Y += (e->align.Y - 1.0) * bounds.getHeight() / 2;
 				bounds += pos;
-				font->draw(text.c_str(), bounds + v2s32((e->align.X - 1.0) * bounds.getWidth() / 2, 0), color);
+				waypoint_font->draw(text.c_str(), bounds + v2s32((e->align.X - 1.0) * bounds.getWidth() / 2, 0), color);
 				if (draw_precision) {
 					std::ostringstream os;
 					v3f p_pos = player->getPosition() / BS;
 					float distance = std::floor(precision * p_pos.getDistanceFrom(e->world_pos)) / precision;
 					os << distance << unit;
 					text = unescape_translate(utf8_to_wide(os.str()));
-					bounds.LowerRightCorner.X = bounds.UpperLeftCorner.X + font->getDimension(text.c_str()).Width;
-					font->draw(text.c_str(), bounds + v2s32((e->align.X - 1.0f) * bounds.getWidth() / 2, text_height), color);
+					bounds.LowerRightCorner.X = bounds.UpperLeftCorner.X + waypoint_font->getDimension(text.c_str()).Width;
+					waypoint_font->draw(text.c_str(), bounds + v2s32((e->align.X - 1.0f) * bounds.getWidth() / 2, waypoint_text_height), color);
 				}
 				break; }
 			case HUD_ELEM_IMAGE_WAYPOINT: {
@@ -877,7 +919,13 @@ void Hud::drawSelectionMesh()
 {
 	if (m_mode == HIGHLIGHT_NONE || (m_mode == HIGHLIGHT_HALO && !m_selection_mesh))
 		return;
-	driver->setMaterial(m_selection_material);
+	const bool themed_node_highlight = m_mode == HIGHLIGHT_BOX &&
+		!pointing_at_object && m_node_highlight_in_reach &&
+		g_settings->getBool("nodehighlight");
+	video::SMaterial selection_material = m_selection_material;
+	if (themed_node_highlight)
+		selection_material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+	driver->setMaterial(selection_material);
 	const core::matrix4 oldtransform = driver->getTransform(video::ETS_WORLD);
 
 	core::matrix4 translate;
@@ -889,6 +937,15 @@ void Hud::drawSelectionMesh()
 	if (m_mode == HIGHLIGHT_BOX) {
 		// Draw 3D selection boxes
 		for (auto & selection_box : m_selection_boxes) {
+			if (themed_node_highlight) {
+				const video::SColor fill_color = readModuleBackgroundColor();
+				const video::SColor border_color = readModuleBorderColor();
+				driver->draw3DBox(selection_box, fill_color, 1, -1,
+					fill_color.getAlpha());
+				driver->draw3DBox(selection_box, border_color, 0,
+					border_color.getAlpha(), -1);
+				continue;
+			}
 			u32 r = (selectionbox_argb.getRed() *
 					m_selection_mesh_color.getRed() / 255);
 			u32 g = (selectionbox_argb.getGreen() *

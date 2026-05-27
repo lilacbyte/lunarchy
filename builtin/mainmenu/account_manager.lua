@@ -92,7 +92,7 @@ function account_manager.load()
 		selected_name = trim(core.settings:get(legacy_selected_name_setting) or "")
 	end
 	if selected_name ~= "" then
-		local selected_username, selected_server = selected_name:match("^(.-)|(.+)$")
+		local selected_username, selected_server = selected_name:match("^(.-)|(.*)$")
 		if selected_username then
 			selected_index = find_account_index_for_server(trim(selected_username), trim(selected_server)) or 0
 		else

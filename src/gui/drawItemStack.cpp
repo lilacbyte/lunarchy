@@ -20,7 +20,7 @@ struct MeshTimeInfo {
 	scene::IMesh *mesh = nullptr;
 };
 
-void drawItemStack(
+static void drawItemStackInternal(
 		video::IVideoDriver *driver,
 		gui::IGUIFont *font,
 		const ItemStack &item,
@@ -29,7 +29,9 @@ void drawItemStack(
 		Client *client,
 		ItemRotationKind rotation_kind,
 		const v3s16 &angle,
-		const v3s16 &rotation_speed)
+		const v3s16 &rotation_speed,
+		const video::SColor *text_color_override,
+		const video::SColor *wear_bar_color_override)
 {
 	static MeshTimeInfo rotation_time_infos[IT_ROT_NONE];
 
@@ -210,8 +212,9 @@ void drawItemStack(
 		//   wear = 1.0: red
 
 		video::SColor color;
-		auto barParams = item.getWearBarParams(client->idef());
-		if (barParams.has_value()) {
+		if (wear_bar_color_override) {
+			color = *wear_bar_color_override;
+		} else if (auto barParams = item.getWearBarParams(client->idef()); barParams.has_value()) {
 			f32 durabilityPercent = 1.0 - wear;
 			color = barParams->getWearBarColor(durabilityPercent);
 		} else {
@@ -295,7 +298,8 @@ void drawItemStack(
 			rect2 = core::rect<s32>(x1, y1, x2, y2);
 		}
 
-		video::SColor color(255, 255, 255, 255);
+		video::SColor color = text_color_override ? *text_color_override :
+			video::SColor(255, 255, 255, 255);
 		font->draw(utf8_to_wide(text).c_str(), rect2, color, false, false, &viewrect);
 	}
 }
@@ -309,6 +313,35 @@ void drawItemStack(
 		Client *client,
 		ItemRotationKind rotation_kind)
 {
-	drawItemStack(driver, font, item, rect, clip, client, rotation_kind,
-		v3s16(0, 0, 0), v3s16(0, 100, 0));
+	drawItemStackInternal(driver, font, item, rect, clip, client, rotation_kind,
+		v3s16(0, 0, 0), v3s16(0, 100, 0), nullptr, nullptr);
+}
+
+void drawItemStackWithTextColor(video::IVideoDriver *driver,
+		gui::IGUIFont *font,
+		const ItemStack &item,
+		const core::rect<s32> &rect,
+		const core::rect<s32> *clip,
+		Client *client,
+		ItemRotationKind rotation_kind,
+		const video::SColor &text_color,
+		const video::SColor &wear_bar_color)
+{
+	drawItemStackInternal(driver, font, item, rect, clip, client, rotation_kind,
+		v3s16(0, 0, 0), v3s16(0, 100, 0), &text_color, &wear_bar_color);
+}
+
+void drawItemStack(
+		video::IVideoDriver *driver,
+		gui::IGUIFont *font,
+		const ItemStack &item,
+		const core::rect<s32> &rect,
+		const core::rect<s32> *clip,
+		Client *client,
+		ItemRotationKind rotation_kind,
+		const v3s16 &angle,
+		const v3s16 &rotation_speed)
+{
+	drawItemStackInternal(driver, font, item, rect, clip, client, rotation_kind,
+		angle, rotation_speed, nullptr, nullptr);
 }

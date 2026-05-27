@@ -29,6 +29,16 @@ void drawItemStack(video::IVideoDriver *driver,
 		Client *client,
 		ItemRotationKind rotation_kind);
 
+void drawItemStackWithTextColor(video::IVideoDriver *driver,
+		gui::IGUIFont *font,
+		const ItemStack &item,
+		const core::rect<s32> &rect,
+		const core::rect<s32> *clip,
+		Client *client,
+		ItemRotationKind rotation_kind,
+		const video::SColor &text_color,
+		const video::SColor &wear_bar_color);
+
 void drawItemStack(
 		video::IVideoDriver *driver,
 		gui::IGUIFont *font,

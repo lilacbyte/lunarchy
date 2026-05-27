@@ -103,6 +103,12 @@ namespace gui
 		//! Sets whether to draw the border
 		virtual void setDrawBorder(bool draw);
 
+		//! Sets the inner padding between the border/background and the text.
+		virtual void setTextPadding(s32 padding);
+
+		//! Sets the border color used when drawing a custom border.
+		virtual void setBorderColor(video::SColor color);
+
 		//! Checks if border drawing is enabled
 		virtual bool isDrawBorderEnabled() const;
 
@@ -177,8 +183,11 @@ namespace gui
 		bool Border;
 		bool WordWrap;
 		bool Background;
+		s32 TextPadding;
 		bool RestrainTextInside;
 		bool RightToLeft;
+		bool CustomBorderColor;
+		video::SColor BorderColor;
 
 		gui::IGUIFont* OverrideFont;
 		gui::IGUIFont* LastBreakFont; // stored because: if skin changes, line break must be recalculated.

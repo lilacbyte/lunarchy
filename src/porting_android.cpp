@@ -75,7 +75,7 @@ void osSpecificInit()
 #ifdef GPROF
 	// in the start-up code
 	warningstream << "Initializing GPROF profiler" << std::endl;
-	monstartup("libluanti.so");
+	monstartup("liblunarchy.so");
 #endif
 }
 

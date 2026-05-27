@@ -7,7 +7,7 @@ core.register_globalstep(function(dtime)
 		if core.get_server_game() == "not_initialized" then return end
 
 		if core.get_server_game() ~= "capturetheflag" then
-			core.update_infotext("Auto Team", "Misc", "autoteam", "Invalid Game")
+			core.update_infotext("autoteam", "Misc", "autoteam", "Invalid Game")
 			invalid_game = true
 			return
 		end
@@ -142,4 +142,4 @@ core.register_on_receiving_chat_message(function(message)
     end
 end)
 
-core.register_cheat_with_infotext("AutoTeam", "Misc", "autoteam", "CTF")
+core.register_cheat_with_infotext("autoteam", "Misc", "autoteam", "CTF")

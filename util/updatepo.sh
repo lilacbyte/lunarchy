@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Update/create cloakv4 po files
+# Update/create Lunarchy translations in the retained cloakv4 gettext domain.
 
 # an auxiliary function to abort processing with an optional error
 # message
@@ -49,7 +49,7 @@ cd ..
 # --package-name
 potfile=po/cloakv4.pot
 echo "updating pot"
-xgettext --package-name=cloakv4 \
+xgettext --package-name=Lunarchy \
 	--add-comments='~' \
 	--sort-by-file \
 	--add-location=file \

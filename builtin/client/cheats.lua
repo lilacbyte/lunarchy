@@ -1,94 +1,100 @@
-core.cheats = {
+	core.cheats = {
 	["Client"] = {
-		["QuickMenu"] = { setting = "use_old_menu", order = 0 },
-		["Client List"] = { setting = "clients", order = 1 },
-		["Ping"] = { setting = "ping", order = 3 },
-		["Welcome"] = { setting = "welcome", order = 5 },
-		["CheatHUD"] = { setting = "cheat_hud", order = 6 },
-		["HUD Color"] = { setting = "hud_color", order = 7 },
-		["Coords"] = { setting = "coords", order = 8 },
-		["EquipmentHUD"] = { setting = "equipment_hud", order = 9 },
-		["LagOptimizer"] = { setting = "lag_optimizer", order = 11 },
+		["quickmenu"] = { setting = "use_old_menu", order = 0 },
+		["client list"] = { setting = "clients", order = 1 },
+		["ping"] = { setting = "ping", order = 3 },
+		["cheathud"] = { setting = "cheat_hud", order = 6 },
+		["hud"] = { setting = "hud.enabled", order = 7 },
+		["chatplus"] = { setting = "chatplus.enabled", order = 9 },
+		["coords"] = { setting = "coords", order = 10 },
+		["luna-stats"] = { setting = "luna_stats.enabled", order = 11 },
+		["fps"] = { setting = "fps", order = 12 },
+		["totems"] = { setting = "totems", order = 13 },
+		["WAILA"] = { setting = "waila", order = 14 },
+		["equipmenthud"] = { setting = "equipment_hud", order = 15 },
+		["lagoptimizer"] = { setting = "lag_optimizer", order = 16 },
 	},
 	["Render"] = {
-		["FullBright"] = "fullbright",
-		["BrightNight"] = "no_night",
-		["NoClouds"] = "no_clouds",
-		["NoFog"] = "no_fog",
-		["Xray"] = "xray",
-		["EntityESP"] = "enable_entity_esp",
-		["EntityTracers"] = "enable_entity_tracers",
-		["NoArmor"] = "no_armor",
-		["PlayerESP"] = "enable_player_esp",
-		["PlayerTracers"] = "enable_player_tracers",
-		["NodeESP"] = "enable_node_esp",
-		["NodeTracers"] = "enable_node_tracers",
-		["TunnelESP"] = "enable_tunnel_esp",
-		["TunnelTracers"] = "enable_tunnel_tracers",
-	--	["HUDBypass"] = "hud_flags_bypass", dont wanna work, will fix later
-		["HealthESP"] = "enable_health_esp",
-		["NoHurtCam"] = "no_hurt_cam",
-		["NoDrownCam"] = "no_drown_cam",
-		["NoFire"] = "no_fire",
-		["NoParticles"] = "norender.particles",
-		["TaskTracers"] = "enable_task_tracers",
-		["TaskNodes"] = "enable_task_nodes",
-		["TargetHUD"] = "enable_combat_target_hud",
-		["LeftHand"] = "left_hand",
-		["HandView"] = "hand_view",
-		["ContentPreviewer"] = "content_previewer",
-		["Nametags"] = "nametags",
-	["FOV"] = "fov_setting",
-		["Skybox"] = "custom_skybox",
+		["fullbright"] = "fullbright",
+		["brightnight"] = "no_night",
+		["xray"] = "xray",
+		["entityesp"] = "enable_entity_esp",
+		["entitytracers"] = "enable_entity_tracers",
+		["noarmor"] = "no_armor",
+		["playeresp"] = "enable_player_esp",
+		["playertracers"] = "enable_player_tracers",
+		["nodeesp"] = "enable_node_esp",
+		["nodetracers"] = "enable_node_tracers",
+		["nodehighlight"] = "nodehighlight",
+		["tunnelesp"] = "enable_tunnel_esp",
+		["tunneltracers"] = "enable_tunnel_tracers",
+	--	["hudbypass"] = "hud_flags_bypass", dont wanna work, will fix later
+		["healthesp"] = "enable_health_esp",
+		["nohurtcam"] = "no_hurt_cam",
+		["nodrowncam"] = "no_drown_cam",
+		["nofire"] = "no_fire",
+		["tasktracers"] = "enable_task_tracers",
+		["tasknodes"] = "enable_task_nodes",
+		["targethud"] = "enable_combat_target_hud",
+		["lefthand"] = "left_hand",
+		["handview"] = "hand_view",
+		["contentpreviewer"] = "content_previewer",
+		["nametags"] = "nametags",
+	["fov"] = "fov_setting",
     },
 	["Player"] = {
-		["PrivBypass"] = "priv_bypass",
-		["NoFallDamage"] = "prevent_natural_damage",
-		["Reach"] = "reach",
-		["AutoRespawn"] = "autorespawn",
-	--	["LuaControl"] = "lua_control",
-		["NoForceRotate"] = "no_force_rotate",
-		["NoViewBob"] = "nobob",
+		["privbypass"] = "priv_bypass",
+		["nofalldamage"] = "prevent_natural_damage",
+		["reach"] = "reach",
+		["autorespawn"] = "autorespawn",
+	--	["luacontrol"] = "lua_control",
+		["noforcerotate"] = "no_force_rotate",
     },
 	["Movement"] = {
-		["Freecam"] = "freecam",
-		["InvMove"] = "invmove",
-		["AutoForward"] = "continuous_forward",
-		["PitchMove"] = "pitch_move",
-		["AutoJump"] = "autojump",
-		["Flight"] = "free_move",
-		["Noclip"] = "noclip",
-		["FastMove"] = "fast_move",
-		["Jesus"] = "jesus",
-		["NoSlow"] = "no_slow",
-		["JetPack"] = "jetpack",
-		["AntiSlip"] = "antislip",
-		["AirJump"] = "airjump",
-		["Spider"] = "spider",
-		["AutoSneak"] = "autosneak",
-		["Step"] = "step",
+		["BHOP"] = { setting = "BHOP", order = 0 },
+		["freecam"] = { setting = "freecam", order = 1 },
+		["flight"] = "free_move",
+		["invmove"] = "invmove",
+		["autoforward"] = "continuous_forward",
+		["pitchmove"] = "pitch_move",
+		["autojump"] = "autojump",
+		["noclip"] = "noclip",
+		["fastmove"] = "fast_move",
+		["jesus"] = "jesus",
+		["noslow"] = "no_slow",
+		["jetpack"] = "jetpack",
+		["jump"] = "jump",
+		["antislip"] = "antislip",
+		["airjump"] = "airjump",
+		["spider"] = "spider",
+		["autosneak"] = "autosneak",
+		["step"] = "step",
     },
 	["Combat"] = {
-		["AntiKnockback"] = "antiknockback",
-		["AttachmentFloat"] = "float_above_parent",
-		["ThroughWalls"] = "throughwalls",
+		["antiknockback"] = "antiknockback",
+		["attachmentfloat"] = "float_above_parent",
+		["throughwalls"] = "throughwalls",
     },
 	["Interact"] = {
-		["Blink"] = "blink",
-		["FastHit"] = "spamclick",
-		["AutoHit"] = "autohit",
-		["FastPlace"] = "fastplace",
-		["AutoPlace"] = "autoplace",
-		["AutoDig"] = "autodig",
-		["FastDig"] = "fastdig",
-		["InstantBreak"] = "instant_break",
-		["AutoTool"] = "autotool",
+		["blink"] = "blink",
+		["fasthit"] = "spamclick",
+		["autohit"] = "autohit",
+		["fastplace"] = "fastplace",
+		["autoplace"] = "autoplace",
+		["autodig"] = "autodig",
+		["fastdig"] = "fastdig",
+		["instantbreak"] = "instant_break",
+		["autotool"] = "autotool",
     },
 	["Misc"] = {
-		["AutoStaff"] = "autostaff",
-		["AntiAFK"] = "anti_afk",
-		["Greeter"] = "greeter",
-		["Spammer+"] = "spammer_plus",
+		["autostaff"] = "autostaff",
+		["antiafk"] = "anti_afk",
+		["greeter"] = "greeter",
+		["friends"] = { setting = "friends.middle_click", order = 4 },
+		["logoutspots"] = { setting = "logoutspots" },
+		["deathmarker"] = { setting = "deathmarker" },
+		["avoid"] = { setting = "avoid" },
+		["spammer+"] = "spammer_plus",
     }
 }
 -----------------------------------------------------------REGISTER CHEATS-----------------------------------------------------------
@@ -171,181 +177,226 @@ function core.panic()
 		end
 	end
 end
-core.register_cheat("Panic", "Misc", core.panic)
+core.register_cheat("panic", "Misc", core.panic)
 -----------------------------------------------------------TESTS, PRESET VALUES, ETC-----------------------------------------------------------
 
 --Combat
-core.register_cheat_description("AntiKnockback", "Combat", "antiknockback", "Ignore knockback")
-core.register_cheat_description("AttachmentFloat", "Combat", "float_above_parent", "Puts the camera one node higher when attached to an entity")
-core.register_cheat_description("AutoTotem", "Combat", "autototem", "Automatically puts a totem in your offhand")
-core.register_cheat_description("AutoAim", "Combat", "autoaim", "Aims at a specified target")
-core.register_cheat_description("CombatLog", "Combat", "be_a_bitch", "Logs off when certain HP is reached")
-core.register_cheat_description("Criticals", "Combat", "critical_hits", "Does critical hits in mcl2/mcla")
-core.register_cheat_description("CrystalSpam", "Combat", "crystalspam", "Puts end crystals under nearby players or entities")
-core.register_cheat_description("AutoWither", "Combat", "autowither", "Completes a wither structure and places the skulls")
-core.register_cheat_setting("Nametag", "Combat", "autowither", "autowither.nametag", {type="bool"})
-core.register_cheat_description("Killaura", "Combat", "killaura", "Attacks a specified target. Silent mode is recommended in PVP servers, as it makes Killaura undetectable")
-core.register_cheat_description("Orbit", "Combat", "orbit", "Moves around a specified target")
-core.register_cheat_description("TriggerBot", "Combat", "tbot", "Automatically punch when aiming at an entity")
-core.register_cheat_description("ThroughWalls", "Combat", "throughwalls", "Lets you hit players or entities through walls")
+core.register_cheat_description("antiknockback", "Combat", "antiknockback", "Ignore knockback")
+core.register_cheat_description("attachmentfloat", "Combat", "float_above_parent", "Puts the camera one node higher when attached to an entity")
+	core.register_cheat_description("autototem", "Combat", "autototem", "Automatically puts a totem in your offhand")
+	core.register_cheat_description("autoaim", "Combat", "autoaim", "Aims at a specified target")
+	core.register_cheat_description("combatlog", "Combat", "be_a_bitch", "Logs off when certain HP is reached")
+	core.register_cheat_description("criticals", "Combat", "critical_hits", "Does critical hits in mcl2/mcla")
+	core.register_cheat_description("crystalspam", "Combat", "crystalspam", "Puts end crystals under nearby players or entities")
+core.register_cheat_description("autowither", "Combat", "autowither", "Completes a wither structure and places the skulls")
+core.register_cheat_setting("nametag", "Combat", "autowither", "autowither.nametag", {type="bool"})
+core.register_cheat_description("killaura", "Combat", "killaura", "Attacks a specified target. Silent mode is recommended in PVP servers, as it makes Killaura undetectable")
+core.register_cheat_description("orbit", "Combat", "orbit", "Moves around a specified target")
+core.register_cheat_description("triggerbot", "Combat", "tbot", "Automatically punch when aiming at an entity")
+core.register_cheat_description("throughwalls", "Combat", "throughwalls", "Lets you hit players or entities through walls")
 --Interact
-core.register_cheat_description("FastDig", "Interact", "fastdig", "No block break cooldown")
-core.register_cheat_with_infotext("Blink", "Interact", "blink", "0ms")
-core.register_cheat_description("Blink", "Interact", "blink", "Delay sending of packets until this cheat is disabled.")
-core.register_cheat_description("FastPlace", "Interact", "fastplace", "No block placement cooldown")
-core.register_cheat_description("AutoDig", "Interact", "autodig", "Player can dig blocks without mouse press")
-core.register_cheat_description("AutoPlace", "Interact", "autoplace", "Auto place blocks")
-core.register_cheat_description("InstantBreak","Interact", "instant_break", "Instantly break blocks regardless of tool used")
-core.register_cheat_description("FastHit", "Interact", "spamclick", "Hit faster while holding")
-core.register_cheat_description("AutoHit","Interact", "autohit", "Auto hit when looking at entity")
-core.register_cheat_description("AutoTool", "Interact", "autotool", "Selects the best tool for an action")
+core.register_cheat_description("fastdig", "Interact", "fastdig", "No block break cooldown")
+core.register_cheat_with_infotext("blink", "Interact", "blink", "0ms")
+core.register_cheat_description("blink", "Interact", "blink", "Delay sending of packets until this cheat is disabled.")
+core.register_cheat_description("fastplace", "Interact", "fastplace", "No block placement cooldown")
+core.register_cheat_description("autodig", "Interact", "autodig", "Player can dig blocks without mouse press")
+core.register_cheat_description("autoplace", "Interact", "autoplace", "Auto place blocks")
+core.register_cheat_description("instantbreak","Interact", "instant_break", "Instantly break blocks regardless of tool used")
+core.register_cheat_description("fasthit", "Interact", "spamclick", "Hit faster while holding")
+core.register_cheat_description("autohit","Interact", "autohit", "Auto hit when looking at entity")
+core.register_cheat_description("autotool", "Interact", "autotool", "Selects the best tool for an action")
 --Inventory
-core.register_cheat_description("Enderchest", "Misc", minetest.open_enderchest, "Preview enderchest content in mcl/mcla")
-core.register_cheat_description("Hand", "Misc", minetest.open_handslot, "Open hand formspec in mcl/mcla")
+core.register_cheat_description("enderchest", "Misc", minetest.open_enderchest, "Preview enderchest content in mcl/mcla")
+core.register_cheat_description("hand", "Misc", minetest.open_handslot, "Open hand formspec in mcl/mcla")
 --Misc
-core.register_cheat_description("AntiAFK", "Misc", "anti_afk", "Prevent afk by moving")
-core.register_cheat_description("AutoStaff", "Misc", "autostaff", "Automatically check player privs and assign them as a staff. WARNING: can be detected easily")
-core.register_cheat_setting("Warn Staff", "Misc", "autostaff", "autostaff.warn_staff", {type="bool"})
-core.register_cheat_description("AutoTeam", "Misc", "autoteam", "Sets allied players to your team in ctf. It might require you to run /team in some servers")
-core.register_cheat_description("Panic", "Misc", "panic", "Disables all cheats")
-core.register_cheat_description("Greeter", "Misc", "greeter", "Sends welcome and goodbye messages for joined or leaving clients")
-core.register_cheat_description("Spammer+", "Misc", "spammer_plus", "Loops through chat messages, including multiline text")
+core.register_cheat_description("antiafk", "Misc", "anti_afk", "Prevent afk by moving")
+core.register_cheat_description("autostaff", "Misc", "autostaff", "Automatically check player privs and assign them as a staff. WARNING: can be detected easily")
+core.register_cheat_setting("warn staff", "Misc", "autostaff", "autostaff.warn_staff", {type="bool"})
+core.register_cheat_description("autoteam", "Misc", "autoteam", "Sets allied players to your team in ctf. It might require you to run /team in some servers")
+core.register_cheat_description("logoutspots", "Misc", "logoutspots", "Records logout positions as waypoints in your current session")
+core.register_cheat_setting("Range", "Misc", "logoutspots", "logoutspots.range", {type="slider_int", min=32, max=256, steps=29})
+core.register_cheat_setting("Limit", "Misc", "logoutspots", "logoutspots.limit", {type="slider_int", min=1, max=100, steps=100})
+core.register_cheat_setting("Scale", "Misc", "logoutspots", "logoutspots.scale", {type="slider_float", min=0.1, max=2.0, steps=20})
+core.register_cheat_description("deathmarker", "Misc", "deathmarker", "Marks your last death position as a waypoint")
+core.register_cheat_description("avoid", "Misc", "avoid", "Disconnect when a listed player is online on this server")
+core.register_cheat_setting("Players", "Misc", "avoid", "avoid.players", {type="text", size=80})
+core.register_cheat_description("friends", "Misc", "friends.middle_click", "Toggle a pointed player in the server friend list")
+core.register_cheat_setting("Middle click", "Misc", "friends.middle_click", "friends.middle_click", {type="bool"})
+core.register_cheat_setting("Friends", "Misc", "friends.middle_click", "friends.list", {type="text", size=80})
+core.register_cheat_setting("Ignore", "Misc", "friends.middle_click", "friends.ignore", {type="bool"})
+core.register_cheat_description("panic", "Misc", "panic", "Disables all cheats")
+core.register_cheat_description("greeter", "Misc", "greeter", "Sends welcome and goodbye messages for joined or leaving clients")
+core.register_cheat_description("spammer+", "Misc", "spammer_plus", "Loops through chat messages, including multiline text")
 --Movement
-core.register_cheat_description("AirJump", "Movement", "airjump", "Jump on air")
-core.register_cheat_description("AntiSlip", "Movement", "antislip", "Walk on slippery blocks without slipping")
-core.register_cheat_description("AutoForward", "Movement", "continuous_forward", "Walk forward automatically")
-core.register_cheat_description("AutoJump", "Movement", "autojump", "Jump automatically")
-core.register_cheat_description("AutoSneak", "Movement", "autosneak", "Always sneak")
-core.register_cheat_description("FastMove", "Movement", "fast_move", "Toggle fast (req. PrivBypass)")
-core.register_cheat_with_infotext("Flight", "Movement", "free_move", "")
-core.register_cheat_description("Flight", "Movement", "free_move", "Toggle flight (req. PrivBypass)")
-core.register_cheat_description("Freecam", "Movement", "freecam", "Spectator mode")
-core.register_cheat_description("InvMove", "Movement", "invmove", "Move while a formspec is open")
-core.register_cheat_description("Jesus", "Movement", "jesus", "Walk on liquids")
-core.register_cheat_with_infotext("JetPack", "Movement", "jetpack", "")
-core.register_cheat_description("JetPack", "Movement", "jetpack", "AirJump with adjustable speed")
-core.register_cheat_description("NoSlow", "Movement", "noslow", "Sneaking doesn't slow you down")
-core.register_cheat_description("Noclip", "Movement", "noclip", "Walk through walls (req. PrivBypass)")
-core.register_cheat_description("Overrides", "Movement", "overrides", "Movement overrides")
-core.register_cheat_description("PitchMove", "Movement", "pitch_move", "While flying, you move where you're pointing")
-core.register_cheat_description("Spider", "Movement", "spider", "Climb walls")
-core.register_cheat_description("Step", "Movement", "step", "Climbs the block you're facing")
-core.register_cheat_description("Velocity", "Movement", "velocity", "Various velocity overrides")
+core.register_cheat_description("airjump", "Movement", "airjump", "Jump on air")
+core.register_cheat_description("antislip", "Movement", "antislip", "Walk on slippery blocks without slipping")
+core.register_cheat_description("autoforward", "Movement", "continuous_forward", "Walk forward automatically")
+core.register_cheat_description("autojump", "Movement", "autojump", "Jump automatically")
+core.register_cheat_description("autosneak", "Movement", "autosneak", "Always sneak")
+core.register_cheat_description("fastmove", "Movement", "fast_move", "Toggle fast (req. PrivBypass)")
+core.register_cheat_with_infotext("flight", "Movement", "free_move", "")
+core.register_cheat_description("flight", "Movement", "free_move", "Toggle flight (req. PrivBypass)")
+core.register_cheat_description("freecam", "Movement", "freecam", "Spectator mode")
+core.register_cheat_description("invmove", "Movement", "invmove", "Move while a formspec is open")
+core.register_cheat_description("jesus", "Movement", "jesus", "Walk on liquids")
+core.register_cheat_with_infotext("jetpack", "Movement", "jetpack", "")
+core.register_cheat_description("jetpack", "Movement", "jetpack", "AirJump with adjustable speed")
+core.register_cheat_with_infotext("jump", "Movement", "jump", "")
+core.register_cheat_description("jump", "Movement", "jump", "Adjust normal jump height")
+core.register_cheat_description("BHOP", "Movement", "BHOP", "Boost movement acceleration while moving")
+core.register_cheat_description("detachedcamera", "Movement", "detached_camera", "Detach the camera from the player")
+core.register_cheat_description("noslow", "Movement", "noslow", "Sneaking doesn't slow you down")
+core.register_cheat_description("noclip", "Movement", "noclip", "Walk through walls (req. PrivBypass)")
+core.register_cheat_description("overrides", "Movement", "overrides", "Movement overrides")
+core.register_cheat_description("pitchmove", "Movement", "pitch_move", "While flying, you move where you're pointing")
+core.register_cheat_description("spider", "Movement", "spider", "Climb walls")
+core.register_cheat_description("step", "Movement", "step", "Climbs the block you're facing")
+core.register_cheat_description("velocity", "Movement", "velocity", "Various velocity overrides")
 --Player
-core.register_cheat_description("AutoRespawn", "Player", "autorespawn", "Respawn after dying. Singleplayer only")
-core.register_cheat_description("NoFallDamage", "Player", "prevent_natural_damage", "Receive no fall damage")
-core.register_cheat_description("NoForceRotate", "Player", "noforcerotate", "Prevent server from changing the player's view direction")
-core.register_cheat_description("NoViewBob", "Player", "nobob", "Disable view bobbing")
-core.register_cheat_description("PrivBypass", "Player", "priv_bypass", "Bypass fly, noclip, fast and wireframe rendering")
-core.register_cheat_with_infotext("Reach", "Player", "reach", "")
-core.register_cheat_description("Reach", "Player", "reach", "Increase reach")
+core.register_cheat_description("autorespawn", "Player", "autorespawn", "Respawn after dying. Singleplayer only")
+core.register_cheat_description("nofalldamage", "Player", "prevent_natural_damage", "Receive no fall damage")
+core.register_cheat_description("noforcerotate", "Player", "noforcerotate", "Prevent server from changing the player's view direction")
+core.register_cheat_description("privbypass", "Player", "priv_bypass", "Bypass fly, noclip, fast and wireframe rendering")
+core.register_cheat_with_infotext("reach", "Player", "reach", "")
+core.register_cheat_description("reach", "Player", "reach", "Increase reach")
 -- core.register_cheat_description("LuaControl", "Player", "luacontrol", "The player moves regardless of the received input")
-core.register_cheat_description("QuickMenu", "Client", "use_old_menu", "Add a menu for quicker access to cheats")
-core.register_cheat_description("Client List", "Client", "clients", "Show online and nearby players")
-core.register_cheat_description("Ping", "Client", "ping", "Show client RTT in milliseconds")
-core.register_cheat_description("Welcome", "Client", "welcome", "Shows a customizable welcome message in the HUD")
-core.register_cheat_description("CheatHUD", "Client", "cheat_hud", "List enabled cheats")
-core.register_cheat_setting("Order", "Client", "cheat_hud", "cheat_hud.order", {type="selectionbox", options={"Ascending", "Descending"}})
-core.register_cheat_setting("By Length", "Client", "cheat_hud", "cheat_hud.by_length", {type="bool"})
-core.register_cheat_setting("Y Offset", "Client", "cheat_hud", "cheat_hud.offset", {type="slider_int", min=0, max=200, steps=41})
-core.register_cheat_setting("Text Align", "Client", "cheat_hud", "cheat_hud.align", {type="selectionbox", options={"Left", "Center", "Right"}})
-core.register_cheat_description("HUD Color", "Client", "hud_color", "Colorize HUD and menu accents")
-core.register_cheat_description("Coords", "Client", "coords", "Render coordinates in the bottom left corner")
-core.register_cheat_description("EquipmentHUD", "Client", "equipment_hud", "Shows armor and held item durability")
-core.register_cheat_description("LagOptimizer", "Client", "lag_optimizer", "Reduce visual lag, first-person motion, inventory animations, and item motion")
+core.register_cheat_description("quickmenu", "Client", "use_old_menu", "Add a menu for quicker access to cheats")
+core.register_cheat_description("client list", "Client", "clients", "Show online and nearby players")
+core.register_cheat_setting("mode", "Client", "clients", "clients.mode", {type="selectionbox", options={"online", "nearby", "both"}})
+core.register_cheat_setting("nearby distance", "Client", "clients", "nearby_clients.distance", {type="bool"})
+core.register_cheat_setting("nearby health", "Client", "clients", "nearby_clients.health", {type="bool"})
+core.register_cheat_description("ping", "Client", "ping", "Show client RTT in milliseconds")
+core.register_cheat_description("cheathud", "Client", "cheat_hud", "List enabled cheats")
+core.register_cheat_description("chatplus", "Client", "chatplus.enabled", "ChatPlus overlay")
+core.register_cheat_setting("x offset", "Client", "chatplus.enabled", "chatplus_offset_x", {type="slider_int", min=-500, max=500, steps=200})
+core.register_cheat_setting("y offset", "Client", "chatplus.enabled", "chatplus_offset_y", {type="slider_int", min=-500, max=500, steps=200})
+core.register_cheat_setting("background", "Client", "chatplus.enabled", "chatplus_background", {type="bool"})
+core.register_cheat_setting("background color", "Client", "chatplus.enabled", "chatplus_background_color", {type="text", size=18})
+core.register_cheat_setting("background alpha", "Client", "chatplus.enabled", "chatplus_background_alpha", {type="slider_int", min=0, max=255, steps=255})
+core.register_cheat_setting("border", "Client", "chatplus.enabled", "chatplus_border", {type="bool"})
+core.register_cheat_setting("border color", "Client", "chatplus.enabled", "chatplus_border_color", {type="text", size=18})
+core.register_cheat_setting("border alpha", "Client", "chatplus.enabled", "chatplus_border_alpha", {type="slider_int", min=0, max=255, steps=255})
+core.register_cheat_setting("padding", "Client", "chatplus.enabled", "chatplus_padding", {type="slider_int", min=0, max=20, steps=20})
+core.register_cheat_setting("order", "Client", "cheat_hud", "cheat_hud.order", {type="selectionbox", options={"ascending", "descending"}})
+core.register_cheat_setting("by length", "Client", "cheat_hud", "cheat_hud.by_length", {type="bool"})
+core.register_cheat_setting("y offset", "Client", "cheat_hud", "cheat_hud.offset", {type="slider_int", min=0, max=200, steps=41})
+core.register_cheat_setting("text align", "Client", "cheat_hud", "cheat_hud.align", {type="selectionbox", options={"Left", "Center", "Right"}})
+core.register_cheat_description("hud", "Client", "hud.enabled", "Configure HUD colors, backgrounds, and spacing")
+core.register_cheat_description("coords", "Client", "coords", "Render coordinates in the bottom left corner")
+core.register_cheat_description("luna-stats", "Client", "luna_stats.enabled", "Configure Luna API stat displays")
+core.register_cheat_description("fps", "Client", "fps", "Show current frames per second")
+core.register_cheat_description("totems", "Client", "totems", "Show total totems in inventory and offhand")
+core.register_cheat_description("WAILA", "Client", "waila", "Show the node or entity you are looking at")
+core.register_cheat_description("equipmenthud", "Client", "equipment_hud", "Shows armor and held item durability")
+core.register_cheat_description("lagoptimizer", "Client", "lag_optimizer", "Reduce visual lag, first-person motion, inventory animations, and item motion")
 --Render
-core.register_cheat_description("BrightNight", "Render", "no_night", "Always daytime")
-core.register_cheat_description("EntityESP", "Render", "enable_entity_esp", "See entities through walls")
-core.register_cheat_description("EntityTracers", "Render", "enable_entity_tracers", "Draw tracers to entities")
-core.register_cheat_description("FullBright", "Render", "fullbright", "No darkness")
-core.register_cheat_description("Left hand", "Render", "left_hand", "Switch to left hand")
-core.register_cheat_description("Skybox", "Render", "custom_skybox", "Render custom skybox")
-core.register_cheat_with_infotext("FOV", "Render", "fov_setting", "FOV")
-core.register_cheat_description("FOV", "Render", "fov_setting", "Have your FOV set to a custom value")
+core.register_cheat_description("brightnight", "Render", "no_night", "Always daytime")
+core.register_cheat_description("entityesp", "Render", "enable_entity_esp", "See entities through walls")
+core.register_cheat_description("entitytracers", "Render", "enable_entity_tracers", "Draw tracers to entities")
+core.register_cheat_description("fullbright", "Render", "fullbright", "No darkness")
+core.register_cheat_description("left hand", "Render", "left_hand", "Switch to left hand")
+core.register_cheat_with_infotext("fov", "Render", "fov_setting", "FOV")
+core.register_cheat_description("fov", "Render", "fov_setting", "Have your FOV set to a custom value")
 --core.register_cheat_description("HUDBypass", "Render", "hudbypass", "Allows player to toggle hud elements disabled by the game")
-core.register_cheat_description("HealthESP", "Render", "show_players_hp", "Shows player and entity HP")
-core.register_cheat_description("NoDrownCam", "Render", "no_drown_cam", "Disables drowning camera effect")
-core.register_cheat_description("NoClouds", "Render", "no_clouds", "Disables cloud rendering")
-core.register_cheat_description("NoFog", "Render", "no_fog", "Disables fog rendering")
-core.register_cheat_description("NoFire", "Render", "no_fire", "Disables the burning fire HUD")
-core.register_cheat_description("NoArmor", "Render", "no_armor", "Hide armor on player models and nametags")
-core.register_cheat_description("NoHurtCam", "Render", "no_hurt_cam", "Disables hurt camera effect")
-core.register_cheat_description("NoParticles", "Render", "norender.particles", "Don't render particles")
-core.register_cheat_description("NodeESP", "Render", "enable_node_esp", "See specified nodes through walls")
-core.register_cheat_description("NodeTracers", "Render", "enable_node_tracers", "Draw tracers to specified nodes")
-core.register_cheat_description("PlayerESP", "Render", "enable_player_esp", "See players through walls")
-core.register_cheat_description("PlayerTracers", "Render", "enable_player_tracers", "Draw tracers to players")
-core.register_cheat_description("TunnelESP", "Render", "enable_tunnel_esp", "See tunnels through walls")
-core.register_cheat_description("TunnelTracers", "Render", "enable_tunnel_tracers", "Draw tracers to tunnels")
-core.register_cheat_description("Xray", "Render", "xray", "Don't render specific nodes")
-core.register_cheat_description("TargetHUD", "Render", "enable_combat_target_hud", "Shows best target on a HUD (depends on your combat settings)")
-core.register_cheat_description("Nametags", "Render", "nametags", "Customize players nametags, equipment, wielded items, and item names. Doesn't work well in CTF")
-core.register_cheat_description("LeftHand", "Render", "left_hand", "Switch to left hand")
-core.register_cheat_description("HandView", "Render", "hand_view", "Adjust the wielded hand position and scale")
+core.register_cheat_description("healthesp", "Render", "show_players_hp", "Shows player and entity HP")
+core.register_cheat_description("nodrowncam", "Render", "no_drown_cam", "Disables drowning camera effect")
+core.register_cheat_description("nofire", "Render", "no_fire", "Disables the burning fire HUD")
+core.register_cheat_description("noarmor", "Render", "no_armor", "Hide armor on player models and nametags")
+core.register_cheat_description("nohurtcam", "Render", "no_hurt_cam", "Disables hurt camera effect")
+core.register_cheat_description("nodeesp", "Render", "enable_node_esp", "See specified nodes through walls")
+core.register_cheat_description("nodetracers", "Render", "enable_node_tracers", "Draw tracers to specified nodes")
+core.register_cheat_description("nodehighlight", "Render", "nodehighlight", "Style the node you are looking at with the HUD theme")
+core.register_cheat_description("playeresp", "Render", "enable_player_esp", "See players through walls")
+core.register_cheat_description("playertracers", "Render", "enable_player_tracers", "Draw tracers to players")
+core.register_cheat_description("tunnelesp", "Render", "enable_tunnel_esp", "See tunnels through walls")
+core.register_cheat_description("tunneltracers", "Render", "enable_tunnel_tracers", "Draw tracers to tunnels")
+core.register_cheat_description("xray", "Render", "xray", "Don't render specific nodes")
+core.register_cheat_description("targethud", "Render", "enable_combat_target_hud", "Shows best target on a HUD (depends on your combat settings)")
+core.register_cheat_description("nametags", "Render", "nametags", "Customize players nametags, equipment, wielded items, and item names. Doesn't work well in CTF")
+core.register_cheat_description("lefthand", "Render", "left_hand", "Switch to left hand")
+core.register_cheat_description("handview", "Render", "hand_view", "Adjust the wielded hand position and scale")
 --World
-core.register_cheat_description("AutoTNT", "World", "autotnt", "Puts TNT on the ground")
-core.register_cheat_description("BlockLava", "World", "blocklava", "Replace lava with the block you're holding")
-core.register_cheat_description("BlockWater", "World", "blockwater", "Replace water with the block you're holding")
-core.register_cheat_description("Replace", "World", "replace", "When you break a block it gets replaced by the block you're holding")
-core.register_cheat_description("Scaffold", "World", "scaffold", "Puts blocks below you")
-core.register_cheat_description("ScaffoldPlus", "World", "scaffoldplus", "Puts even more blocks under you")
+core.register_cheat_description("autotnt", "World", "autotnt", "Puts TNT on the ground")
+core.register_cheat_description("blocklava", "World", "blocklava", "Replace lava with the block you're holding")
+core.register_cheat_description("blockwater", "World", "blockwater", "Replace water with the block you're holding")
+core.register_cheat_description("replace", "World", "replace", "When you break a block it gets replaced by the block you're holding")
+core.register_cheat_description("scaffold", "World", "scaffold", "Puts blocks below you")
+core.register_cheat_description("scaffoldplus", "World", "scaffoldplus", "Puts even more blocks under you")
 
 
 --SOME SETTINGS
 
 core.register_cheat_setting("Nodelist", "Render", "xray", "xray.nodes", {type="text", size=10})
 core.register_cheat_setting("Nodelist", "Render", "enable_node_esp", "enable_node_esp.nodes", {type="text", size=10})
-core.register_cheat_setting("Multiplier", "Movement", "step", "step.mult", {type="slider_float", min=1.0, max=3.5, steps=6})
-core.register_cheat_setting("Range", "Player", "reach", "reach.range",
+core.register_cheat_setting("multiplier", "Movement", "step", "step.mult", {type="slider_float", min=1.0, max=3.5, steps=6})
+core.register_cheat_setting("range", "Player", "reach", "reach.range",
 	{type="slider_float", min=1.0, max=6.0, steps=100})
-core.register_cheat_setting("Flight Speed", "Movement", "free_move", "free_move.speed",
+core.register_cheat_setting("jump", "Movement", "BHOP", "BHOP.jump", {type="bool"})
+core.register_cheat_setting("sprint", "Movement", "BHOP", "BHOP.sprint", {type="bool"})
+core.register_cheat_setting("speed", "Movement", "BHOP", "BHOP.speed", {type="bool"})
+core.register_cheat_setting("disable on damage", "Movement", "freecam", "freecam.disable_on_damage", {type="bool"})
+core.register_cheat_setting("flight speed", "Movement", "free_move", "free_move.speed",
 	{type="slider_float", min=0.25, max=8.00, steps=155})
-core.register_cheat_setting("JetPack Speed", "Movement", "jetpack", "jetpack.speed",
+core.register_cheat_setting("jetpack speed", "Movement", "jetpack", "jetpack.speed",
 	{type="slider_float", min=0.25, max=8.00, steps=155})
-core.register_cheat_setting("HUD Color", "Client", "hud_color", "globalcolor", {type="text", size=18})
-core.register_cheat_setting("Background", "Client", "cheat_hud", "cheat_hud.background", {type="bool"})
-core.register_cheat_setting("Reset", "Client", "cheat_hud", "cheat_hud.reset", {type="bool"})
-core.register_cheat_setting("HandView", "Render", "hand_view", "hand_view", {type="bool"})
-core.register_cheat_setting("X Offset", "Render", "hand_view", "hand_view.x", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("Y Offset", "Render", "hand_view", "hand_view.y", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("Z Offset", "Render", "hand_view", "hand_view.z", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("Scale", "Render", "hand_view", "hand_view.scale", {type="slider_float", min=0.10, max=3.00, steps=58})
-core.register_cheat_setting("Type", "Render", "enable_health_esp", "enable_health_esp.type", {type="selectionbox", options={"Health Bar", "Above Head"}})
-core.register_cheat_setting("Players Only", "Render", "enable_health_esp", "enable_health_esp.players_only", {type="bool"})
-core.register_cheat_setting("Target highlight", "Render", "enable_combat_target_hud", "enable_combat_target_hud.target_highlight", {type="bool"})
-core.register_cheat_setting("Target Mode", "Combat", "crystalspam", "crystalspam.target_mode", {type="selectionbox", options={"Players", "Entities", "Both"}})
-core.register_cheat_setting("Safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
-core.register_cheat_setting("HP", "Render", "nametags", "nametags.hp", {type="bool"})
-core.register_cheat_setting("Status Marker", "Render", "nametags", "nametags.status", {type="bool"})
-core.register_cheat_setting("Distance", "Render", "nametags", "nametags.distance", {type="bool"})
-core.register_cheat_setting("Self", "Render", "nametags", "nametags.self", {type="bool"})
-core.register_cheat_setting("Icon Scale", "Render", "nametags", "nametags.icon_scale", {type="slider_float", min=0.50, max=4.00, steps=70})
-core.register_cheat_setting("Item names", "Render", "nametags", "nametags.item_names", {type="bool"})
-core.register_cheat_setting("Equipment", "Render", "nametags", "nametags.armor", {type="bool"})
-core.register_cheat_setting("Wielded Items", "Render", "nametags", "nametags.wielded_items", {type="bool"})
-core.register_cheat_setting("Background", "Render", "nametags", "show_nametag_backgrounds", {type="bool"})
-core.register_cheat_setting("Height", "Render", "nametags", "nametags.height", {type="slider_int", min=1, max=9, steps = 9});
-core.register_cheat_setting("Field Of View", "Render", "fov_setting", "fov.step", {type="slider_int", min=72, max=160, steps = 89});
-core.register_cheat_setting("Background", "Client", "equipment_hud", "equipment_hud.background", {type="bool"})
-core.register_cheat_setting("Background", "Client", "coords", "coords.background", {type="bool"})
-core.register_cheat_setting("Message", "Client", "welcome", "welcome.message", {type="text", size=80})
-core.register_cheat_setting("Text Align", "Client", "welcome", "welcome.align", {type="selectionbox", options={"Left", "Center", "Right"}})
-core.register_cheat_setting("Text Color", "Client", "welcome", "welcome.color", {type="text", size=18})
-core.register_cheat_setting("Background", "Client", "welcome", "welcome.background", {type="bool"})
-core.register_cheat_setting("Background", "Client", "ping", "ping.background", {type="bool"})
-core.register_cheat_setting("Background", "Client", "clients", "clients.background", {type="bool"})
-core.register_cheat_setting("Nether Coords", "Client", "coords", "coords.nether_coords", {type="bool"})
-core.register_cheat_setting("Durability", "Client", "equipment_hud", "equipment_hud.durability_mode", {type="selectionbox", options={"Percent", "Dur/Max", "Both"}})
-core.register_cheat_setting("Enderchest", "Render", "content_previewer", "content_previewer.enderchest", {type="bool"})
-core.register_cheat_setting("Shulker", "Render", "content_previewer", "content_previewer.shulker", {type="bool"})
-core.register_cheat_setting("Maps", "Render", "content_previewer", "content_previewer.maps", {type="bool"})
-core.register_cheat_setting("No Item Spin", "Client", "lag_optimizer", "lag_optimizer.no_item_spin", {type="bool"})
-core.register_cheat_setting("No Hand Animation", "Client", "lag_optimizer",
-	"lag_optimizer.no_hand_animation", {type="bool"})
-
-core.register_cheat_setting("Display sunrise", "Render", "custom_skybox", "display_sunrise", {type="bool"})
-core.register_cheat_setting("Force custom sky", "Render", "custom_skybox", "force_custom_skybox", {type="bool"})
-core.register_cheat_setting("Force render sky", "Render", "custom_skybox", "force_render_skybox", {type="bool"})
+core.register_cheat_setting("multiplier", "Movement", "jump", "jump.multiplier",
+	{type="slider_float", min=0.25, max=8.00, steps=155})
+core.register_cheat_setting("accent color", "Client", "hud.enabled", "hud.accent_color", {type="text", size=18})
+core.register_cheat_setting("text color", "Client", "hud.enabled", "hud.text_color", {type="text", size=18})
+core.register_cheat_setting("background color", "Client", "hud.enabled", "hud.background_color", {type="text", size=18})
+core.register_cheat_setting("background alpha", "Client", "hud.enabled", "hud.background_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("border color", "Client", "hud.enabled", "hud.border_color", {type="text", size=18})
+core.register_cheat_setting("border alpha", "Client", "hud.enabled", "hud.border_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("padding", "Client", "hud.enabled", "hud.padding", {type="slider_int", min=0, max=20, steps=21})
+core.register_cheat_setting("tooltips theme", "Client", "hud.enabled", "hud.tooltips_theme", {type="bool"})
+core.register_cheat_setting("background", "Client", "cheat_hud", "cheat_hud.background", {type="bool"})
+core.register_cheat_setting("background color", "Client", "cheat_hud", "hud.background_color", {type="text", size=18})
+core.register_cheat_setting("background alpha", "Client", "cheat_hud", "hud.background_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("reset", "Client", "cheat_hud", "cheat_hud.reset", {type="bool"})
+core.register_cheat_setting("handview", "Render", "hand_view", "hand_view", {type="bool"})
+core.register_cheat_setting("x offset", "Render", "hand_view", "hand_view.x", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("y offset", "Render", "hand_view", "hand_view.y", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("z offset", "Render", "hand_view", "hand_view.z", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("scale", "Render", "hand_view", "hand_view.scale", {type="slider_float", min=0.10, max=3.00, steps=58})
+core.register_cheat_setting("color", "Render", "hand_view", "hand_view.color", {type="text", size=18})
+core.register_cheat_setting("type", "Render", "enable_health_esp", "enable_health_esp.type", {type="selectionbox", options={"Health Bar", "Above Head"}})
+core.register_cheat_setting("players only", "Render", "enable_health_esp", "enable_health_esp.players_only", {type="bool"})
+core.register_cheat_setting("target highlight", "Render", "enable_combat_target_hud", "enable_combat_target_hud.target_highlight", {type="bool"})
+core.register_cheat_setting("target mode", "Combat", "crystalspam", "crystalspam.target_mode", {type="selectionbox", options={"Players", "Entities", "Both"}})
+core.register_cheat_setting("safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
+core.register_cheat_setting("hp", "Render", "nametags", "nametags.hp", {type="bool"})
+core.register_cheat_setting("status marker", "Render", "nametags", "nametags.status", {type="bool"})
+core.register_cheat_setting("distance", "Render", "nametags", "nametags.distance", {type="bool"})
+core.register_cheat_setting("self", "Render", "nametags", "nametags.self", {type="bool"})
+core.register_cheat_setting("icon scale", "Render", "nametags", "nametags.icon_scale", {type="slider_float", min=0.50, max=4.00, steps=70})
+core.register_cheat_setting("item names", "Render", "nametags", "nametags.item_names", {type="bool"})
+core.register_cheat_setting("equipment", "Render", "nametags", "nametags.armor", {type="bool"})
+core.register_cheat_setting("wielded items", "Render", "nametags", "nametags.wielded_items", {type="bool"})
+core.register_cheat_setting("background", "Render", "nametags", "show_nametag_backgrounds", {type="bool"})
+core.register_cheat_setting("height", "Render", "nametags", "nametags.height", {type="slider_int", min=1, max=9, steps = 9});
+core.register_cheat_setting("field of view", "Render", "fov_setting", "fov.step", {type="slider_int", min=72, max=160, steps = 89});
+core.register_cheat_setting("background", "Client", "equipment_hud", "equipment_hud.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "coords", "coords.background", {type="bool"})
+core.register_cheat_setting("enabled", "Client", "luna_stats.enabled", "luna_stats.enabled", {type="bool"})
+core.register_cheat_setting("HUD", "Client", "luna_stats.enabled", "luna_stats.hud", {type="bool"})
+core.register_cheat_setting("HUD background", "Client", "luna_stats.enabled", "luna_stats.hud.background", {type="bool"})
+core.register_cheat_setting("HUD pvp", "Client", "luna_stats.enabled", "luna_stats.hud.pvp", {type="bool"})
+core.register_cheat_setting("HUD messages", "Client", "luna_stats.enabled", "luna_stats.hud.messages", {type="bool"})
+core.register_cheat_setting("HUD joined", "Client", "luna_stats.enabled", "luna_stats.hud.joined", {type="bool"})
+core.register_cheat_setting("HUD joins", "Client", "luna_stats.enabled", "luna_stats.hud.joins", {type="bool"})
+core.register_cheat_setting("HUD leaves", "Client", "luna_stats.enabled", "luna_stats.hud.leaves", {type="bool"})
+core.register_cheat_setting("nametags", "Client", "luna_stats.enabled", "luna_stats.nametags", {type="bool"})
+core.register_cheat_setting("client list online", "Client", "luna_stats.enabled", "luna_stats.client_list.online", {type="bool"})
+core.register_cheat_setting("background", "Client", "fps", "fps.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "totems", "totems.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "waila", "waila.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "ping", "ping.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "clients", "clients.background", {type="bool"})
+core.register_cheat_setting("nether coords", "Client", "coords", "coords.nether_coords", {type="bool"})
+core.register_cheat_setting("durability", "Client", "equipment_hud", "equipment_hud.durability_mode", {type="selectionbox", options={"Percent", "Dur/Max", "Both"}})
+core.register_cheat_setting("enderchest", "Render", "content_previewer", "content_previewer.enderchest", {type="bool"})
+core.register_cheat_setting("shulker", "Render", "content_previewer", "content_previewer.shulker", {type="bool"})
+core.register_cheat_setting("maps", "Render", "content_previewer", "content_previewer.maps", {type="bool"})
 
 core.register_cheat_setting("Min Length", "Render", "enable_tunnel_esp", "tunnel_esp_min_length", {type="slider_int", min=1, max=10, steps=10})
 core.register_cheat_setting("Max Width", "Render", "enable_tunnel_esp", "tunnel_esp_max_width", {type="slider_int", min=1, max=5, steps=5})
@@ -354,6 +405,42 @@ core.register_cheat_setting("Max Height", "Render", "enable_tunnel_esp", "tunnel
 local update_interval = 0.25
 local timer = 0
 local blinktime = 0
+local friends_sync_server = ""
+local friends_sync_value = ""
+
+local function get_friends_json()
+	local data = core.settings:get_json("friends") or {}
+	if type(data) ~= "table" then
+		data = {}
+	end
+	return data
+end
+
+local function get_current_friends_list()
+	local server_url = core.get_server_url()
+	if not server_url then
+		return "", ""
+	end
+
+	local friends = get_friends_json()
+	local value = friends[server_url]
+	if type(value) ~= "string" then
+		value = ""
+	end
+
+	return server_url, value
+end
+
+local function set_current_friends_list(value)
+	local server_url = core.get_server_url()
+	if not server_url then
+		return
+	end
+
+	local friends = get_friends_json()
+	friends[server_url] = value or ""
+	core.settings:set_json("friends", friends)
+end
 
 local function reset_cheat_hud()
 	core.settings:set_bool("cheat_hud", true)
@@ -384,9 +471,24 @@ end
 minetest.register_globalstep(function(dtime)
     timer = timer + dtime
 
+	local server_url, stored_value = get_current_friends_list()
+	if server_url ~= "" and server_url ~= friends_sync_server then
+		friends_sync_server = server_url
+		friends_sync_value = stored_value
+		if (core.settings:get("friends.list") or "") ~= stored_value then
+			core.settings:set("friends.list", stored_value)
+		end
+	elseif server_url ~= "" then
+		local current_value = core.settings:get("friends.list") or ""
+		if current_value ~= friends_sync_value then
+			friends_sync_value = current_value
+			set_current_friends_list(current_value)
+		end
+	end
+
 	if core.settings:get_bool("blink") then
 		blinktime = blinktime + dtime
-		core.update_infotext("Blink", "Interact", "blink", math.floor(blinktime * 1000) .. "ms")
+	core.update_infotext("blink", "Interact", "blink", math.floor(blinktime * 1000) .. "ms")
 		if blinktime > 10 then
 			core.settings:set_bool("blink", false)
 		end
@@ -409,22 +511,25 @@ minetest.register_globalstep(function(dtime)
         end
 
         -- Step infotext
-        core.update_infotext("Step", "Movement", "step", "Mult: " .. core.settings:get("step.mult"))
-        core.update_infotext("Reach", "Player", "reach",
+        core.update_infotext("step", "Movement", "step",
+            core.settings:get_bool("step") and format_amount(core.settings:get("step.mult")) or "")
+        core.update_infotext("reach", "Player", "reach",
             core.settings:get_bool("reach") and format_amount(core.settings:get("reach.range")) or "")
-        core.update_infotext("Flight", "Movement", "free_move",
+        core.update_infotext("flight", "Movement", "free_move",
             core.settings:get_bool("free_move") and format_amount(core.settings:get("free_move.speed")) or "")
-        core.update_infotext("JetPack", "Movement", "jetpack",
+        core.update_infotext("jetpack", "Movement", "jetpack",
             core.settings:get_bool("jetpack") and format_amount(core.settings:get("jetpack.speed")) or "")
+        core.update_infotext("jump", "Movement", "jump",
+            core.settings:get_bool("jump") and format_amount(core.settings:get("jump.multiplier")) or "")
 
         -- CombatLog infotext
-        core.update_infotext("CombatLog", "Combat", "combatlog", "Min HP: " .. core.settings:get("combatlog.hp"))
+        core.update_infotext("combatlog", "Combat", "combatlog", "Min HP: " .. core.settings:get("combatlog.hp"))
 
         -- FOV infotext
         if core.settings:get_bool("fov_setting") then
-            core.update_infotext("FOV", "Render", "fov_setting", core.settings:get("fov.step"))
+            core.update_infotext("fov", "Render", "fov_setting", core.settings:get("fov.step"))
         else
-            core.update_infotext("FOV", "Render", "fov_setting", "")
+            core.update_infotext("fov", "Render", "fov_setting", "")
         end
 
         -- Nametags infotext
@@ -433,23 +538,30 @@ minetest.register_globalstep(function(dtime)
         local nametags_status = core.settings:get_bool("nametags.status")
         local nametags_distance = core.settings:get_bool("nametags.distance")
         if nametags_enabled then
-            core.update_infotext("Nametags", "Render", "nametags", "")
+            core.update_infotext("nametags", "Render", "nametags", "")
+        end
+
+        -- Friends infotext
+        if core.settings:get_bool("friends.ignore") then
+            core.update_infotext("friends", "Misc", "friends.middle_click", "ignored")
+        else
+            core.update_infotext("friends", "Misc", "friends.middle_click", "")
         end
 
 		--Scaffold infotext
 		if core.settings:get_bool("scaffold") then
 			if core.settings:get("scaffold.mode") == "Silent" then
-				core.update_infotext("Scaffold", "World", "scaffold", "Silent")
+				core.update_infotext("scaffold", "World", "scaffold", "Silent")
 			else
-				core.update_infotext("Scaffold", "World", "scaffold", "Blatant")
+				core.update_infotext("scaffold", "World", "scaffold", "Blatant")
 			end
 		end
 		--ScaffoldPlus infotext
 		if core.settings:get_bool("scaffold_plus") then
 			if core.settings:get("scaffold_plus.mode") == "Silent" then
-				core.update_infotext("ScaffoldPlus", "World", "scaffold_plus", "Silent")
+				core.update_infotext("scaffoldplus", "World", "scaffold_plus", "Silent")
 			else
-				core.update_infotext("ScaffoldPlus", "World", "scaffold_plus", "Blatant")
+				core.update_infotext("scaffoldplus", "World", "scaffold_plus", "Blatant")
 			end
 		end
     end

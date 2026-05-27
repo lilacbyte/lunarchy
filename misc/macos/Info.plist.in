@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>cloakv4</string>
+	<string>lunarchy</string>
 	<key>CFBundleIconFile</key>
 	<string>luanti-icon.icns</string>
 	<key>CFBundleName</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>@PROJECT_NAME_CAPITALIZED@</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.cloakv4.cloakv4</string>
+	<string>org.lunarchy.lunarchy</string>
 	<key>CFBundleVersion</key>
 	<string>@VERSION_STRING@</string>
 	<key>LSApplicationCategoryType</key>

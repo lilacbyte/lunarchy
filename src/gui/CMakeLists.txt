@@ -30,12 +30,16 @@ set(gui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/touchscreeneditor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/drawItemStack.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/NewMenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chatHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cheatHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/targetHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/coordsHUD.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/statsHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/clientsHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pingHUD.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/welcomeHUD.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fpsHUD.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/totemsHUD.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/wailaHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/equipmentHUD.cpp
 	PARENT_SCOPE
 )

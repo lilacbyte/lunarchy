@@ -259,6 +259,12 @@ fake_function() {
 	gettext("Selection box border color (R,G,B).");
 	gettext("Selection box width");
 	gettext("Width of the selection box lines around nodes.");
+	gettext("ChatPlus overlay");
+	gettext("ChatPlus border");
+	gettext("ChatPlus border color");
+	gettext("ChatPlus border alpha");
+	gettext("ChatPlus background color");
+	gettext("ChatPlus background alpha");
 	gettext("Crosshair color");
 	gettext("Crosshair color (R,G,B).\nAlso controls the object crosshair color");
 	gettext("Crosshair alpha");

@@ -14,6 +14,7 @@
 #include "util/enriched_string.h"
 #include "util/pointedthing.h"
 #include "client.h"
+#include "chatplus.h"
 #include "clientmap.h"
 #include "fontengine.h"
 #include "hud.h" // HUD_FLAG_*
@@ -21,6 +22,42 @@
 #include "profiler.h"
 #include "renderingengine.h"
 #include "version.h"
+
+namespace {
+
+static bool loadChatBounds(core::rect<s32> &bounds)
+{
+	if (g_settings->exists("HudElement_Position1_chat_hud") &&
+			g_settings->exists("HudElement_Position2_chat_hud")) {
+		v2f position1;
+		v2f position2;
+		if (g_settings->getV2FNoEx("HudElement_Position1_chat_hud", position1) &&
+				g_settings->getV2FNoEx("HudElement_Position2_chat_hud", position2)) {
+			bounds = core::rect<s32>(position1.X, position1.Y, position2.X, position2.Y);
+			return bounds.getWidth() > 0 && bounds.getHeight() > 0;
+		}
+	}
+
+	return false;
+}
+
+static void fitChatBoundsToWholeRows(gui::IGUIStaticText *chat,
+		core::rect<s32> &bounds, const ChatPlus::HudStyle &style)
+{
+	gui::IGUIFont *font = chat ? chat->getActiveFont() : nullptr;
+	if (!font)
+		return;
+
+	const s32 line_height = font->getDimension(L"A").Height + font->getKerning(L'A').Y;
+	if (line_height <= 0)
+		return;
+
+	const s32 inset = style.padding + (style.border ? 2 : 0);
+	const s32 text_height = std::max<s32>(0, bounds.getHeight() - (inset * 2));
+	bounds.UpperLeftCorner.Y += text_height % line_height;
+}
+
+} // namespace
 
 inline static const char *yawToDirectionString(int yaw)
 {
@@ -55,6 +92,10 @@ void GameUI::init()
 	m_guitext_chat = gui::StaticText::add(guienv, L"", core::rect<s32>(0, 0, 0, 0),
 		//false, false); // Disable word wrap as of now
 		false, true, guiroot);
+	const ChatPlus::HudStyle chatplus = ChatPlus::readHudStyle();
+	m_guitext_chat->setTextAlignment(gui::EGUIA_UPPERLEFT,
+		chatplus.enabled ? gui::EGUIA_LOWERRIGHT : gui::EGUIA_UPPERLEFT);
+	ChatPlus::applyAppearance(m_guitext_chat, chatplus);
 	u16 chat_font_size = g_settings->getU16("chat_font_size");
 	if (chat_font_size != 0) {
 		m_guitext_chat->setOverrideFont(g_fontengine->getFont(
@@ -211,8 +252,9 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 		guitext_status->enableOverrideColor(true);
 	}
 
-	// Hide chat when disabled by server or when console is visible
-	m_guitext_chat->setVisible(isChatVisible() && !chat_console->isVisible() && (player->hud_flags & HUD_FLAG_CHAT_VISIBLE));
+	// Hide chat when disabled by server, when a menu is open, or when the console is visible.
+	m_guitext_chat->setVisible(isChatVisible() && !chat_console->isVisible() &&
+		(player->hud_flags & HUD_FLAG_CHAT_VISIBLE) && !isMenuActive());
 }
 
 void GameUI::initFlags()
@@ -227,16 +269,55 @@ void GameUI::showTranslatedStatusText(const char *str)
 
 void GameUI::setChatText(const EnrichedString &chat_text, u32 recent_chat_count)
 {
+	if (!m_guitext_chat)
+		return;
+
 	setStaticText(m_guitext_chat, chat_text);
+	ChatPlus::applyAppearance(m_guitext_chat, ChatPlus::readHudStyle());
 
 	m_recent_chat_count = recent_chat_count;
 }
 
 void GameUI::updateChatSize()
 {
+	if (!m_guitext_chat)
+		return;
+
 	// Update gui element size and position
 	s32 chat_y = 5;
 	const v2u32 &window_size = RenderingEngine::getWindowSize();
+	const ChatPlus::HudStyle chatplus = ChatPlus::readHudStyle();
+
+	if (!chatplus.enabled) {
+		ChatPlus::applyAppearance(m_guitext_chat, chatplus);
+		m_guitext_chat->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
+		core::rect<s32> chat_size(10, chat_y, std::max(20, (s32)window_size.X - 10),
+			chat_y + std::max<s32>(1, m_guitext_chat->getTextHeight()));
+		if (chat_size != m_current_chat_size) {
+			m_current_chat_size = chat_size;
+			m_guitext_chat->setRelativePosition(chat_size);
+		}
+		return;
+	}
+
+	const s32 text_height = std::max<s32>(1, m_guitext_chat->getTextHeight());
+
+	core::rect<s32> stored_chat_bounds;
+	if (loadChatBounds(stored_chat_bounds)) {
+		core::rect<s32> chat_size(
+			stored_chat_bounds.UpperLeftCorner.X,
+			stored_chat_bounds.UpperLeftCorner.Y,
+			stored_chat_bounds.LowerRightCorner.X,
+			stored_chat_bounds.LowerRightCorner.Y);
+		chat_size = ChatPlus::applyHudStyle(chat_size, chatplus, window_size);
+		fitChatBoundsToWholeRows(m_guitext_chat, chat_size, chatplus);
+		ChatPlus::applyAppearance(m_guitext_chat, chatplus);
+		if (chat_size != m_current_chat_size) {
+			m_current_chat_size = chat_size;
+			m_guitext_chat->setRelativePosition(chat_size);
+		}
+		return;
+	}
 
 	if (m_flags.show_minimal_debug)
 		chat_y += m_guitext->getTextHeight();
@@ -251,18 +332,19 @@ void GameUI::updateChatSize()
 		} else {	
 			cwidth = 0;	
 		}
-	int chat_length = g_settings->getBool("cheat_hud") ? window_size.X - cwidth : window_size.X;
 	int chat_start;
 	if (!m_flags.show_cheat_menu) {
 	    chat_start = 0;
-	} else if (m_cheat_menu->m_cheat_layer) {
-	    chat_start = cwidth * 2 + 10;
+	} else if (m_cheat_menu && m_cheat_menu->m_cheat_layer) {
+		chat_start = cwidth * 2 + 10;
 	} else {
 		chat_start = cwidth + 7;
 	}
-	core::rect<s32> chat_size(chat_start, chat_y, chat_length, 0);
-	chat_size.LowerRightCorner.Y = std::min((s32)window_size.Y,
-			m_guitext_chat->getTextHeight() + chat_y);
+	core::rect<s32> chat_size = ChatPlus::applyHudStyle(
+		core::rect<s32>(chat_start, chat_y,
+			chat_start + std::max<s32>(1, m_guitext_chat->getTextWidth() + (chatplus.padding * 2)),
+			chat_y + text_height + (chatplus.padding * 2)), chatplus, window_size);
+	ChatPlus::applyAppearance(m_guitext_chat, chatplus);
 
 	if (chat_size == m_current_chat_size)
 		return;

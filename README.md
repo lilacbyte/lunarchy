@@ -1,6 +1,12 @@
 Lunarchy (fork of CloakV4)
 ==============
 
+The executable and package stem is `lunarchy`. Existing user data remains in the
+legacy Minetest-compatible locations (`.minetest`/`Minetest` on desktop and the
+`net.minetest.minetest` Android package) so upgrading does not create an empty
+profile or hide existing worlds, settings, and client data. Translation catalogs
+retain their existing `cloakv4` gettext domain for the same compatibility reason.
+
 Difference from CloakV4:
 
 - Instead of HUD themes, it's all controlled with HEX colour codes

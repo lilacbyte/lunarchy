@@ -26,6 +26,7 @@
 #include <IAnimatedMeshSceneNode.h>
 #include "client/renderingengine.h"
 #include "client/joystick_controller.h"
+#include "gui/moduleColor.h"
 #include "log.h"
 #include "drawItemStack.h"
 #include "filesys.h"
@@ -2311,8 +2312,10 @@ void GUIFormSpecMenu::parseBackgroundColor(parserData* data, const std::string &
 	}
 
 	// bgcolor
-	if (parameter_count >= 1 && !parts[0].empty())
+	if (parameter_count >= 1 && !parts[0].empty()) {
 		parseColorString(parts[0], m_bgcolor, false);
+		m_bgcolor.setAlpha(191);
+	}
 
 	// fullscreen
 	if (parameter_count >= 2) {
@@ -3049,7 +3052,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_bgfullscreen = false;
 
 	m_formspec_version = 1;
-	m_bgcolor = video::SColor(140, 0, 0, 0);
+	m_bgcolor = video::SColor(191, 0, 0, 0);
 	m_tabheader_upper_edge = 0;
 
 	{
@@ -3620,11 +3623,16 @@ void GUIFormSpecMenu::drawMenu()
 
 	const bool has_preview = m_hovered_item_preview && !m_hovered_item_preview->empty();
 	const bool has_texture_preview = m_hovered_item_preview_texture && !m_hovered_item_preview_texture->empty();
+	const bool hud_tooltip_style = g_settings->getBool("hud.enabled") &&
+		g_settings->getBool("hud.tooltips_theme");
 	m_tooltip_element->setDrawBackground(!has_preview);
-	m_tooltip_element->setDrawBorder(!has_preview);
+	m_tooltip_element->setDrawBorder(!has_preview && !hud_tooltip_style);
 
 	if (!has_preview && !has_texture_preview) {
 		m_tooltip_element->draw();
+		if (hud_tooltip_style && m_tooltip_element->isVisible())
+			driver->draw2DRectangleOutline(m_tooltip_element->getAbsolutePosition(),
+				readModuleBorderColor(), 1);
 	} else {
 		const core::rect<s32> tooltip_rect = m_tooltip_element->getAbsolutePosition();
 		const core::rect<s32> screen_clip(0, 0, screenSize.X, screenSize.Y);
@@ -3656,11 +3664,16 @@ void GUIFormSpecMenu::drawMenu()
 		panel_rect.addInternalPoint(preview_rect.UpperLeftCorner);
 		panel_rect.addInternalPoint(preview_rect.LowerRightCorner);
 
-		driver->draw2DRectangle(video::SColor(190, 0, 0, 0), panel_rect, &screen_clip);
-		driver->draw2DRectangle(video::SColor(255, 70, 70, 70),
-			core::rect<s32>(panel_rect.UpperLeftCorner,
-				v2s32(panel_rect.LowerRightCorner.X, panel_rect.UpperLeftCorner.Y + 1)),
-			&screen_clip);
+		driver->draw2DRectangle(hud_tooltip_style ? readModuleBackgroundColor() :
+			video::SColor(190, 0, 0, 0), panel_rect, &screen_clip);
+		if (hud_tooltip_style) {
+			driver->draw2DRectangleOutline(panel_rect, readModuleBorderColor(), 1);
+		} else {
+			driver->draw2DRectangle(video::SColor(255, 70, 70, 70),
+				core::rect<s32>(panel_rect.UpperLeftCorner,
+					v2s32(panel_rect.LowerRightCorner.X, panel_rect.UpperLeftCorner.Y + 1)),
+				&screen_clip);
+		}
 
 		m_tooltip_element->draw();
 
@@ -3716,7 +3729,9 @@ void GUIFormSpecMenu::showTooltip(const std::wstring &text,
 	EnrichedString ntext(text);
 	ntext.setDefaultColor(color);
 	if (!ntext.hasBackground())
-		ntext.setBackground(bgcolor);
+		ntext.setBackground(g_settings->getBool("hud.enabled") &&
+			g_settings->getBool("hud.tooltips_theme") ?
+			readModuleBackgroundColor() : bgcolor);
 
 	setStaticText(m_tooltip_element, ntext);
 

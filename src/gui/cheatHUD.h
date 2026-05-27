@@ -18,4 +18,5 @@ private:
 	std::vector<std::string> m_cached_enabled_cheats;
 	float m_cache_timer = 0.0f;
 	bool m_cache_valid = false;
+	u32 m_cached_cheat_revision = 0;
 };

@@ -83,6 +83,9 @@ private:
 	// safe_file_write(path, content)
 	static int l_safe_file_write(lua_State *L);
 
+	// safe_file_read(path) -> content or nil
+	static int l_safe_file_read(lua_State *L);
+
 	// request_insecure_environment()
 	static int l_request_insecure_environment(lua_State *L);
 

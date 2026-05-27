@@ -6,6 +6,7 @@
 
 #include "irrlichttypes.h"
 #include <ITexture.h>
+#include <string>
 #include <vector>
 #include <SMaterial.h>
 
@@ -162,12 +163,22 @@ struct AnimationInfo {
 			m_frames(tile.frames)
 	{};
 
+	AnimationInfo(const TileLayer &tile, const std::string &texture_name) :
+			m_frame_length_ms(tile.animation_frame_length_ms),
+			m_frame_count(tile.animation_frame_count),
+			m_is_water(texture_name.find("water") != std::string::npos),
+			m_is_lava(texture_name.find("lava") != std::string::npos),
+			m_frames(tile.frames)
+	{};
+
 	void updateTexture(video::SMaterial &material, float animation_time);
 
 private:
 	u16 m_frame = 0; // last animation frame
 	u16 m_frame_length_ms = 0;
 	u16 m_frame_count = 1;
+	bool m_is_water = false;
+	bool m_is_lava = false;
 
 	/// @note not owned by this struct
 	std::vector<FrameSpec> *m_frames = nullptr;

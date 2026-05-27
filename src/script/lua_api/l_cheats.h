@@ -16,6 +16,8 @@ static int l_setPlayerColorESP(lua_State *L);
 static int l_set_target_esp_color(lua_State *L);
 static int l_clear_combat_target(lua_State *L);
 static int l_set_combat_target(lua_State *L);
+static int l_close_cheat_menu(lua_State *L);
+static int l_refresh_cheat_settings(lua_State *L);
 };
 
 #endif // L_CHEATS_H

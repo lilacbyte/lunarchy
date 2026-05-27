@@ -1,5 +1,7 @@
 #include "gui/pingHUD.h"
 
+#include "gui/moduleColor.h"
+
 #include <algorithm>
 #include <iomanip>
 #include <sstream>
@@ -22,7 +24,6 @@ pingHUD::pingHUD(Client *client, const core::rect<s32> &rect) : CheatUIElement(r
 void pingHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtime,
 	ClientEnvironment &env, bool editing)
 {
-	(void)dtime;
 	(void)env;
 	if (!hudShouldRender(editing))
 		return;
@@ -32,21 +33,20 @@ void pingHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtime
 	if (!font)
 		return;
 
-	const std::wstring text = buildPingText(m_client);
+	m_cache_timer += dtime;
+	if (editing || m_cache_timer >= 0.5f || m_cached_text == L"ping: -- ms") {
+		m_cached_text = buildPingText(m_client);
+		m_cache_timer = 0.0f;
+	}
+	const std::wstring &text = m_cached_text;
 	const core::dimension2d<u32> dim_u32 = font->getDimension(text.c_str());
 	const core::dimension2d<s32> dim(dim_u32.Width, dim_u32.Height);
 
-	core::rect<s32> draw_bounds = bounds;
-	if (draw_bounds.getWidth() <= 0 || draw_bounds.getHeight() <= 0) {
-		const s32 padding = 10;
-		const s32 width = dim.Width + padding;
-		const s32 height = dim.Height + padding;
-		draw_bounds = core::rect<s32>(10, 45, 10 + width, 45 + height);
-	}
+	const core::rect<s32> draw_bounds = fitModuleHudBounds(*this, dim.Width, dim.Height);
 
-	const video::SColor outline_color(255, 0, 0, 0);
-	const video::SColor background_color(180, 25, 25, 25);
-	const video::SColor text_color(255, 255, 255, 255);
+	const video::SColor outline_color = readModuleBorderColor();
+	const video::SColor background_color = readModuleBackgroundColor();
+	const video::SColor text_color = readModuleTextColor();
 
 	const bool draw_background = editing || g_settings->getBool("ping.background");
 	if (draw_background) {
@@ -54,7 +54,8 @@ void pingHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtime
 		driver->draw2DRectangleOutline(draw_bounds, outline_color, 2);
 	}
 
-	const s32 x = draw_bounds.UpperLeftCorner.X + (draw_bounds.getWidth() - dim.Width) / 2;
-	const s32 y = draw_bounds.UpperLeftCorner.Y + (draw_bounds.getHeight() - dim.Height) / 2;
+	const s32 padding = moduleHudPadding();
+	const s32 x = draw_bounds.UpperLeftCorner.X + padding;
+	const s32 y = draw_bounds.UpperLeftCorner.Y + padding;
 	font->draw(text.c_str(), core::rect<s32>(x, y, x + dim.Width, y + dim.Height), text_color);
 }

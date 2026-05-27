@@ -21,27 +21,31 @@ local function get_formspec(dialogdata)
 		dialogdata.password = ""
 	end
 	dialogdata.selected_index = selected
+	local mapped_server = account and account.server or ""
+	if mapped_server == "" then
+		mapped_server = fgettext("No server mapped")
+	end
 
 	return table.concat({
 		"formspec_version[8]",
-		"size[11.4,10.1]",
+		"size[11.4,9.1]",
 		"bgcolor[;neither;]",
-		"box[0,0;11.4,10.1;#1f2328]",
-		"image[0,0;11.4,1.15;" .. core.formspec_escape(defaulttexturedir .. "menu_header.png") .. "]",
+		"box[0,0;11.4,9.1;#1f2328]",
 		"style_type[*;border=false;textcolor=white;font_size=*1.25;font=bold]",
-		"label[0.55,1.32;" .. fgettext("Account Manager") .. "]",
+		"label[0.55,1.12;" .. fgettext("Account Manager") .. "]",
 		"style_type[image_button;border=false;textcolor=white;font_size=*1.7;padding=0;font=bold;" ..
 			"bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button.png") .. ";" ..
 			"bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_hovered.png") .. "]",
-		"textlist[0.45,2.0;4.35,6.15;accounts;" .. account_list_text() .. ";" .. selected .. "]",
-		"label[5.3,2.0;" .. fgettext("Username") .. ":]",
-		"field[5.3,2.35;5.45,0.8;username;;" .. core.formspec_escape(dialogdata.username or "") .. "]",
-		"label[5.3,3.5;" .. fgettext("Password") .. ":]",
-		"pwdfield[5.3,3.85;5.45,0.8;password;]",
-		"image_button[5.3,5.05;5.45,0.85;;save;" .. fgettext("Add / Update") .. "]",
-		"image_button[5.3,6.15;5.45,0.85;;select;" .. fgettext("Select") .. "]",
-		"image_button[5.3,7.25;5.45,0.85;;remove;" .. fgettext("Remove") .. "]",
-		"image_button[1.1,8.7;3.2,0.75;;back;" .. fgettext("Back") .. "]"
+		"textlist[0.45,1.7;4.35,6.35;accounts;" .. account_list_text() .. ";" .. selected .. "]",
+		"label[5.3,1.7;" .. fgettext("Username") .. ":]",
+		"field[5.3,2.05;5.45,0.8;username;;" .. core.formspec_escape(dialogdata.username or "") .. "]",
+		"label[5.3,3.0;" .. fgettext("Server") .. ": " .. core.formspec_escape(mapped_server) .. "]",
+		"label[5.3,3.55;" .. fgettext("Password") .. ":]",
+		"pwdfield[5.3,3.9;5.45,0.75;password;]",
+		"image_button[5.3,4.8;5.45,0.75;;save;" .. fgettext("Add / Update") .. "]",
+		"image_button[5.3,5.7;5.45,0.75;;set_default;" .. fgettext("Set Default") .. "]",
+		"image_button[5.3,6.6;5.45,0.75;;remove;" .. fgettext("Remove") .. "]",
+		"image_button[5.3,7.5;5.45,0.75;;back;" .. fgettext("Back") .. "]"
 	}, "\n")
 end
 
@@ -77,7 +81,7 @@ local function buttonhandler(this, fields)
 		return true
 	end
 
-	if fields.select then
+	if fields.set_default then
 		local index = tonumber(this.data.selected_index) or account_manager.get_selected_index()
 		if account_manager.select_index(index) then
 			local account = account_manager.get_selected_account()
@@ -112,7 +116,6 @@ end
 local function eventhandler(event)
 	if event == "DialogShow" then
 		mm_game_theme.set_engine()
-		mm_game_theme.clear_single("header")
 		return true
 	elseif event == "MenuQuit" then
 		local mainmenu = ui.find_by_name("mainmenu")

@@ -609,6 +609,17 @@ public:
 	GameRunData& getRunData() { return runData; }
 	Camera* getCamera() const { return camera; }
 	InputHandler* getInput() { return input; }
+	void closeCheatMenu()
+	{
+		if (new_menu && new_menu->isOpen())
+			new_menu->close();
+	}
+
+	void refreshCheatMenuAppearance()
+	{
+		if (new_menu)
+			new_menu->applyAppearanceOverrides();
+	}
 	
 	void processItemSelection(u16 *new_playeritem);
 

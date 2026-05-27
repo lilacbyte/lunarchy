@@ -234,7 +234,7 @@ void ScriptApiCheats::init_cheat_settings()
 
     // Iterate over the first level (categories)
     lua_pushnil(L); // Start iteration
-    while (lua_next(L, -2) != 0) {
+	while (lua_next(L, -2) != 0) {
         if (lua_isstring(L, -2)) {
             const char *category_name = lua_tostring(L, -2);
 			ScriptApiCheatsCategory* category = get_category(category_name);
@@ -264,6 +264,13 @@ void ScriptApiCheats::init_cheat_settings()
 										setting_name = lua_tostring(L, -1);
 									}
 									lua_pop(L, 1); // Pop 'name'
+
+									if (!setting_name || !setting_id) {
+										warningstream << "CheatMenuSettings: Missing name or id for setting under "
+											<< category_name << "/" << parent_name << std::endl;
+										lua_pop(L, 1); // Pop setting table
+										continue;
+									}
 
 									ScriptApiCheatsCheatSetting* cheat_setting = new ScriptApiCheatsCheatSetting(setting_name, setting_id);
 
@@ -313,9 +320,16 @@ void ScriptApiCheats::init_cheat_settings()
 											lua_pop(L, 1); // Pop value (string)
 										}
 									}
-                        			lua_pop(L, 2); // Pop 'options' and setting table
+									lua_pop(L, 2); // Pop 'options' and setting table
 									cheat_setting->m_parent = parent_name;
-									category->get_cheat_by_id(parent_name)->m_cheat_settings.push_back(cheat_setting);
+									ScriptApiCheatsCheat *parent_cheat = category->get_cheat_by_id(parent_name);
+									if (!parent_cheat) {
+										warningstream << "CheatMenuSettings: Unknown parent cheat: "
+											<< category_name << "/" << parent_name << std::endl;
+										delete cheat_setting;
+										continue;
+									}
+									parent_cheat->m_cheat_settings.push_back(cheat_setting);
 								}
 							}
                             
@@ -346,6 +360,24 @@ void ScriptApiCheats::init_cheat_settings()
 	}
 
     lua_pop(L, 2); // Pop 'core.cheat_settings' and 'core'
+}
+
+void ScriptApiCheats::reload_cheat_settings()
+{
+	for (auto *category : m_cheat_categories) {
+		if (!category)
+			continue;
+		for (auto *cheat : category->m_cheats) {
+			if (!cheat)
+				continue;
+			for (auto *setting : cheat->m_cheat_settings)
+				delete setting;
+			cheat->m_cheat_settings.clear();
+		}
+	}
+
+	init_cheat_settings();
+	++m_cheat_state_revision;
 }
 
 

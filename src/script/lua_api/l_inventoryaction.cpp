@@ -103,8 +103,21 @@ int LuaInventoryAction::l_set_count(lua_State *L)
 	case IAction::Craft:
 		((ICraftAction *)o->m_action)->count = count;
 		break;
+	case IAction::Delete:
+		((IDeleteAction *)o->m_action)->count = count;
+		break;
 	}
 
+	return 0;
+}
+
+int LuaInventoryAction::l_set_distance(lua_State *L)
+{
+	LuaInventoryAction *o = checkobject(L, 1);
+	if (o->m_action->getType() != IAction::Drop)
+		return 0;
+
+	((IDropAction *)o->m_action)->drop_distance = luaL_checknumber(L, 2);
 	return 0;
 }
 
@@ -119,6 +132,9 @@ LuaInventoryAction::LuaInventoryAction(const IAction &type) : m_action(nullptr)
 		break;
 	case IAction::Craft:
 		m_action = new ICraftAction();
+		break;
+	case IAction::Delete:
+		m_action = new IDeleteAction();
 		break;
 	}
 }
@@ -153,6 +169,8 @@ int LuaInventoryAction::create_object(lua_State *L)
 		type = IAction::Drop;
 	else if (typeStr == "craft")
 		type = IAction::Craft;
+	else if (typeStr == "delete")
+		type = IAction::Delete;
 	else
 		return 0;
 
@@ -212,4 +230,5 @@ const char LuaInventoryAction::className[] = "InventoryAction";
 const luaL_Reg LuaInventoryAction::methods[] = {luamethod(LuaInventoryAction, apply),
 		luamethod(LuaInventoryAction, from), luamethod(LuaInventoryAction, to),
 		luamethod(LuaInventoryAction, craft),
-		luamethod(LuaInventoryAction, set_count), {0, 0}};
+		luamethod(LuaInventoryAction, set_count),
+		luamethod(LuaInventoryAction, set_distance), {0, 0}};

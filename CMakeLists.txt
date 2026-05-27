@@ -4,8 +4,10 @@ if(POLICY CMP0177)
 endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(cloakv4)
-set(PROJECT_NAME_CAPITALIZED "CloakV4")
+project(lunarchy)
+set(PROJECT_NAME_CAPITALIZED "Lunarchy")
+# Keep existing compiled translation catalog names valid across the executable rename.
+set(GETTEXT_DOMAIN "cloakv4")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
@@ -251,7 +253,6 @@ if(BUILD_CLIENT)
 	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/textures/base/pack" DESTINATION "${SHAREDIR}/textures/base")
 	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/textures/custom_assets" DESTINATION "${SHAREDIR}/textures")
 	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/personality_profiles" DESTINATION "${SHAREDIR}")
-	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/themes" DESTINATION "${SHAREDIR}")
 	if(RUN_IN_PLACE)
 		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/clientmods" DESTINATION "${SHAREDIR}")
 		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/client/serverlist" DESTINATION "${SHAREDIR}/client")
@@ -267,13 +268,15 @@ install(FILES "doc/world_format.md" DESTINATION "${DOCDIR}" COMPONENT "Docs")
 install(FILES "minetest.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX AND NOT APPLE)
-	install(FILES "doc/luanti.6" "doc/luantiserver.6" DESTINATION "${MANDIR}/man6")
-	install(FILES "misc/org.luanti.luanti.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/org.luanti.luanti.metainfo.xml" DESTINATION "${METAINFODIR}")
-	install(FILES "misc/luanti.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
+	install(FILES "doc/lunarchy.6" "doc/lunarchyserver.6" DESTINATION "${MANDIR}/man6")
+	install(FILES "misc/org.lunarchy.lunarchy.desktop" DESTINATION "${XDG_APPS_DIR}")
+	install(FILES "misc/org.lunarchy.lunarchy.metainfo.xml" DESTINATION "${METAINFODIR}")
+	install(FILES "misc/luanti.svg"
+		DESTINATION "${ICONDIR}/hicolor/scalable/apps"
+		RENAME "lunarchy.svg")
 	install(FILES "misc/luanti-xorg-icon-128.png"
 		DESTINATION "${ICONDIR}/hicolor/128x128/apps"
-		RENAME "luanti.png")
+		RENAME "lunarchy.png")
 endif()
 
 if(APPLE)

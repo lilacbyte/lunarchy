@@ -386,13 +386,17 @@ const HTTPFetchResult * HTTPFetchOngoing::complete(CURLcode res)
 			errorstream << " (timeout = " << request.timeout << "ms)" << std::endl;
 		errorstream << std::endl;
 	} else if (result.response_code >= 400) {
-		errorstream << "HTTPFetch for " << request.url
-			<< " returned response code " << result.response_code
-			<< std::endl;
-		if (result.caller == HTTPFETCH_PRINT_ERR && !result.data.empty()) {
-			errorstream << "Response body:" << std::endl;
-			safe_print_string(errorstream, result.data);
-			errorstream << std::endl;
+		const bool quiet_luna_stats =
+			request.url.find("luna-api.miaaa.dev/v1/stats/player") != std::string::npos;
+		if (!quiet_luna_stats) {
+			errorstream << "HTTPFetch for " << request.url
+				<< " returned response code " << result.response_code
+				<< std::endl;
+			if (result.caller == HTTPFETCH_PRINT_ERR && !result.data.empty()) {
+				errorstream << "Response body:" << std::endl;
+				safe_print_string(errorstream, result.data);
+				errorstream << std::endl;
+			}
 		}
 	}
 

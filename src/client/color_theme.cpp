@@ -1,19 +1,7 @@
 #include "color_theme.h"
 #include <sstream>
-#include <fstream>
 #include <algorithm>
-#include <iostream>
 #include <map>
-
-#if defined(_WIN32) && __has_include(<filesystem>)
-    #include <filesystem>
-    namespace fs = std::filesystem;
-    #define USE_STD_FILESYSTEM
-#else
-    #include <dirent.h>
-    #include <sys/stat.h>
-    #include <unistd.h>
-#endif
 
 static std::string trim(const std::string &s) {
 	size_t start = s.find_first_not_of(" \t\r\n");
@@ -110,55 +98,161 @@ ColorTheme::ColorTheme(const std::string &data) {
 }
 
 void ThemeManager::LoadThemes(const std::string &folderpath) {
+    (void)folderpath;
     themes.clear();
 
-#ifdef USE_STD_FILESYSTEM
-    for (const auto &entry : fs::directory_iterator(folderpath)) {
-        if (!entry.is_regular_file() || entry.path().extension() != ".theme")
-            continue;
+    static const char *builtin_themes[] = {
+R"THEME([theme]
+name = Legacy
 
-        std::ifstream file(entry.path());
-        if (!file) continue;
+background-top    = hsl(220, 13%, 3%)
+background        = hsl(220, 13%, 7%)
+background-bottom = hsl(220, 13%, 10%)
 
-        std::ostringstream ss;
-        ss << file.rdbuf();
-        std::string content = ss.str();
+border            = hsl(210, 90%, 40%)
 
-        ColorTheme theme(content);
+text              = hsl(0, 0%, 100%)
+text-muted        = hsl(0, 0%, 70%)
+
+primary           = hsl(210, 90%, 40%)
+primary-muted     = hsl(210, 90%, 30%)
+
+secondary         = hsl(0, 90%, 30%)
+secondary-muted   = hsl(0, 90%, 15%)
+)THEME",
+R"THEME([theme]
+name = Midnight
+
+background-top    = hsl(345, 20%, 1%)
+background        = hsl(345, 20%, 2%)
+background-bottom = hsl(345, 20%, 4%)
+
+border            = hsl(345, 20%, 10%)
+
+text              = hsl(0, 0%, 90%)
+text-muted        = hsl(0, 0%, 60%)
+
+primary           = hsl(350, 50%, 14%)
+primary-muted     = hsl(350, 30%, 7%)
+
+secondary         = hsl(10, 80%, 15%)
+secondary-muted   = hsl(10, 50%, 7%)
+)THEME",
+R"THEME([theme]
+name = Modern
+
+background-top    = hsl(220, 13%, 2%)
+background        = hsl(220, 13%, 4%)
+background-bottom = hsl(220, 13%, 6%)
+
+border            = hsl(220, 13%, 20%)
+
+text              = hsl(0, 0%, 100%)
+text-muted        = hsl(0, 0%, 70%)
+
+primary           = hsl(220, 13%, 25%)
+primary-muted     = hsl(220, 13%, 15%)
+
+secondary         = hsl(220, 13%, 30%)
+secondary-muted   = hsl(220, 13%, 15%)
+)THEME",
+R"THEME([theme]
+name = Modern Light
+
+background-top    = hsl(0, 0%, 98%)
+background        = hsl(0, 0%, 96%)
+background-bottom = hsl(0, 0%, 93%)
+
+border            = hsl(0, 0%, 80%)
+
+text              = hsl(220, 15%, 10%)
+text-muted        = hsl(220, 10%, 50%)
+
+primary           = hsl(220, 5%, 40%)
+primary-muted     = hsl(220, 5%, 85%)
+
+secondary         = hsl(0, 0%, 90%)
+secondary-muted   = hsl(220, 5%, 50%)
+)THEME",
+R"THEME([theme]
+name = Moss
+
+background-top    = hsl(120, 10%, 8%)
+background        = hsl(120, 10%, 10%)
+background-bottom = hsl(120, 10%, 12%)
+
+border            = hsl(120, 10%, 25%)
+
+text              = hsl(0, 0%, 90%)
+text-muted        = hsl(0, 0%, 60%)
+
+primary           = hsl(120, 40%, 30%)
+primary-muted     = hsl(120, 30%, 18%)
+
+secondary         = hsl(100, 50%, 35%)
+secondary-muted   = hsl(100, 40%, 20%)
+)THEME",
+R"THEME([theme]
+name = Ocean
+
+background-top    = hsl(200, 60%, 96%)
+background        = hsl(200, 60%, 94%)
+background-bottom = hsl(200, 60%, 91%)
+
+border            = hsl(200, 30%, 70%)
+
+text              = hsl(210, 30%, 15%)
+text-muted        = hsl(210, 20%, 50%)
+
+primary           = hsl(195, 85%, 45%)
+primary-muted     = hsl(195, 70%, 80%)
+
+secondary         = hsl(200, 60%, 40%)
+secondary-muted   = hsl(210, 80%, 85%)
+)THEME",
+R"THEME([theme]
+name = Outdoors
+
+background-top    = hsl(80, 2%, 92%)
+background        = hsl(80, 2%, 89%)
+background-bottom = hsl(80, 2%, 86%)
+
+border            = hsl(80, 5%, 80%)
+
+text              = hsl(0, 0%, 12%)
+text-muted        = hsl(0, 0%, 50%)
+
+primary           = hsl(100, 60%, 35%)
+primary-muted     = hsl(100, 60%, 75%)
+
+secondary         = hsl(140, 50%, 35%)
+secondary-muted   = hsl(140, 50%, 70%)
+)THEME",
+R"THEME([theme]
+name = Rainbow
+
+background-top    = hsl(220, 13%, 3%)
+background        = hsl(220, 13%, 7%)
+background-bottom = hsl(220, 13%, 10%)
+
+border            = hsl(210, 90%, 40%)
+
+text              = hsl(0, 0%, 100%)
+text-muted        = hsl(0, 0%, 70%)
+
+primary           = hsl(210, 90%, 40%)
+primary-muted     = hsl(210, 90%, 30%)
+
+secondary         = hsl(0, 90%, 30%)
+secondary-muted   = hsl(0, 90%, 15%)
+)THEME"
+    };
+
+    for (const char *theme_data : builtin_themes) {
+        ColorTheme theme(theme_data);
         if (!theme.name.empty())
             themes.push_back(theme);
     }
-#else
-    // POSIX fallback for Linux/macOS (works on old macOS versions)
-    DIR *dir = opendir(folderpath.c_str());
-    if (!dir) return;
-
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != nullptr) {
-        std::string filename = entry->d_name;
-        if (filename == "." || filename == "..") continue;
-        if (filename.size() < 6 || filename.substr(filename.size() - 6) != ".theme") continue;
-
-        std::string fullpath = folderpath + "/" + filename;
-
-        struct stat st;
-        if (stat(fullpath.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
-            continue;
-
-        std::ifstream file(fullpath);
-        if (!file) continue;
-
-        std::ostringstream ss;
-        ss << file.rdbuf();
-        std::string content = ss.str();
-
-        ColorTheme theme(content);
-        if (!theme.name.empty())
-            themes.push_back(theme);
-    }
-
-    closedir(dir);
-#endif
 }
 
 

@@ -12,13 +12,16 @@
 #include <cmath>
 #include "client/renderingengine.h"
 #include "client/content_cao.h"
+#include "client/playerstats.h"
 #include "client/item_visuals_manager.h"
+#include "gui/moduleColor.h"
 #include "settings.h"
 #include "wieldmesh.h"
 #include "noise.h"         // easeCurve
 #include "mtevent.h"
 #include "nodedef.h"
 #include "util/numeric.h"
+#include "util/string.h"
 #include "constants.h"
 #include "fontengine.h"
 #include "script/scripting_client.h"
@@ -28,6 +31,10 @@
 #include <IGUIFont.h>
 #include <IVideoDriver.h>
 #include <algorithm>
+#include <cctype>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 
 static constexpr f32 CAMERA_OFFSET_STEP = 200;
 
@@ -46,6 +53,7 @@ static const char *setting_names[] = {
 	"hand_view.y",
 	"hand_view.z",
 	"hand_view.scale",
+	"hand_view.color",
 	"nametags.distance",
 };
 
@@ -55,6 +63,12 @@ struct NametagItemToken {
 	std::string label;
 	ItemStack item;
 };
+
+static bool lagOptimizerNoHandAnimation()
+{
+	return g_settings->getBool("lag_optimizer") &&
+		g_settings->getBool("lag_optimizer.no_hand_animation");
+}
 
 static std::string get_item_display_name(const ItemStack &item, Client *client)
 {
@@ -68,7 +82,19 @@ static std::string get_item_display_name(const ItemStack &item, Client *client)
 	if (desc.empty())
 		desc = item.name;
 
-	return desc;
+	std::string clean;
+	bool pending_space = false;
+	for (unsigned char ch : desc) {
+		if (std::isspace(ch)) {
+			pending_space = !clean.empty();
+			continue;
+		}
+		if (pending_space)
+			clean.push_back(' ');
+		clean.push_back(static_cast<char>(ch));
+		pending_space = false;
+	}
+	return clean;
 }
 
 static bool texture_mentions_item(const std::string &texture, const std::string &itemstring)
@@ -194,6 +220,16 @@ static s32 measure_icon_row_width(const std::vector<NametagItemToken> &tokens, s
 		+ static_cast<s32>(tokens.size() - 1) * gap;
 }
 
+static s32 measure_item_name_width(gui::IGUIFont *font,
+		const std::vector<NametagItemToken> &tokens)
+{
+	s32 width = 0;
+	for (const auto &token : tokens)
+		width = std::max<s32>(width,
+			static_cast<s32>(font->getDimension(utf8_to_wide(token.label).c_str()).Width));
+	return width;
+}
+
 static void draw_icon_row(video::IVideoDriver *driver, gui::IGUIFont *font, Client *client,
 		const std::vector<NametagItemToken> &tokens, const v2s32 &center, s32 icon_size,
 		s32 gap)
@@ -224,22 +260,19 @@ static void draw_icon_row(video::IVideoDriver *driver, gui::IGUIFont *font, Clie
 }
 
 static void draw_item_name_rows(gui::IGUIFont *font, const std::vector<NametagItemToken> &tokens,
-		const v2s32 &center, s32 icon_size, s32 gap, s32 start_y, s32 line_height)
+		const v2s32 &center, s32 start_y, s32 line_height)
 {
 	if (!font || tokens.empty())
 		return;
 
-	s32 row_width = measure_icon_row_width(tokens, icon_size, gap);
-	s32 x = center.X - row_width / 2;
 	for (size_t i = 0; i < tokens.size(); ++i) {
 		const auto &token = tokens[i];
 		const core::dimension2d<u32> dim = font->getDimension(utf8_to_wide(token.label).c_str());
-		const s32 text_x = x + (icon_size - static_cast<s32>(dim.Width)) / 2;
+		const s32 text_x = center.X - static_cast<s32>(dim.Width) / 2;
 		core::rect<s32> rect(text_x, start_y + static_cast<s32>(i) * line_height,
 				text_x + static_cast<s32>(dim.Width), start_y + static_cast<s32>(i + 1) * line_height);
 		font->draw(utf8_to_wide(token.label).c_str(), rect,
 			video::SColor(255, 255, 255, 255), true, false);
-		x += icon_size + gap;
 	}
 }
 
@@ -713,13 +746,13 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// Make new matrices and frustum
 	m_cameranode->updateMatrices();
 
-	if (m_arm_inertia && !g_settings->getBool("lag_optimizer.no_hand_animation"))
+	if (m_arm_inertia && !lagOptimizerNoHandAnimation())
 		addArmInertia(yaw);
 
 	// Position the wielded item
 	v3f wield_position = v3f(m_wieldmesh_offset.X, m_wieldmesh_offset.Y, 65);
 	v3f wield_rotation = v3f(-100, 120, -100);
-	const bool no_hand_animation = g_settings->getBool("lag_optimizer.no_hand_animation");
+	const bool no_hand_animation = lagOptimizerNoHandAnimation();
 	if (!no_hand_animation) {
 		wield_position.Y += std::abs(m_wield_change_timer) * 320 - 40;
 		if (m_digging_anim < 0.05 || m_digging_anim > 0.5) {
@@ -851,7 +884,7 @@ void Camera::setDigging(s32 button)
 
 void Camera::wield(const ItemStack &item)
 {
-	if (g_settings->getBool("lag_optimizer.no_hand_animation")) {
+	if (lagOptimizerNoHandAnimation()) {
 		if (item.name != m_wield_item_next.name || item.metadata != m_wield_item_next.metadata) {
 			m_wield_item_next = item;
 			m_wield_change_timer = 0;
@@ -929,10 +962,16 @@ void Camera::drawNametags()
 				(0.5 - transformed_pos[1] * zDiv * 0.5) - textsize.Height / 2;
 			core::rect<s32> size(0, 0, std::max(textsize.Width, (u32) nametag->images_dim.Width), textsize.Height + nametag->images_dim.Height);
 
-			auto bgcolor = nametag->getBgColor(m_show_nametag_backgrounds);
+			auto bgcolor = g_settings->getBool("hud.enabled") && m_show_nametag_backgrounds ?
+				readModuleBackgroundColor() : nametag->getBgColor(m_show_nametag_backgrounds);
 			if (bgcolor.getAlpha() != 0) {
-				core::rect<s32> bg_size(-2, 0, textsize.Width + 2, textsize.Height);
-				driver->draw2DRectangle(bgcolor, bg_size + screen_pos);
+				const s32 padding = 2;
+				core::rect<s32> bg_size(-padding, -padding,
+					textsize.Width + padding, textsize.Height + padding);
+				const core::rect<s32> bg_rect = bg_size + screen_pos;
+				driver->draw2DRectangle(bgcolor, bg_rect);
+				if (g_settings->getBool("hud.enabled"))
+					driver->draw2DRectangleOutline(bg_rect, readModuleBorderColor(), 1);
 			}
 
 			font->draw(
@@ -1026,6 +1065,8 @@ void Camera::drawDiffNametag(float dtime)
         const bool showItemNames = g_settings->getBool("nametags.item_names");
         const bool showWieldedItems = g_settings->getBool("nametags.wielded_items");
         const bool showEquipment = g_settings->getBool("nametags.armor");
+        const bool showLunaStats = g_settings->getBool("luna_stats.enabled") &&
+            g_settings->getBool("luna_stats.nametags");
 
         LocalPlayer *lp = m_client->getEnv().getLocalPlayer();
         if (!lp)
@@ -1069,13 +1110,18 @@ void Camera::drawDiffNametag(float dtime)
         if (showDistance) {
             const f32 distance_blocks_f = lp->getPosition().getDistanceFrom(obj->getPosition()) / BS;
             const s32 distance_blocks = std::max(0, static_cast<s32>(std::floor(distance_blocks_f + 0.5f)));
-            wdistance = utf8_to_wide(" [" + itos(distance_blocks) + " blocks away]");
+            wdistance = utf8_to_wide(" [" + itos(distance_blocks) + "m away]");
         }
 
         auto dim_name = font->getDimension(wname.c_str());
         auto dim_hp = font->getDimension(whp.c_str());
         auto dim_rel = font->getDimension(wrelation.c_str());
         auto dim_distance = showDistance ? font->getDimension(wdistance.c_str()) : core::dimension2d<u32>(0, 0);
+        auto luna_stats = showLunaStats ? player_stats::getLine(name) : std::nullopt;
+        if (luna_stats)
+            *luna_stats = L"[" + *luna_stats + L"]";
+        const auto dim_luna_stats = luna_stats ? font->getDimension(luna_stats->c_str()) :
+            core::dimension2d<u32>(0, 0);
 
         std::vector<NametagItemToken> item_tokens;
         if (showWieldedItems)
@@ -1092,6 +1138,8 @@ void Camera::drawDiffNametag(float dtime)
         int lineWidth = dim_name.Width;
         if (showDistance)
             lineWidth += 8 + dim_distance.Width;
+        if (luna_stats)
+            lineWidth += 8 + dim_luna_stats.Width;
         if (showHp)
             lineWidth += 8 + dim_hp.Width;
         if (showStatus)
@@ -1105,14 +1153,21 @@ void Camera::drawDiffNametag(float dtime)
                                showStatus ? dim_rel.Height : 0});
         int itemNamesHeight = 0;
         if (!item_tokens.empty()) {
-            if (showItemNames)
-                itemNamesHeight = row_gap + static_cast<s32>(item_tokens.size()) * item_line_height;
+            if (showItemNames) {
+                itemNamesHeight = static_cast<s32>(item_tokens.size()) * item_line_height;
+                textWidth = std::max<s32>(textWidth, measure_item_name_width(font, item_tokens));
+            }
         }
-        int totalHeight = (item_tokens.empty() ? 0 : icon_size + row_gap) + itemNamesHeight + nameHeight;
+        int totalHeight = (item_tokens.empty() ? 0 : icon_size + row_gap) +
+            itemNamesHeight + nameHeight;
 
         int text_x = screen.X - textWidth / 2;
+        const int name_x = screen.X - lineWidth / 2;
         int y = screen.Y - totalHeight / 2;
         bool drew_text_bg = false;
+        const s32 nametag_padding = 2;
+        const video::SColor nametag_background = g_settings->getBool("hud.enabled") ?
+            readModuleBackgroundColor() : video::SColor(140, 0, 0, 0);
         if (!item_tokens.empty()) {
             draw_icon_row(driver, font, m_client, item_tokens, v2s32(screen.X, y), icon_size, icon_gap);
             y += icon_size + row_gap;
@@ -1120,35 +1175,39 @@ void Camera::drawDiffNametag(float dtime)
             if (showItemNames) {
                 if (m_show_nametag_backgrounds) {
                     core::rect<s32> bg_rect(
-                        text_x - 2,
-                        y - 1,
-                        text_x + std::max(textWidth, icon_row_width) + 2,
-                        y + itemNamesHeight + nameHeight + 1);
-                    driver->draw2DRectangle(video::SColor(140, 0, 0, 0), bg_rect);
+                        text_x - nametag_padding,
+                        y - nametag_padding,
+                        text_x + std::max(textWidth, icon_row_width) + nametag_padding,
+                        y + itemNamesHeight + nameHeight + nametag_padding);
+                    driver->draw2DRectangle(nametag_background, bg_rect);
+                    if (g_settings->getBool("hud.enabled"))
+                        driver->draw2DRectangleOutline(bg_rect, readModuleBorderColor(), 1);
                     drew_text_bg = true;
                 }
                 draw_item_name_rows(font, item_tokens, v2s32(screen.X, y),
-                        icon_size, icon_gap, y, item_line_height);
+                        y, item_line_height);
                 y += itemNamesHeight;
             }
         }
 
         if (m_show_nametag_backgrounds && !drew_text_bg) {
             core::rect<s32> bg_rect(
-                text_x - 2,
-                y - 1,
-                text_x + textWidth + 2,
-                y + nameHeight + 1);
-            driver->draw2DRectangle(video::SColor(140, 0, 0, 0), bg_rect);
+                text_x - nametag_padding,
+                y - nametag_padding,
+                text_x + textWidth + nametag_padding,
+                y + nameHeight + nametag_padding);
+            driver->draw2DRectangle(nametag_background, bg_rect);
+            if (g_settings->getBool("hud.enabled"))
+                driver->draw2DRectangleOutline(bg_rect, readModuleBorderColor(), 1);
         }
 
-        core::rect<s32> rectName(text_x, y, text_x + dim_name.Width, y + dim_name.Height);
+        core::rect<s32> rectName(name_x, y, name_x + dim_name.Width, y + dim_name.Height);
 
         font->draw(wname.c_str(), rectName,
                    video::SColor(255, 255, 255, 255),
                    false, false);
 
-        int offsetX = text_x + dim_name.Width + 8;
+        int offsetX = name_x + dim_name.Width + 8;
 
         if (showDistance) {
             core::rect<s32> rectDistance(offsetX, y,
@@ -1160,6 +1219,18 @@ void Camera::drawDiffNametag(float dtime)
                        false, false);
 
             offsetX += dim_distance.Width + 8;
+        }
+
+        if (luna_stats) {
+            core::rect<s32> rectStats(offsetX, y,
+                                      offsetX + dim_luna_stats.Width,
+                                      y + dim_luna_stats.Height);
+
+            font->draw(luna_stats->c_str(), rectStats,
+                       video::SColor(255, 160, 160, 160),
+                       false, false);
+
+            offsetX += dim_luna_stats.Width + 8;
         }
 
         if (showHp) {
@@ -1183,6 +1254,7 @@ void Camera::drawDiffNametag(float dtime)
                        relationColor,
                        false, false);
         }
+
     }
 }
 
@@ -1312,7 +1384,6 @@ void Camera::drawHealthESP(float dtime)
         }
     }
 }
-
 
 Nametag *Camera::addNametag(scene::ISceneNode *parent_node,
 		const std::string &text, video::SColor textcolor,

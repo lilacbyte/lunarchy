@@ -1,2 +1,2 @@
-rootProject.name = "Luanti"
+rootProject.name = "Lunarchy"
 include ':app', ':native'

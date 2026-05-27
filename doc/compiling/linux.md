@@ -68,16 +68,9 @@ For Void users:
 
     sudo xbps-install git
 
-Download source (this is the URL to the latest of source repository, which might not work at all times) using Git:
+Obtain a source checkout, then change into its directory:
 
-    git clone --depth 1 https://github.com/TeamAcedia/CloakV4/
     cd CloakV4
-
-Download source, without using Git:
-
-    wget https://github.com/TeamAcedia/CloakV4/archive/master.tar.gz
-    tar xf master.tar.gz
-    cd CloakV4-main
 
 ## Build
 
@@ -88,11 +81,11 @@ Build a version that runs directly from the source directory:
 
 Run it:
 
-    ./bin/luanti
+    ./bin/lunarchy
 
 Run unit tests:
 
-    ./bin/luanti --run-unittests
+    ./bin/lunarchy --run-unittests
 
 - Use `cmake . -LH` to see all CMake options and their current state.
 - If you want to install it system-wide (or are making a distribution package),

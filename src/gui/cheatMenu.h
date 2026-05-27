@@ -85,7 +85,7 @@ private:
 	video::SColor m_bg_color = video::SColor(192, 255, 145, 88);
 	video::SColor m_active_bg_color = video::SColor(192, 255, 87, 53);
 	video::SColor m_font_color = video::SColor(255, 0, 0, 0);
-	video::SColor m_selected_font_color = video::SColor(255, 255, 252, 88);
+	video::SColor m_selected_font_color = video::SColor(235, 200, 200, 200);
 
 	FontMode fontStringToEnum(std::string str);
 

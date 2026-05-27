@@ -1,20 +1,21 @@
 -------------- Killaura -----------------
 local is_behind_cover = false
 
-core.register_cheat_with_infotext("Killaura", "Combat", "killaura", "")
+core.register_cheat_with_infotext("killaura", "Combat", "killaura", "")
 core.register_cheat_setting("Target Mode", "Combat", "killaura", "targeting.target_mode", {type="selectionbox", options={"Nearest", "Lowest HP", "Highest HP"}})
 core.register_cheat_setting("Target Type", "Combat", "killaura", "targeting.target_type", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("Distance", "Combat", "killaura", "targeting.distance", {type="slider_int", min=1, max=10, steps=10})
-core.register_cheat_setting("Enemies Only", "Combat", "killaura", "targeting.enemies_only", {type="bool"})
 core.register_cheat_setting("Through walls", "Combat", "killaura", "killaura.throughwalls", {type="bool"})
 core.register_cheat_setting("Assist", "Combat", "killaura", "killaura.assist", {type="bool"})
 core.register_cheat_setting("Many Punches", "Combat", "killaura", "killaura.manypunches", {type="bool"})
 core.register_cheat_setting("Mode", "Combat", "killaura", "killaura.mode", {type="selectionbox", options={"Blatant", "Silent"}})
 core.register_cheat_setting("Fake aiming time", "Combat", "killaura", "killaura.simtime", {type="bool"})
+core.register_cheat_setting("Mace", "Combat", "killaura", "killaura.mace", {type="bool"})
+core.register_cheat_setting("Mace Jump Supress", "Combat", "killaura", "killaura.mace_jump_suppress", {type="bool"})
 
 -------------- Auto Aim -----------------
 
-core.register_cheat_with_infotext("AutoAim", "Combat", "autoaim", "")
+core.register_cheat_with_infotext("autoaim", "Combat", "autoaim", "")
 core.register_cheat_setting("Target Mode", "Combat", "autoaim", "targeting.target_mode", {type="selectionbox", options={"Nearest", "Lowest HP", "Highest HP"}})
 core.register_cheat_setting("Target Type", "Combat", "autoaim", "targeting.target_type", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("Distance", "Combat", "autoaim", "targeting.distance", {type="slider_int", min=1, max=10, steps=10})
@@ -25,7 +26,7 @@ core.register_cheat_setting("Y offset", "Combat", "autoaim", "autoaim.y_offset",
 
 local qtime = 0
 
-core.register_cheat_with_infotext("Orbit", "Combat", "orbit", "Nearest")
+core.register_cheat_with_infotext("orbit", "Combat", "orbit", "Nearest")
 core.register_cheat_setting("Target Mode", "Combat", "orbit", "targeting.target_mode", {type="selectionbox", options={"Nearest", "Lowest HP", "Highest HP"}})
 core.register_cheat_setting("Target Type", "Combat", "orbit", "targeting.target_type", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("Distance", "Combat", "orbit", "targeting.distance", {type="slider_int", min=1, max=10, steps=10})
@@ -34,7 +35,7 @@ core.register_cheat_setting("Enemies Only", "Combat", "orbit", "targeting.enemie
 
 --------------- TPAura -------------------
 
-core.register_cheat_with_infotext("TP Aura", "Combat", "tpaura", "Nearest")
+core.register_cheat_with_infotext("tp aura", "Combat", "tpaura", "Nearest")
 core.register_cheat_setting("Target Mode", "Combat", "tpaura", "targeting.target_mode", {type="selectionbox", options={"Nearest", "Lowest HP", "Highest HP"}})
 core.register_cheat_setting("Target Type", "Combat", "tpaura", "targeting.target_type", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("Distance", "Combat", "tpaura", "tpaura.distance", {type="slider_int", min=1, max=20, steps=20})
@@ -42,7 +43,7 @@ core.register_cheat_setting("TP Delay", "Combat", "tpaura", "tpaura.delay", {typ
 core.register_cheat_setting("Enemies Only", "Combat", "tpaura", "targeting.enemies_only", {type="bool"})
 
 --------------- TriggerBot -------------------
-core.register_cheat("TriggerBot", "Combat", "tbot")
+core.register_cheat("triggerbot", "Combat", "tbot")
 
 --------------- Functions -------------------
 function is_valid_target(obj, target_type, max_distance, ppos)
@@ -69,7 +70,9 @@ function is_valid_target(obj, target_type, max_distance, ppos)
 
     if is_player then
         local relationship = core.localplayer:get_entity_relationship(obj:get_id())
-        if relationship ~= core.EntityRelationship.ENEMY and core.settings:get_bool("targeting.enemies_only") then
+        if relationship ~= core.EntityRelationship.ENEMY
+                and core.settings:get_bool("targeting.enemies_only")
+                and not core.settings:get_bool("friends.ignore") then
             return false
         end
     end
@@ -128,10 +131,172 @@ function get_punch_interval(player)
     return interval
 end
 
+local function get_mace_combo_interval()
+	local interval = 0.25
+	if core.settings:get_bool("spamclick") then
+		local multiplier = tonumber(core.settings:get("spamclick_multiplier")) or 6
+		interval = interval / multiplier
+	end
+	return math.max(0.05, interval)
+end
+
 local killaura_target = nil
 local last_time_aimed_at_target = 0
 local time_aimed_at_target = 0
 local target_aimed_at = nil
+local is_mace_item
+local MACE_COOLDOWN = 2.05
+local MACE_MIN_HEIGHT = 1.0
+local MACE_USE_DISTANCE = 5.0
+local last_mace_punch_time = 0
+local mace_jump_suppress_until = 0
+
+local function set_mace_jump_suppress(active)
+	core.settings:set_bool("killaura.mace_suppress_jump_multiplier", active)
+end
+
+local function suppress_jump_multiplier_for_mace_hit()
+	if not core.settings:get_bool("killaura.mace_jump_suppress") then
+		return
+	end
+
+	mace_jump_suppress_until = os.clock() + 0.55
+	set_mace_jump_suppress(true)
+end
+
+set_mace_jump_suppress(false)
+
+is_mace_item = function(item_name)
+	if not item_name or item_name == "" then
+		return false
+	end
+
+	local item_def = core.get_item_def(item_name)
+	if item_def and item_def.groups and (item_def.groups.mace or 0) > 0 then
+		return true
+	end
+
+	return item_name:find("mace", 1, true) ~= nil
+end
+
+local function is_elytra(stack)
+	if not stack or stack:is_empty() then
+		return false
+	end
+
+	local def = core.get_item_def(stack:get_name())
+	local groups = def and def.groups or nil
+	return groups and (groups.elytra or 0) > 0 or false
+end
+
+local function equip_best_torso_armor()
+	local inv = core.get_inventory("current_player")
+	if not inv or not inv.main or not inv.armor then
+		return false
+	end
+
+	local current = inv.armor[3] or ItemStack("")
+	if not current:is_empty() and not is_elytra(current) then
+		local current_def = core.get_item_def(current:get_name())
+		local current_groups = current_def and current_def.groups or nil
+		if current_groups and (current_groups.armor_torso or 0) > 0 then
+			return false
+		end
+	end
+
+	local best_index
+	local best_score = -1
+	for i, stack in ipairs(inv.main) do
+		if not stack:is_empty() then
+			local def = core.get_item_def(stack:get_name())
+			local groups = def and def.groups or nil
+			if groups and (groups.armor_torso or 0) > 0 and (groups.elytra or 0) == 0 then
+				local score = tonumber(groups.mcl_armor_points) or 0
+				score = score * 100000000 + (tonumber(groups.mcl_armor_toughness) or 0) * 1000000
+				score = score + math.floor((math.max(1, (tonumber(groups.mcl_armor_uses) or 1) - 1) * (65535 - stack:get_wear())) / 65535)
+				if score > best_score then
+					best_score = score
+					best_index = i
+				end
+			end
+		end
+	end
+
+	if not best_index then
+		return false
+	end
+
+	local action = InventoryAction("move")
+	action:from("current_player", "main", best_index)
+	action:to("current_player", "armor", 3)
+	action:set_count(1)
+	action:apply()
+	return true
+end
+
+local function mace_ready()
+	local cooldown_left = MACE_COOLDOWN - (os.clock() - last_mace_punch_time)
+	return cooldown_left <= 0, math.max(0, cooldown_left)
+end
+
+local function player_is_above_target(player, target, min_blocks)
+	local player_pos = player and player:get_pos()
+	local target_pos = target and target:get_pos()
+	if not player_pos or not target_pos then
+		return false
+	end
+	return (player_pos.y - target_pos.y) >= (min_blocks or 1.0)
+end
+
+local function mace_target_is_near(player, target)
+	local player_pos = player and player:get_pos()
+	local target_pos = target and target:get_pos()
+	if not player_pos or not target_pos then
+		return false
+	end
+
+	return vector.distance(player_pos, target_pos) <= MACE_USE_DISTANCE
+end
+
+local function can_mace_special(player, target)
+	return player_is_above_target(player, target, MACE_MIN_HEIGHT) and
+			mace_target_is_near(player, target)
+end
+
+local function get_mace_target_score(player, target)
+	local player_pos = player:get_pos()
+	local target_pos = target:get_pos()
+	if not player_pos or not target_pos then
+		return math.huge
+	end
+
+	local dx = player_pos.x - target_pos.x
+	local dz = player_pos.z - target_pos.z
+	local horizontal_distance = math.sqrt(dx * dx + dz * dz)
+	local height = player_pos.y - target_pos.y
+	local player_bonus = target:is_player() and -100 or 0
+
+	return player_bonus + horizontal_distance * 10 + math.abs(height - 1.5)
+end
+
+local function get_best_mace_target(objects, target_mode, target_type, max_distance, player)
+	local best_target = nil
+	local best_value = math.huge
+	local ppos = player:get_pos()
+
+	for _, obj in ipairs(objects) do
+		if is_valid_target(obj, target_type, max_distance, ppos) and
+				can_mace_special(player, obj) then
+			local value = get_mace_target_score(player, obj)
+			if value < best_value then
+				best_value = value
+				best_target = obj
+			end
+		end
+	end
+
+	return best_target
+end
 
 core.get_send_pitch = function(pitch)
 	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
@@ -174,10 +339,14 @@ core.get_send_yaw = function(yaw)
 end
 
 core.get_send_speed = function(critspeed)
-    if core.settings:get_bool("critical_hits") then 
-        critspeed.y = -7
-    end
-    return critspeed
+	local player = core.localplayer
+	local wielded = player and player:get_wielded_item()
+	local wield_name = wielded and wielded:get_name() or ""
+
+	if core.settings:get_bool("critical_hits") and not is_mace_item(wield_name) then
+		critspeed.y = -7
+	end
+	return critspeed
 end
 
 core.get_send_controls = function(controls)
@@ -279,14 +448,18 @@ core.register_globalstep(function(dtime)
 	total_time = total_time + dtime
 	local r, g, b = get_sine_color(total_time)
 	core.set_target_esp_color({r = r, g = g, b = b})
+	if mace_jump_suppress_until > 0 and os.clock() >= mace_jump_suppress_until then
+		mace_jump_suppress_until = 0
+		set_mace_jump_suppress(false)
+	end
 	if core.settings:get_bool("killaura") then
-		if core.settings:get("killaura.mode") == "Silent" then
-			core.update_infotext("Killaura", "Combat", "killaura", "Silent")
-		else
-			core.update_infotext("Killaura", "Combat", "killaura", "Blatant")
+		local infotext = core.settings:get("killaura.mode") == "Silent" and "Silent" or "Blatant"
+		if core.settings:get_bool("killaura.mace") then
+			infotext = infotext .. ", Mace"
 		end
+		core.update_infotext("killaura", "Combat", "killaura", infotext)
 	else
-		core.update_infotext("Killaura", "Combat", "killaura", "")
+		core.update_infotext("killaura", "Combat", "killaura", "")
 	end
 
 	if core.settings:get_bool("autoaim") then
@@ -294,7 +467,7 @@ core.register_globalstep(function(dtime)
 		local mode_text = target_mode and target_mode:gsub(" HP", "") or "Unknown"
 	
 		local target_description = core.settings:get("targeting.target_type")
-		core.update_infotext("AutoAim", "Combat", "autoaim", string.format("%s, %s", mode_text, target_description))
+		core.update_infotext("autoaim", "Combat", "autoaim", string.format("%s, %s", mode_text, target_description))
 	end
 
 	if core.settings:get_bool("orbit") then
@@ -302,7 +475,7 @@ core.register_globalstep(function(dtime)
 		local mode_text = target_mode and target_mode:gsub(" HP", "") or "Unknown"
 	
 		local target_description = core.settings:get("targeting.target_type")
-		core.update_infotext("Orbit", "Combat", "orbit", string.format("%s, %s", mode_text, target_description))
+		core.update_infotext("orbit", "Combat", "orbit", string.format("%s, %s", mode_text, target_description))
 	end
 
 	if core.settings:get_bool("tpaura") then
@@ -310,56 +483,77 @@ core.register_globalstep(function(dtime)
 		local mode_text = target_mode and target_mode:gsub(" HP", "") or "Unknown"
 	
 		local target_description = core.settings:get("targeting.target_type")
-		core.update_infotext("TP Aura", "Combat", "tpaura", string.format("%s, %s", core.settings:get("tpaura.distance"), core.settings:get("tpaura.delay")))
+		core.update_infotext("tp aura", "Combat", "tpaura", string.format("%s, %s", core.settings:get("tpaura.distance"), core.settings:get("tpaura.delay")))
 	end
 
-	local player = core.localplayer
-	if not player then return end
-    local ppos = core.localplayer:get_pos()
-	local target_enemy = nil
-	if core.settings:get("targeting.target_mode") then
+		local player = core.localplayer
+		if not player then return end
+		local target_enemy = nil
 		local target_mode = core.settings:get("targeting.target_mode")
 		local target_type = core.settings:get("targeting.target_type")
-		local max_distance = tonumber(core.settings:get("targeting.distance")) + 0.5
-		if core.settings:get_bool("reach") then
-			local reach_bonus = tonumber(core.settings:get("reach.range")) or 2
-			max_distance = max_distance + reach_bonus
+		local max_distance = (tonumber(core.settings:get("targeting.distance")) or 5) + 0.5
+		local wielded = player:get_wielded_item()
+		local wield_name = wielded and wielded:get_name() or ""
+		local mace_mode = core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
+		if target_mode then
+			if core.settings:get_bool("reach") then
+				local reach_bonus = tonumber(core.settings:get("reach.range")) or 2
+				max_distance = max_distance + reach_bonus
+			end
+			if core.settings:get_bool("tpaura") then
+				max_distance = tonumber(core.settings:get("tpaura.distance")) + 0.5
+			end
+			local objects = core.get_nearby_objects(max_distance) or {}
+			if mace_mode then
+				target_enemy = get_best_mace_target(objects, target_mode, target_type,
+						math.min(max_distance, MACE_USE_DISTANCE), player)
+			end
+			target_enemy = target_enemy or get_best_target(objects, target_mode, target_type, max_distance, player)
 		end
-		if core.settings:get_bool("tpaura") then
-			max_distance = tonumber(core.settings:get("tpaura.distance")) + 0.5
-		end
-		local objects = core.get_nearby_objects(max_distance)
-		target_enemy = get_best_target(objects, target_mode, target_type, max_distance, player)
-	end
 	if not target_enemy then 
 		core.clear_combat_target() 
 	else 	
 		core.set_combat_target(target_enemy:get_id()) 	
 	end
 
-	if target_enemy and (core.settings:get_bool("killaura")) then
-		killaura_target = target_enemy
-		-- if using killaura silent mode then wait atleast 0.5 seconds to start attacking after simulating aiming at target and pressing attack
-		if (core.settings:get("killaura.mode") == "Silent" and core.settings:get_bool("killaura.simtime") and time_aimed_at_target < 0.5) or (core.settings:get("killaura.mode") == "Silent" and target_aimed_at ~= target_enemy:get_id()) then
-			return
-		end
-		local interval = get_punch_interval(player)
+		if target_enemy and core.settings:get_bool("killaura") then
+			killaura_target = target_enemy
+			-- if using killaura silent mode then wait atleast 0.5 seconds to start attacking after simulating aiming at target and pressing attack
+			if (core.settings:get("killaura.mode") == "Silent" and core.settings:get_bool("killaura.simtime") and time_aimed_at_target < 0.5) or (core.settings:get("killaura.mode") == "Silent" and target_aimed_at ~= target_enemy:get_id()) then
+				return
+			end
+		local interval = mace_mode and get_mace_combo_interval() or get_punch_interval(player)
 
-		if player:get_time_from_last_punch() > interval or core.settings:get_bool("killaura.manypunches") then
-		
-			if (not core.settings:get_bool("killaura.throughwalls") and target_enemy) then
-			
-				local pos = truncate_pos(player:get_pos())
-				local enemy_pos = truncate_pos(target_enemy:get_pos())
-			
-				local has_los = not is_block_between(pos, enemy_pos, 1.0)
-				is_behind_cover = not is_block_between(pos, enemy_pos, 1.0)
-			
-				if (not has_los) then
+		if (not core.settings:get_bool("killaura.throughwalls") and target_enemy) then
+			local pos = truncate_pos(player:get_pos())
+			local enemy_pos = truncate_pos(target_enemy:get_pos())
+			local has_los = not is_block_between(pos, enemy_pos, 1.0)
+			is_behind_cover = has_los
+
+			if not has_los then
+				return
+			end
+		end
+
+			if mace_mode and can_mace_special(player, target_enemy) then
+				local ready, cooldown_left = mace_ready()
+				if ready then
+					local target_pos = target_enemy:get_pos()
+					if target_pos then
+						target_pos.y = target_pos.y - 0.6
+						ws.aim(target_pos)
+					end
+					equip_best_torso_armor()
+					suppress_jump_multiplier_for_mace_hit()
+					core.interact("use", { type = "object", ref = target_enemy })
+					last_mace_punch_time = os.clock()
 					return
+				elseif cooldown_left > 0 then
+					core.update_infotext("killaura", "Combat", "killaura", ("Mace cd %.1fs"):format(cooldown_left))
 				end
 			end
-		
+
+			if player:get_time_from_last_punch() > interval or core.settings:get_bool("killaura.manypunches") then
 			if (core.settings:get_bool("killaura.assist")) then
 				local wield_index = player:get_wield_index() + 1
 				local dmg = core.get_inv_item_damage(wield_index, target_enemy:get_id())
@@ -367,7 +561,7 @@ core.register_globalstep(function(dtime)
 					return
 				end
 			end
-			
+
 			if (core.settings:get_bool("killaura.doubletap")) then
 				local wield_index = player:get_wield_index() + 1
 				local dmg = core.get_inv_item_damage(wield_index, target_enemy:get_id())
@@ -383,9 +577,9 @@ core.register_globalstep(function(dtime)
 
 			player:punch(target_enemy:get_id())
 		end
-	else
-		killaura_target = nil
-	end
+		else
+			killaura_target = nil
+		end
 	
 
 	if target_enemy and core.settings:get_bool("autoaim") then
@@ -436,7 +630,7 @@ end)
 
 
 
-core.register_cheat("Criticals", "Combat", "critical_hits")
+core.register_cheat("criticals", "Combat", "critical_hits")
 
 core.register_chatcommand("fasthit", {
 	params = "<multiplier>",

@@ -374,5 +374,5 @@ core.register_globalstep(function(dtime)
 	end
 end)
 
-core.register_cheat_with_infotext("AutoWither", "Combat", "autowither", "-")
-core.register_cheat_description("AutoWither", "Combat", "autowither", "Automatically completes a wither structure and places the skulls.")
+core.register_cheat_with_infotext("autowither", "Combat", "autowither", "-")
+core.register_cheat_description("autowither", "Combat", "autowither", "Automatically completes a wither structure and places the skulls.")

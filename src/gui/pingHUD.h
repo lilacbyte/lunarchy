@@ -4,6 +4,7 @@
 #include "client/client.h"
 #include "client/clientenvironment.h"
 #include "settings.h"
+#include <string>
 
 class pingHUD : public CheatUIElement {
 public:
@@ -13,4 +14,6 @@ public:
 
 private:
 	Client *m_client;
+	float m_cache_timer = 0.0f;
+	std::wstring m_cached_text = L"ping: -- ms";
 };

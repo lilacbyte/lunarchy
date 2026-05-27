@@ -1,15 +1,15 @@
 [Desktop Entry]
-Name=Luanti
-GenericName=Luanti
+Name=Lunarchy
+GenericName=Lunarchy
 Comment=Block-based multiplayer game platform
 Comment[de]=Blockbasierte Mehrspieler-Spieleplattform
 Comment[fr]=Plate-forme de jeu multijoueurs à base de blocs
-Exec=luanti
-Icon=luanti
+Exec=lunarchy
+Icon=lunarchy
 Terminal=false
 # Note: don't add PrefersNonDefaultGPU here, see #16095
 Type=Application
 Categories=Game;Simulation;
 StartupNotify=false
-StartupWMClass=Luanti
+StartupWMClass=Lunarchy
 Keywords=sandbox;world;mining;crafting;blocks;nodes;multiplayer;roleplaying;minetest;

@@ -3,7 +3,7 @@
 
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 gameid=${gameid:-devtest}
-executable=$dir/../bin/cloakv4
+executable=$dir/../bin/lunarchy
 testspath=$dir/../tests
 conf_client1=$testspath/client1.conf
 conf_server=$testspath/server.conf

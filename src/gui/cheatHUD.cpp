@@ -1,53 +1,14 @@
 #include "gui/cheatHUD.h"
 
 #include "client/fontengine.h"
+#include "gui/moduleColor.h"
 #include "script/scripting_client.h"
 #include "util/string.h"
 #include <algorithm>
-#include <optional>
+#include <cctype>
 #include <tuple>
 
 namespace {
-static std::optional<video::SColor> readHudColor()
-{
-	if (g_settings->existsLocal("hud_color")) {
-		if (!g_settings->getBool("hud_color"))
-			return std::nullopt;
-	} else if (g_settings->existsLocal("hudcolor")) {
-		const std::string legacy_value = g_settings->get("hudcolor");
-		video::SColor legacy_color(255, 255, 255, 255);
-		if (parseColorString(legacy_value, legacy_color, true, 0xff))
-			return legacy_color;
-		if (!g_settings->getBool("hudcolor"))
-			return std::nullopt;
-	} else if (g_settings->exists("hud_color")) {
-		return std::nullopt;
-	}
-
-	video::SColor color(255, 255, 255, 255);
-	if (g_settings->existsLocal("globalcolor") &&
-			parseColorString(g_settings->get("globalcolor"), color, true, 0xff))
-		return color;
-	if (g_settings->existsLocal("global_color") &&
-			parseColorString(g_settings->get("global_color"), color, true, 0xff))
-		return color;
-	if (parseColorString(g_settings->get("globalcolor"), color, true, 0xff))
-		return color;
-	if (parseColorString(g_settings->get("global_color"), color, true, 0xff))
-		return color;
-
-	std::optional<v3f> legacy;
-	g_settings->getV3FNoEx("cheat_hud.color", legacy);
-	if (legacy) {
-		return video::SColor(255,
-			static_cast<u8>(std::clamp<float>(legacy->X, 0.0f, 255.0f)),
-			static_cast<u8>(std::clamp<float>(legacy->Y, 0.0f, 255.0f)),
-			static_cast<u8>(std::clamp<float>(legacy->Z, 0.0f, 255.0f)));
-	}
-
-	return std::nullopt;
-}
-
 static std::vector<std::string> collectEnabledCheatTexts(Client *client)
 {
 	std::vector<std::string> enabled_cheats;
@@ -89,6 +50,15 @@ static std::string getHudTextAlign()
 		return "Right";
 
 	return "Right";
+}
+
+static std::string getCheatHudOrder()
+{
+	std::string order = g_settings->get("cheat_hud.order");
+	std::transform(order.begin(), order.end(), order.begin(), [](unsigned char c) {
+		return static_cast<char>(std::tolower(c));
+	});
+	return order;
 }
 
 static core::rect<s32> getStoredBounds()
@@ -168,11 +138,17 @@ void CheatHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtim
 
 	if (!g_settings->getBool("cheat_hud") && !editing)
 		return;
+	if (!font)
+		return;
 
+	ClientScripting *script = m_client ? m_client->getScript() : nullptr;
+	const u32 cheat_revision = script ? script->get_cheat_state_revision() : 0;
 	m_cache_timer += dtime;
-	if (editing || !m_cache_valid || m_cache_timer >= 0.35f) {
+	if (editing || !m_cache_valid || cheat_revision != m_cached_cheat_revision ||
+			m_cache_timer >= 0.35f) {
 		m_cached_enabled_cheats = collectEnabledCheatTexts(m_client);
 		m_cache_valid = true;
+		m_cached_cheat_revision = cheat_revision;
 		m_cache_timer = 0.0f;
 	}
 
@@ -180,44 +156,59 @@ void CheatHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtim
 	if (enabled_cheats.empty() && !editing)
 		return;
 
-	core::rect<s32> draw_bounds = bounds;
-	if (draw_bounds.getWidth() <= 0 || draw_bounds.getHeight() <= 0)
-		draw_bounds = getHudBounds(driver, m_client, font);
-
-	const bool draw_background = editing || g_settings->getBool("cheat_hud.background");
-
-	if (draw_background) {
-		const video::SColor background_color(180, 25, 25, 25);
-		const video::SColor outline_color(255, 0, 0, 0);
-		driver->draw2DRectangle(background_color, draw_bounds);
-		driver->draw2DRectangleOutline(draw_bounds, outline_color, 2);
-	}
-
-	const video::SColor hud_color = readHudColor().value_or(video::SColor(255, 255, 255, 255));
+	const video::SColor hud_color = readHudAccentColor(readModuleTextColor());
 	const video::SColor infoColor(230, 230, 230, 230);
 	const std::string align = getHudTextAlign();
 	const s32 line_padding = 5;
-	s32 y = draw_bounds.UpperLeftCorner.Y + line_padding;
-	if (draw_bounds.UpperLeftCorner.X < 0)
-		draw_bounds.UpperLeftCorner.X = 0;
-	if (draw_bounds.UpperLeftCorner.Y < 0)
-		draw_bounds.UpperLeftCorner.Y = 0;
 
 	std::sort(enabled_cheats.begin(), enabled_cheats.end(),
 		[font](const std::string &a, const std::string &b) {
-			const std::string order = g_settings->get("cheat_hud.order");
+			const std::string order = getCheatHudOrder();
 			const bool by_length = g_settings->getBool("cheat_hud.by_length");
 			const s32 width_a = static_cast<s32>(font->getDimension(utf8_to_wide(a).c_str()).Width);
 			const s32 width_b = static_cast<s32>(font->getDimension(utf8_to_wide(b).c_str()).Width);
-			if (order == "Ascending")
+			if (order == "ascending")
 				return by_length ? width_a < width_b : a < b;
-			if (order == "Descending")
+			if (order == "descending")
 				return by_length ? width_a > width_b : a > b;
 			if (width_a == width_b)
 				return a < b;
 			return width_a < width_b;
 		});
 
+	if (bounds.getWidth() <= 0 || bounds.getHeight() <= 0)
+		bounds = getHudBounds(driver, m_client, font);
+	s32 max_width = 0;
+	s32 total_height = 0;
+	for (const auto &text : enabled_cheats) {
+		const auto dim = font->getDimension(utf8_to_wide(text).c_str());
+		max_width = std::max(max_width, static_cast<s32>(dim.Width));
+		total_height += static_cast<s32>(dim.Height);
+	}
+	if (enabled_cheats.empty()) {
+		const auto dim = font->getDimension(L"cheathud");
+		max_width = dim.Width;
+		total_height = dim.Height;
+	}
+	const s32 anchored_right = bounds.LowerRightCorner.X;
+	core::rect<s32> draw_bounds = fitModuleHudBounds(*this, max_width, total_height, line_padding);
+	if (align == "Right") {
+		const s32 dx = anchored_right - draw_bounds.LowerRightCorner.X;
+		bounds += core::position2d<s32>(dx, 0);
+		resizeBounds += core::position2d<s32>(dx, 0);
+		draw_bounds += core::position2d<s32>(dx, 0);
+	}
+	if (draw_bounds.UpperLeftCorner.X < 0)
+		draw_bounds.UpperLeftCorner.X = 0;
+	if (draw_bounds.UpperLeftCorner.Y < 0)
+		draw_bounds.UpperLeftCorner.Y = 0;
+
+	if (editing || g_settings->getBool("cheat_hud.background")) {
+		driver->draw2DRectangle(readModuleBackgroundColor(), draw_bounds);
+		driver->draw2DRectangleOutline(draw_bounds, readModuleBorderColor(), 2);
+	}
+
+	s32 y = draw_bounds.UpperLeftCorner.Y + line_padding;
 	for (size_t i = 0; i < enabled_cheats.size(); ++i) {
 		const video::SColor line_color = hud_color;
 		std::string cheat_full_str = enabled_cheats[i];

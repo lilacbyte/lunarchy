@@ -42,6 +42,7 @@ dofile(menupath .. DIR_DELIM .. "dlg_reinstall_mtg.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_rebind_keys.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_clients_list.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_account_manager.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_profiles.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_server_list_mods.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_local.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_online.lua")
@@ -80,7 +81,7 @@ local function init_globals()
 	menudata.worldlist:set_sortmode("alphabetic")
 
 	mm_game_theme.init()
-	mm_game_theme.set_engine() -- This is just a fallback.
+	mm_game_theme.set_engine() -- Use the normal decorated menu background.
 
 	local mainmenu = create_main_menu("mainmenu")
 

@@ -1,5 +1,7 @@
 #include "gui/targetHUD.h"
 
+#include "gui/moduleColor.h"
+
 TargetHUD::TargetHUD(const core::rect<s32>& rect) : CheatUIElement(rect) {}
 
 
@@ -29,9 +31,9 @@ double TargetHUD::getInterpolatedHealth(const GenericCAO *obj, float dtime) {
 }
 
 void drawTargetHud(video::IVideoDriver* driver, gui::IGUIFont* font, double interpolated_health, u16 hp_max, core::rect<s32> bounds, std::wstring title) {
-	const video::SColor outline_color = video::SColor(255, 0, 0, 0);
-	const video::SColor background_color = video::SColor(255, 25, 25, 25);
-	const video::SColor text_color = video::SColor(255, 255, 255, 255);
+	const video::SColor outline_color = readModuleBorderColor();
+	const video::SColor background_color = readModuleBackgroundColor();
+	const video::SColor text_color = readModuleTextColor();
 
 	s32 vertical_padding = s32(bounds.getHeight()/8);
 	s32 horizontal_padding = s32(bounds.getWidth()/16);
@@ -85,10 +87,20 @@ void drawTargetHud(video::IVideoDriver* driver, gui::IGUIFont* font, double inte
 void TargetHUD::draw(video::IVideoDriver* driver, gui::IGUIFont* font, float dtime, ClientEnvironment &env, bool editing) {
 	if (!hudShouldRender(editing))
 		return;
+	if (!font)
+		return;
+
+	auto draw_target = [&](double health, u16 hp_max, const std::wstring &title) {
+		const core::dimension2d<u32> dim = font->getDimension(title.c_str());
+		const core::rect<s32> draw_bounds = fitModuleHudBounds(*this,
+			std::max<s32>(120, static_cast<s32>(dim.Width)),
+			static_cast<s32>(dim.Height) + 18);
+		drawTargetHud(driver, font, health, hp_max, draw_bounds, title);
+	};
 
 	if (g_settings->getBool("enable_combat_target_hud")) {
 		if (editing) {
-			drawTargetHud(driver, font, 10, 20, bounds, L"Target");
+			draw_target(10, 20, L"Target");
 		} else {
 			std::unordered_map<u16, ClientActiveObject*> allObjects;
 	
@@ -97,13 +109,12 @@ void TargetHUD::draw(video::IVideoDriver* driver, gui::IGUIFont* font, float dti
 			for (auto &ao_it : allObjects) {
 				ClientActiveObject *cao = ao_it.second;
 				GenericCAO *obj = dynamic_cast<GenericCAO *>(cao);
-				
-				double interpolated_health = TargetHUD::getInterpolatedHealth(obj, dtime); // unoptimized workaround for interpolation not being stepped if it isn't a valid target.
-	
-				if (!obj || obj->getId() != RenderingCore::combat_target || RenderingCore::combat_target == NULL)
+				if (!obj || obj->getId() != RenderingCore::combat_target || RenderingCore::combat_target == 0)
 					continue;
 
-				drawTargetHud(driver, font, interpolated_health, obj->getProperties().hp_max, bounds, std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(obj->getName()));
+				double interpolated_health = TargetHUD::getInterpolatedHealth(obj, dtime);
+				draw_target(interpolated_health, obj->getProperties().hp_max,
+					std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(obj->getName()));
 			}
 		}
 	}

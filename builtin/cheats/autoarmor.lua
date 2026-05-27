@@ -118,5 +118,5 @@ core.register_globalstep(function(dtime)
 	end
 end)
 
-core.register_cheat_with_infotext("AutoArmor", "Combat", "autoarmor", "")
-core.register_cheat_description("AutoArmor", "Combat", "autoarmor", "Automatically equips the best armor in your inventory.")
+core.register_cheat_with_infotext("autoarmor", "Combat", "autoarmor", "")
+core.register_cheat_description("autoarmor", "Combat", "autoarmor", "Automatically equips the best armor in your inventory.")

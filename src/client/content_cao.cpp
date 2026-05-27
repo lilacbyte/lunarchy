@@ -405,6 +405,23 @@ scene::IAnimatedMeshSceneNode *GenericCAO::getAnimatedMeshSceneNode() const
 	return m_animated_meshnode;
 }
 
+bool GenericCAO::isHiddenByLagOptimizer() const
+{
+	if (!g_settings->getBool("lag_optimizer") ||
+			!g_settings->getBool("lag_optimizer.no_ground_items"))
+		return false;
+
+	if (m_attachment_parent_id != 0 || m_is_player)
+		return false;
+
+	if (m_name == "__builtin:item")
+		return true;
+
+	return (m_prop.visual == OBJECTVISUAL_ITEM ||
+			m_prop.visual == OBJECTVISUAL_WIELDITEM) &&
+			m_prop.physical && !m_prop.wield_item.empty();
+}
+
 void GenericCAO::setChildrenVisible(bool toset)
 {
 	for (object_t cao_id : m_attachment_child_ids) {
@@ -784,6 +801,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 	if (scene::ISceneNode *node = getSceneNode()) {
 		node->setParent(m_matrixnode);
+		node->setVisible(m_is_visible && !isHiddenByLagOptimizer());
 
 		if (auto shadow = RenderingEngine::get_shadow_renderer())
 			shadow->addNodeToShadowList(node);
@@ -1097,7 +1115,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 	// Make sure m_is_visible is always applied
 	scene::ISceneNode *node = getSceneNode();
 	if (node)
-		node->setVisible(m_is_visible);
+		node->setVisible(m_is_visible && !isHiddenByLagOptimizer());
 
 	if(getParent() != NULL) // Attachments should be glued to their parent by Irrlicht
 	{

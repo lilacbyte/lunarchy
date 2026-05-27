@@ -1,7 +1,7 @@
 #!/bin/bash
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 gameid=${gameid:-devtest}
-executable=$dir/../bin/luanti
+executable=$dir/../bin/lunarchy
 testspath=$dir/../tests
 conf_server=$testspath/server.conf
 worldpath=$testspath/world

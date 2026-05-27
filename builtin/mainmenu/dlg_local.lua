@@ -457,7 +457,6 @@ local function main_button_handler(this, fields, name, tabdata)
 			gamebar:hide()
 		end
 		mm_game_theme.set_engine()
-		mm_game_theme.clear_single("header")
 		return true
 	end
 end
@@ -484,7 +483,6 @@ local function on_change(type)
 			gamebar:hide()
 		end
 		mm_game_theme.set_engine()
-		mm_game_theme.clear_single("header")
 		return false
 	elseif type == "DialogHide" then
 		menudata.worldlist:set_filtercriteria(nil)
@@ -493,7 +491,6 @@ local function on_change(type)
 			gamebar:hide()
 		end
 		mm_game_theme.set_engine()
-		mm_game_theme.clear_single("header")
 		return false
 	end
 end

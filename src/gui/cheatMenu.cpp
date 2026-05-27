@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/fontengine.h"
 #include "cheatMenu.h"
 #include "gui/cheatHUD.h"
+#include "gui/moduleColor.h"
 #include "settings.h"
 #include <cstddef>
 #include <algorithm>
@@ -53,7 +54,7 @@ CheatMenu::CheatMenu(Client *client) : m_client(client)
 	bg_color = g_settings->getV3F("cheat_menu_bg_color").value_or(v3f(10, 15, 20));
 	active_bg_color = g_settings->getV3F("cheat_menu_active_bg_color").value_or(v3f(50, 80, 175));
 	font_color = g_settings->getV3F("cheat_menu_font_color").value_or(v3f(255, 255, 255));
-	selected_font_color = g_settings->getV3F("cheat_menu_selected_font_color").value_or(v3f(0, 0, 0));
+	selected_font_color = g_settings->getV3F("cheat_menu_selected_font_color").value_or(v3f(200, 200, 200));
 
 
 	m_bg_color = video::SColor(g_settings->getU32("cheat_menu_bg_color_alpha"),
@@ -174,6 +175,20 @@ int negmod(int n, int base)
 void CheatMenu::draw(video::IVideoDriver *driver, bool show_debug)
 {
 	CHEAT_MENU_GET_SCRIPTPTR
+
+	if (g_settings->getBool("hud.enabled")) {
+		m_bg_color = readModuleBackgroundColor();
+		m_active_bg_color = readHudAccentColor(video::SColor(255, 50, 80, 175));
+	} else {
+		const v3f bg_color = g_settings->getV3F("cheat_menu_bg_color")
+			.value_or(v3f(10, 15, 20));
+		m_bg_color = video::SColor(g_settings->getU32("cheat_menu_bg_color_alpha"),
+			bg_color.X, bg_color.Y, bg_color.Z);
+		const v3f active_bg_color = g_settings->getV3F("cheat_menu_active_bg_color")
+			.value_or(v3f(50, 80, 175));
+		m_active_bg_color = video::SColor(g_settings->getU32("cheat_menu_active_bg_color_alpha"),
+			active_bg_color.X, active_bg_color.Y, active_bg_color.Z);
+	}
 
 	const int min_row_height = static_cast<int>(m_fontsize.Y) + 8;
 	m_head_height = std::max<int>(show_debug ? g_settings->getU32("cheat_menu_head_height") : min_row_height,

@@ -228,6 +228,7 @@ public:
 
 	void drawHealthESP(float dtime);
 
+
 	inline void addArmInertia(f32 player_yaw);
 
 private:

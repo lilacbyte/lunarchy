@@ -84,6 +84,12 @@ public:
 	/** \return true if border drawing is enabled, false otherwise */
 	virtual bool isDrawBorderEnabled() const = 0;
 
+	//! Sets the inner padding between the border/background and the text.
+	virtual void setTextPadding(s32 padding) = 0;
+
+	//! Sets the border color used by custom border rendering.
+	virtual void setBorderColor(video::SColor color) = 0;
+
 	//! Sets text justification mode
 	/** \param horizontal: EGUIA_UPPERLEFT for left justified (default),
 	EGUIA_LOWERRIGHT for right justified, or EGUIA_CENTER for centered text.

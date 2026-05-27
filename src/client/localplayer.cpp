@@ -15,6 +15,7 @@
 #include "client.h"
 #include "content_cao.h"
 #include "client/game.h"
+#include "itemgroup.h"
 #include "util/pointedthing.h"
 
 /*
@@ -360,7 +361,12 @@ void LocalPlayer::move(f32 dtime, Environment *env, std::vector<CollisionInfo> *
 	(g_settings->getBool("step") ? g_settings->getFloat("step.mult") : 
 		(g_settings->getBool("scaffold") ? 2.0f : 1.0f)));
 
-	v3f accel_f(0, -gravity, 0);
+	f32 falling_gravity = gravity;
+	if (g_settings->getBool("fastfall") && speed.Y < 0.0f && !touching_ground &&
+			!free_move && !in_liquid && !is_climbing)
+		falling_gravity *= g_settings->getFloat("fastfall.multiplier", 1.0f, 8.0f);
+
+	v3f accel_f(0, -falling_gravity, 0);
 	const v3f initial_position = position;
 	const v3f initial_speed = speed;
 
@@ -691,6 +697,11 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		? g_settings->getFloat("free_move.speed", 0.25f, 8.0f)
 		: 1.0f;
 	const f32 jetpack_speed_mult = g_settings->getFloat("jetpack.speed", 0.25f, 8.0f);
+	const bool jump_enabled = g_settings->getBool("jump");
+	const f32 jump_speed_mult = jump_enabled
+		&& !g_settings->getBool("killaura.mace_suppress_jump_multiplier")
+		? g_settings->getFloat("jump.multiplier", 0.25f, 8.0f)
+		: 1.0f;
 
 	// Whether superspeed mode is used or not
 	bool superspeed = false;
@@ -809,6 +820,8 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			v3f speedJ = getLegitSpeed();
 			if (speedJ.Y >= -0.5f * BS || g_settings->getBool("jetpack")) {
 				speedJ.Y = movement_speed_jump * physics_override.jump;
+				if (m_can_jump)
+					speedJ.Y *= jump_speed_mult;
 				if (g_settings->getBool("jetpack"))
 					speedJ.Y *= jetpack_speed_mult;
 				setLegitSpeed(speedJ);
@@ -984,6 +997,9 @@ bool LocalPlayer::isWaitingForReattach() const
 }
 
 EntityRelationship LocalPlayer::getEntityRelationship(GenericCAO *playerObj) {
+	if (!playerObj) {
+		return EntityRelationship::NEUTRAL;
+	}
 	if (!playerObj->isPlayer()) {
 		return EntityRelationship::NEUTRAL;
 	}

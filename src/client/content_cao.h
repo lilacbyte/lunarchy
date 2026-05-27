@@ -239,6 +239,8 @@ public:
 		return m_is_visible;
 	}
 
+	bool isHiddenByLagOptimizer() const;
+
 	inline void setVisible(bool toset)
 	{
 		m_is_visible = toset;

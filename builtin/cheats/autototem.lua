@@ -21,15 +21,15 @@ local function update_count()
         last_count = count
         if last_count > 0 then
             if totem_stack:get_name()=="mcl_totems:totem" then
-                minetest.update_infotext("AutoTotem", "Combat", "autototem", last_count.."+1")
+                minetest.update_infotext("autototem", "Combat", "autototem", last_count.."+1")
                 else
-                minetest.update_infotext("AutoTotem", "Combat", "autototem", last_count)
+                minetest.update_infotext("autototem", "Combat", "autototem", last_count)
             end
         else
             if totem_stack:get_name()=="mcl_totems:totem" then
-                minetest.update_infotext("AutoTotem", "Combat", "autototem", "0+1")
+                minetest.update_infotext("autototem", "Combat", "autototem", "0+1")
             else
-                minetest.update_infotext("AutoTotem", "Combat", "autototem", "0")
+                minetest.update_infotext("autototem", "Combat", "autototem", "0")
             end
         end
     end
@@ -59,10 +59,10 @@ minetest.register_globalstep(function(dtime)
         end
     else
         if invalid_game == false then
-            minetest.update_infotext("AutoTotem", "Combat", "autototem", "Invalid Game")
+            minetest.update_infotext("autototem", "Combat", "autototem", "Invalid Game")
             invalid_game = true
         end
     end
 end)
 
-minetest.register_cheat_with_infotext("AutoTotem", "Combat", "autototem", "0")
+minetest.register_cheat_with_infotext("autototem", "Combat", "autototem", "0")

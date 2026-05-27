@@ -158,7 +158,6 @@ autojump (Automatic jumping) bool false
 #    On touchscreens, this only affects digging.
 safe_dig_and_place (Safe digging and placing) bool false
 
-static_cape (Static cape?) bool false
 
 [*Keyboard and Mouse]
 
@@ -433,16 +432,6 @@ keymap_slot32 (Hotbar slot 32) key
 
 [*Atmosphere]
 
-[**Sky settings]
-# Enable custom sky?
-custom_skybox (Custom skybox) bool false
-# Enable display sunrise?
-display_sunrise (Display sunrise) bool true
-# Enable force custom skybox?
-force_custom_skybox (Force custom skybox) bool false
-# Enable force render skybox?
-force_render_skybox (Force render skybox) bool true
-
 [*Touchscreen]
 
 #    Enables the touchscreen controls, allowing you to play the game with a touchscreen.
@@ -649,6 +638,9 @@ selectionbox_color (Selection box color) string (0,0,0)
 
 #    Width of the selection box lines around nodes.
 selectionbox_width (Selection box width) int 2 1 5
+
+#    Render the pointed node with the central HUD background and border theme.
+nodehighlight (HUD themed node highlight) bool false
 
 #    Crosshair color (R,G,B).
 #    Also controls the object crosshair color
@@ -1017,6 +1009,116 @@ chat_weblink_color (Weblink color) string #8888FF
 #    Value 0 will use the default font size.
 chat_font_size (Chat font size) int 0 0 72
 
+[ChatPlus] [client]
+
+chatplus.enabled (Enable ChatPlus) bool true
+
+[*Layout]
+
+#    Horizontal offset applied to the on-screen chat overlay.
+chatplus_offset_x (ChatPlus horizontal offset) int 0 -500 500
+
+#    Vertical offset applied to the on-screen chat overlay.
+chatplus_offset_y (ChatPlus vertical offset) int 0 -500 500
+
+#    Enable a background behind the chat overlay.
+chatplus_background (ChatPlus background) bool false
+
+#    Background color for the chat overlay.
+chatplus_background_color (ChatPlus background color) string #3f3f3f
+
+#    Background alpha for the chat overlay.
+chatplus_background_alpha (ChatPlus background alpha) int 180 0 255
+
+#    Enable a border around the chat overlay.
+chatplus_border (ChatPlus border) bool false
+
+#    Border color for the chat overlay.
+chatplus_border_color (ChatPlus border color) string #000000
+
+#    Enable centralized custom colors for HUD overlays.
+hud.enabled (HUD styling) bool false
+
+#    Accent color used by the menu and sync source.
+hud.accent_color (HUD accent color) string #a8c2ff
+
+#    Color used by module HUD text overlays.
+hud.text_color (HUD text color) string #ffffff
+
+#    Color used behind module HUD content and nametags.
+hud.background_color (HUD background color) string #191919
+
+#    Opacity used behind module HUD content and nametags.
+hud.background_alpha (HUD background alpha) int 180 0 255
+
+#    Outline color used by module HUD panels.
+hud.border_color (HUD border color) string #000000
+
+#    Opacity used by module HUD panel outlines.
+hud.border_alpha (HUD border alpha) int 255 0 255
+
+#    Padding inside auto-sized module HUD backgrounds and nametags.
+hud.padding (HUD padding) int 5 0 20
+
+#    Apply HUD background and border colors to tooltip panels.
+hud.tooltips_theme (HUD tooltip theme) bool false
+
+#    Recolor the HandView wielded item and hand.
+hand_view.color (HandView color) string #ffffff
+
+#    Disable inventory item animations while LagOptimizer is active.
+lag_optimizer.no_inventory_animations (LagOptimizer no inventory animations) bool true
+
+#    Stop dropped item spinning while LagOptimizer is active.
+lag_optimizer.no_item_spin (LagOptimizer no item spin) bool true
+
+#    Disable first-person hand movement animations while LagOptimizer is active.
+lag_optimizer.no_hand_animation (LagOptimizer no hand animation) bool true
+
+#    Drop particle packets and spawners while LagOptimizer is active.
+lag_optimizer.no_particles (LagOptimizer no particles) bool true
+
+#    Hide dropped item entities while LagOptimizer is active.
+lag_optimizer.no_ground_items (LagOptimizer no ground items) bool true
+
+#    Disable cloud rendering while LagOptimizer is active.
+lag_optimizer.no_clouds (LagOptimizer no clouds) bool true
+
+#    Disable fog while LagOptimizer is active.
+lag_optimizer.no_fog (LagOptimizer no fog) bool true
+
+#    Disable camera view bobbing while LagOptimizer is active.
+lag_optimizer.no_view_bobbing (LagOptimizer no view bobbing) bool true
+
+#    Disable digging and block-break particles while LagOptimizer is active.
+lag_optimizer.no_break_particles (LagOptimizer no break particles) bool true
+
+#    Disable water texture and wave animation while LagOptimizer is active.
+lag_optimizer.no_water_animation (LagOptimizer no water animation) bool true
+
+#    Disable lava texture animation while LagOptimizer is active.
+lag_optimizer.no_lava_animation (LagOptimizer no lava animation) bool true
+
+#    Force translucent liquids while LagOptimizer is active.
+lag_optimizer.clearer_water (LagOptimizer clearer water) bool true
+
+#    Disable post-processing, bloom, volumetric lighting, and auto exposure while LagOptimizer is active.
+lag_optimizer.low_fx (LagOptimizer low FX) bool true
+
+#    Disable the minimap while LagOptimizer is active.
+lag_optimizer.no_minimap (LagOptimizer no minimap) bool false
+
+#    Hide Mineclonia advancement/achievement notification HUD overlays while LagOptimizer is active.
+lag_optimizer.no_achievement_overlay (LagOptimizer no achievement overlay) bool true
+
+#    Hide Mineclonia boss bar HUD overlays while LagOptimizer is active.
+lag_optimizer.no_bossbar (LagOptimizer no bossbar) bool true
+
+#    Border alpha for the chat overlay.
+chatplus_border_alpha (ChatPlus border alpha) int 255 0 255
+
+#    Inner padding between the border/background and chat text.
+chatplus_padding (ChatPlus padding) int 0 0 20
 
 [**Content Repository]
 

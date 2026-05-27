@@ -26,7 +26,6 @@
 #include "lua_api/l_client_sound.h"
 #include "lua_api/l_clientobject.h"
 #include "lua_api/l_cheats.h"
-#include "lua_api/l_http.h"
 
 ClientScripting::ClientScripting(Client *client):
 	ScriptApiBase(ScriptingType::Client)
@@ -81,8 +80,6 @@ void ClientScripting::InitializeModApi(lua_State *L, int top)
 	ModApiChannels::Initialize(L, top);
 	ModApiParticlesLocal::Initialize(L, top);
 	ModApiClientSound::Initialize(L, top);
-	ModApiHttp::InitializeClientSide(L, top);
-
 	l_cheats::Initialize(L, top);
 }
 

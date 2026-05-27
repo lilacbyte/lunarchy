@@ -114,10 +114,10 @@ local function register_buttonhandler(this, fields)
 		core.settings:set("address",     gamedata.address)
 		core.settings:set("remote_port", gamedata.port)
 
-		if (fields.save_to_account_manager == "true" or this.data.save_to_account_manager == true)
-				and account_manager and account_manager.upsert then
-			local server_key = tostring(gamedata.address or "") .. ":" .. tostring(gamedata.port or "")
-			account_manager.upsert(fields.name, password, server_key)
+		if fields.save_to_account_manager == "true" or this.data.save_to_account_manager == true then
+			core.settings:set("account_manager.pending_register_save", "true")
+		else
+			core.settings:set("account_manager.pending_register_save", "false")
 		end
 
 		core.start()

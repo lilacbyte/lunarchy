@@ -109,7 +109,8 @@ public:
 enum class IAction : u16 {
 	Move,
 	Drop,
-	Craft
+	Craft,
+	Delete
 };
 
 struct InventoryAction
@@ -192,6 +193,7 @@ struct IDropAction : public InventoryAction, public MoveAction
 {
 	// count=0 means "everything"
 	u16 count = 0;
+	f32 drop_distance = 0.0f;
 
 	IDropAction() = default;
 
@@ -208,7 +210,36 @@ struct IDropAction : public InventoryAction, public MoveAction
 		os<<count<<" ";
 		os<<from_inv.dump()<<" ";
 		os<<from_list<<" ";
-		os<<from_i;
+		os<<from_i<<" ";
+		os<<drop_distance;
+	}
+
+	void apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef);
+
+	void clientApply(InventoryManager *mgr, IGameDef *gamedef);
+};
+
+struct IDeleteAction : public InventoryAction, public MoveAction
+{
+	// count=0 means "everything"
+	u16 count = 0;
+
+	IDeleteAction() = default;
+
+	IDeleteAction(std::istream &is);
+
+	IAction getType() const
+	{
+		return IAction::Delete;
+	}
+
+	void serialize(std::ostream &os) const
+	{
+		os << "Delete ";
+		os << count << " ";
+		os << from_inv.dump() << " ";
+		os << from_list << " ";
+		os << from_i;
 	}
 
 	void apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef);

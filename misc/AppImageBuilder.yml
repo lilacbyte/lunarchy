@@ -3,11 +3,11 @@ version: 1
 AppDir:
   path: AppDir
   app_info:
-    id: org.luanti.luanti
-    name: CloakV4
-    icon: luanti
+    id: org.lunarchy.lunarchy
+    name: Lunarchy
+    icon: lunarchy
     version: 5.12.0
-    exec: usr/bin/cloakv4
+    exec: usr/bin/lunarchy
     exec_args: $@
   files:
     include: []
@@ -54,5 +54,5 @@ script: |
     cmake --install appimage-build
 
     # Is a backup icon location in case
-    mkdir -p AppDir/usr/share/luanti/misc
-    cp AppDir/usr/share/icons/hicolor/128x128/apps/luanti.png AppDir/usr/share/luanti/misc/luanti-xorg-icon-128.png
+    mkdir -p AppDir/usr/share/lunarchy/misc
+    cp AppDir/usr/share/icons/hicolor/128x128/apps/lunarchy.png AppDir/usr/share/lunarchy/misc/lunarchy-xorg-icon-128.png

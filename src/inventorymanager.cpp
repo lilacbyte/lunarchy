@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "log.h"
 #include "serverenvironment.h"
+#include "server/player_sao.h"
 #include "scripting_server.h"
 #include "server/serveractiveobject.h"
 #include "settings.h"
@@ -104,6 +105,8 @@ InventoryAction *InventoryAction::deSerialize(std::istream &is)
 		a = new IDropAction(is);
 	} else if (type == "Craft") {
 		a = new ICraftAction(is);
+	} else if (type == "Delete") {
+		a = new IDeleteAction(is);
 	}
 
 	return a;
@@ -666,6 +669,14 @@ IDropAction::IDropAction(std::istream &is)
 
 	std::getline(is, ts, ' ');
 	from_i = stoi(ts);
+
+	if (std::getline(is, ts, ' ')) {
+		try {
+			drop_distance = stof(ts);
+		} catch (const std::exception &) {
+			drop_distance = 0.0f;
+		}
+	}
 }
 
 void IDropAction::apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef)
@@ -742,8 +753,16 @@ void IDropAction::apply(InventoryManager *mgr, ServerActiveObject *player, IGame
 	// Drop the item
 	ItemStack item1 = list_from->getItem(from_i);
 	item1.count = take_count;
-	if(PLAYER_TO_SA(player)->item_OnDrop(item1, player,
-				player->getBasePosition())) {
+	v3f drop_pos = player->getBasePosition();
+	if (drop_distance > 0.0f) {
+		if (PlayerSAO *playersao = dynamic_cast<PlayerSAO *>(player)) {
+			v3f dir(0.0f, 0.0f, 1.0f);
+			dir.rotateYZBy(playersao->getLookPitch());
+			dir.rotateXZBy(playersao->getRotation().Y);
+			drop_pos += dir * (drop_distance * BS);
+		}
+	}
+	if(PLAYER_TO_SA(player)->item_OnDrop(item1, player, drop_pos)) {
 		int actually_dropped_count = take_count - item1.count;
 
 		if (actually_dropped_count == 0) {
@@ -824,6 +843,146 @@ void IDropAction::clientApply(InventoryManager *mgr, IGameDef *gamedef)
 	// Optional InventoryAction operation that is run on the client
 	// to make lag less apparent.
 
+	Inventory *inv_from = mgr->getInventory(from_inv);
+	if (!inv_from)
+		return;
+
+	InventoryLocation current_player;
+	current_player.setCurrentPlayer();
+	Inventory *inv_player = mgr->getInventory(current_player);
+	if (inv_from != inv_player)
+		return;
+
+	InventoryList *list_from = inv_from->getList(from_list);
+	if (!list_from)
+		return;
+
+	if (count == 0)
+		list_from->changeItem(from_i, ItemStack());
+	else
+		list_from->takeItem(from_i, count);
+
+	mgr->setInventoryModified(from_inv);
+}
+
+/*
+	IDeleteAction
+*/
+
+IDeleteAction::IDeleteAction(std::istream &is)
+{
+	std::string ts;
+
+	std::getline(is, ts, ' ');
+	count = stoi(ts);
+
+	std::getline(is, ts, ' ');
+	from_inv.deSerialize(ts);
+
+	std::getline(is, from_list, ' ');
+
+	std::getline(is, ts, ' ');
+	from_i = stoi(ts);
+}
+
+void IDeleteAction::apply(InventoryManager *mgr, ServerActiveObject *player,
+		IGameDef *gamedef)
+{
+	Inventory *inv_from = mgr->getInventory(from_inv);
+	if (!inv_from) {
+		infostream << "IDeleteAction::apply(): FAIL: source inventory not found: "
+				<< "from_inv=\"" << from_inv.dump() << "\"" << std::endl;
+		return;
+	}
+
+	InventoryList *list_from = inv_from->getList(from_list);
+	if (!list_from) {
+		infostream << "IDeleteAction::apply(): FAIL: source list not found: "
+				<< "from_inv=\"" << from_inv.dump() << "\"" << std::endl;
+		return;
+	}
+
+	if (from_i < 0 || list_from->getSize() <= (u32)from_i ||
+			list_from->getItem(from_i).empty()) {
+		infostream << "IDeleteAction::apply(): FAIL: source item not found: "
+				<< "from_inv=\"" << from_inv.dump() << "\""
+				<< ", from_list=\"" << from_list << "\""
+				<< " from_i=" << from_i << std::endl;
+		return;
+	}
+
+	auto list_from_lock = list_from->resizeLock();
+	bool ignore_src_rollback = (from_inv.type == InventoryLocation::PLAYER);
+
+	int take_count = list_from->getItem(from_i).count;
+	if (count != 0 && count < take_count)
+		take_count = count;
+
+	ItemStack src_item = list_from->getItem(from_i);
+	src_item.count = take_count;
+	int src_can_take_count = take_count;
+
+	switch (from_inv.type) {
+	case InventoryLocation::DETACHED:
+		src_can_take_count = PLAYER_TO_SA(player)->detached_inventory_AllowTake(
+				*this, src_item, player);
+		break;
+	case InventoryLocation::NODEMETA:
+		src_can_take_count = PLAYER_TO_SA(player)->nodemeta_inventory_AllowTake(
+				*this, src_item, player);
+		break;
+	case InventoryLocation::PLAYER:
+		src_can_take_count = PLAYER_TO_SA(player)->player_inventory_AllowTake(
+				*this, src_item, player);
+		break;
+	default:
+		break;
+	}
+
+	if (src_can_take_count != -1 && src_can_take_count < take_count)
+		take_count = src_can_take_count;
+	if (take_count <= 0)
+		return;
+
+	src_item = list_from->takeItem(from_i, take_count);
+	mgr->setInventoryModified(from_inv);
+
+	infostream << "IDeleteAction::apply(): deleted "
+			<< " from inv=\"" << from_inv.dump() << "\""
+			<< " list=\"" << from_list << "\""
+			<< " i=" << from_i << std::endl;
+
+	list_from_lock.reset();
+
+	switch (from_inv.type) {
+	case InventoryLocation::DETACHED:
+		PLAYER_TO_SA(player)->detached_inventory_OnTake(*this, src_item, player);
+		break;
+	case InventoryLocation::NODEMETA:
+		PLAYER_TO_SA(player)->nodemeta_inventory_OnTake(*this, src_item, player);
+		break;
+	case InventoryLocation::PLAYER:
+		PLAYER_TO_SA(player)->player_inventory_OnTake(*this, src_item, player);
+		break;
+	default:
+		break;
+	}
+
+	if (!ignore_src_rollback && gamedef->rollback()) {
+		RollbackAction action;
+		std::string loc;
+		{
+			std::ostringstream os(std::ios::binary);
+			from_inv.serialize(os);
+			loc = os.str();
+		}
+		action.setModifyInventoryStack(loc, from_list, from_i, false, src_item);
+		gamedef->rollback()->reportAction(action);
+	}
+}
+
+void IDeleteAction::clientApply(InventoryManager *mgr, IGameDef *gamedef)
+{
 	Inventory *inv_from = mgr->getInventory(from_inv);
 	if (!inv_from)
 		return;
@@ -1016,4 +1175,3 @@ bool getCraftingResult(Inventory *inv, ItemStack &result,
 
 	return found;
 }
-

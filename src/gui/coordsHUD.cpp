@@ -1,5 +1,7 @@
 #include "gui/coordsHUD.h"
 
+#include "gui/moduleColor.h"
+
 #include <algorithm>
 #include <vector>
 
@@ -32,17 +34,22 @@ void coordsHUD::draw(video::IVideoDriver* driver, gui::IGUIFont* font, float dti
         return;
 
     if (g_settings->getBool("coords") || editing) {
-        const video::SColor outline_color = video::SColor(255, 0, 0, 0);
-        const video::SColor background_color = video::SColor(255, 25, 25, 25);
-        const video::SColor text_color = video::SColor(255, 255, 255, 255);
+		if (!font)
+			return;
+        const video::SColor outline_color = readModuleBorderColor();
+        const video::SColor background_color = readModuleBackgroundColor();
+        const video::SColor text_color = readModuleTextColor();
 
-        if (editing || g_settings->getBool("coords.background")) {
-            driver->draw2DRectangle(background_color, bounds);
-            driver->draw2DRectangleOutline(bounds, outline_color, 3);
-        }
-
-        v3f coords = env.getLocalPlayer()->getPosition();
-		const std::vector<std::wstring> lines = buildCoordsLines(coords);
+		LocalPlayer *player = env.getLocalPlayer();
+		if (!player)
+			return;
+		m_cache_timer += dtime;
+		if (editing || !m_cache_valid || m_cache_timer >= 0.1f) {
+			m_cached_lines = buildCoordsLines(player->getPosition());
+			m_cache_valid = true;
+			m_cache_timer = 0.0f;
+		}
+		const std::vector<std::wstring> &lines = m_cached_lines;
 		s32 total_height = 0;
 		s32 max_width = 0;
 		for (const auto &line : lines) {
@@ -50,8 +57,14 @@ void coordsHUD::draw(video::IVideoDriver* driver, gui::IGUIFont* font, float dti
 			max_width = std::max(max_width, static_cast<s32>(dim_u32.Width));
 			total_height += static_cast<s32>(dim_u32.Height);
 		}
-		s32 textX = bounds.UpperLeftCorner.X + (bounds.getWidth() - max_width) / 2;
-		s32 textY = bounds.UpperLeftCorner.Y + (bounds.getHeight() - total_height) / 2;
+		const core::rect<s32> draw_bounds = fitModuleHudBounds(*this, max_width, total_height);
+        if (editing || g_settings->getBool("coords.background")) {
+            driver->draw2DRectangle(background_color, draw_bounds);
+            driver->draw2DRectangleOutline(draw_bounds, outline_color, 2);
+        }
+		const s32 padding = moduleHudPadding();
+		s32 textX = draw_bounds.UpperLeftCorner.X + padding;
+		s32 textY = draw_bounds.UpperLeftCorner.Y + padding;
 		for (const auto &line : lines) {
 			const core::dimension2d<u32> dim_u32 = font->getDimension(line.c_str());
 			const core::dimension2d<s32> dim(dim_u32.Width, dim_u32.Height);

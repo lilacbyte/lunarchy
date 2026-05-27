@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-    <id>org.luanti.luanti</id>
+    <id>org.lunarchy.lunarchy</id>
     <provides>
         <id>net.minetest.minetest</id>
     </provides>
     <replaces>
+        <id>org.luanti.luanti</id>
         <id>net.minetest.minetest</id>
     </replaces>
 
-    <name>Luanti</name>
+    <name>Lunarchy</name>
     <summary>Block-based multiplayer game platform</summary>
     <summary xml:lang="de">Blockbasierte Mehrspieler-Spieleplattform</summary>
     <summary xml:lang="fr">Plate-forme de jeu multijoueurs à base de blocs</summary>
@@ -16,8 +17,8 @@
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>LGPL-2.1+ AND CC-BY-SA-3.0 AND MIT AND Apache-2.0</project_license>
 
-    <developer id="org.luanti">
-        <name>Luanti Team</name>
+    <developer id="org.lunarchy">
+        <name>Lunarchy</name>
     </developer>
 
     <supports>
@@ -59,13 +60,13 @@
 
     <description>
         <p>
-            Luanti is a block-based sandbox game platform.
+            Lunarchy is a block-based sandbox game platform.
         </p>
         <p xml:lang="de">
-            Luanti ist eine blockbasierte Sandbox-Spielplattform.
+            Lunarchy ist eine blockbasierte Sandbox-Spielplattform.
         </p>
         <p xml:lang="fr">
-            Luanti est une plateforme de jeu de type bac à sable à base de blocs.
+            Lunarchy est une plateforme de jeu de type bac à sable à base de blocs.
         </p>
         <p>
             Players can create and destroy various types of blocks in a
@@ -83,25 +84,25 @@
             formes possibles, sur des serveurs multijoueurs ou en solo.
         </p>
         <p>
-            Luanti is designed to be simple, stable, and portable.
+            Lunarchy is designed to be simple, stable, and portable.
             It is lightweight enough to run on fairly old hardware.
         </p>
         <p xml:lang="de">
-            Luanti wurde entworfen, um einfach, stabil und portabel zu sein.
+            Lunarchy wurde entworfen, um einfach, stabil und portabel zu sein.
             Es ist leichtgewichtig genug, um auf relativ alter Hardware zu laufen.
         </p>
         <p xml:lang="fr">
-            Luanti est conçu pour être simple, stable et portable.
+            Lunarchy est conçu pour être simple, stable et portable.
             Il est suffisamment léger pour fonctionner sur du matériel relativement ancien.
         </p>
         <p>
-            Luanti has many features, including:
+            Lunarchy has many features, including:
         </p>
         <p xml:lang="de">
-            Luanti besitzt viele Features, unter anderem:
+            Lunarchy besitzt viele Features, unter anderem:
         </p>
         <p xml:lang="fr">
-            Luanti offre de nombreuses fonctionnalités, notamment :
+            Lunarchy offre de nombreuses fonctionnalités, notamment :
         </p>
         <ul>
             <li>Ability to walk around, dig, and build in a near-infinite voxel world</li>
@@ -125,7 +126,7 @@
         </ul>
     </description>
 
-    <launchable type="desktop-id">org.luanti.luanti.desktop</launchable>
+    <launchable type="desktop-id">org.lunarchy.lunarchy.desktop</launchable>
     <screenshots>
         <screenshot type="default">
             <image>https://www.luanti.org/media/gallery/1.jpg</image>
@@ -138,7 +139,7 @@
         </screenshot>
     </screenshots>
 
-    <icon type="stock">luanti</icon>
+    <icon type="stock">lunarchy</icon>
 
     <categories>
         <category>Game</category>
@@ -166,10 +167,10 @@
     <url type="contribute">https://www.luanti.org/get-involved</url>
 
     <provides>
-        <binary>luanti</binary>
+        <binary>lunarchy</binary>
     </provides>
 
-    <translation type="gettext">luanti</translation>
+    <translation type="gettext">cloakv4</translation>
 
     <update_contact>celeron55@gmail.com</update_contact>
 

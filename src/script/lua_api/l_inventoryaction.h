@@ -60,6 +60,9 @@ private:
 	// set_count(self, count)
 	static int l_set_count(lua_State *L);
 
+	// set_distance(self, distance)
+	static int l_set_distance(lua_State *L);
+
 public:
 	LuaInventoryAction(const IAction &type);
 	~LuaInventoryAction();

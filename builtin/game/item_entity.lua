@@ -64,7 +64,8 @@ core.register_entity(":__builtin:item", {
 			textures = {itemname},
 			visual_size = {x = size + size_bias, y = size + size_bias},
 			collisionbox = c,
-			automatic_rotate = core.settings:get_bool("lag_optimizer.no_item_spin")
+			automatic_rotate = (core.settings:get_bool("lag_optimizer") and
+					core.settings:get_bool("lag_optimizer.no_item_spin"))
 				and 0 or (math.pi * 0.5 * 0.2 / size),
 			wield_item = self.itemstring,
 			glow = glow,

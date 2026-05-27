@@ -56,6 +56,7 @@
 #include "content/mod_configuration.h"
 #include "mapnode.h"
 #include "item_visuals_manager.h"
+#include "porting.h"
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -118,6 +119,7 @@ Client::Client(
 	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
+	m_login_password(password),
 	m_password(password),
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
 	m_media_downloader(new ClientMediaDownloader()),
@@ -1435,7 +1437,120 @@ void Client::sendChangePassword(const std::string &oldpassword,
 	// get into sudo mode and then send new password to server
 	m_password = oldpassword;
 	m_new_password = newpassword;
+	m_pending_account_password = newpassword;
 	startAuth(choseAuthMech(m_sudo_auth_methods));
+}
+
+void Client::updateSavedAccountPassword(const std::string &password)
+{
+	if (password.find_first_of("|\r\n") != std::string::npos) {
+		warningstream << "Not saving password change: unsupported character for accounts.txt."
+				<< std::endl;
+		return;
+	}
+
+	const std::string account_dir = porting::path_user + DIR_DELIM + "client";
+	const std::string account_file = account_dir + DIR_DELIM + "accounts.txt";
+	const std::string server = getAddressName() + ":" +
+			std::to_string(getServerAddress().getPort());
+	LocalPlayer *player = m_env.getLocalPlayer();
+	if (!player)
+		return;
+	const std::string playername = player->getName();
+	const std::string prefix = playername + "|";
+	std::vector<std::string> lines;
+	s32 exact_index = -1;
+	s32 unscoped_index = -1;
+
+	fs::CreateDir(account_dir);
+	std::ifstream input = open_ifstream(account_file.c_str(), false);
+	std::string line;
+	while (std::getline(input, line)) {
+		if (line.rfind(prefix, 0) == 0) {
+			size_t password_end = line.find('|', prefix.size());
+			if (password_end != std::string::npos) {
+				const std::string saved_server = line.substr(password_end + 1);
+				if (saved_server == server)
+					exact_index = lines.size();
+				else if (saved_server.empty() && unscoped_index < 0)
+					unscoped_index = lines.size();
+			}
+		}
+		lines.push_back(line);
+	}
+
+	const std::string new_line = playername + "|" + password + "|" + server;
+	if (exact_index >= 0) {
+		lines[exact_index] = new_line;
+	} else if (unscoped_index >= 0) {
+		lines[unscoped_index] = new_line;
+	} else {
+		lines.push_back(new_line);
+	}
+
+	std::ostringstream output;
+	for (const std::string &saved_line : lines)
+		output << saved_line << "\n";
+	if (!fs::safeWriteToFile(account_file, output.str()))
+		errorstream << "Unable to save changed password to accounts.txt." << std::endl;
+}
+
+void Client::savePendingRegisteredAccount()
+{
+	if (!g_settings->getBool("account_manager.pending_register_save"))
+		return;
+	g_settings->setBool("account_manager.pending_register_save", false);
+
+	if (m_allow_login_or_register != ELoginRegister::Register)
+		return;
+
+	if (m_playername.find_first_of("|\r\n") != std::string::npos ||
+			m_login_password.find_first_of("|\r\n") != std::string::npos) {
+		warningstream << "Not saving registered account: unsupported character for accounts.txt."
+				<< std::endl;
+		return;
+	}
+
+	const std::string account_dir = porting::path_user + DIR_DELIM + "client";
+	const std::string account_file = account_dir + DIR_DELIM + "accounts.txt";
+	const std::string server = getAddressName() + ":" +
+			std::to_string(getServerAddress().getPort());
+	const std::string prefix = m_playername + "|";
+	std::vector<std::string> lines;
+	s32 exact_index = -1;
+	s32 unscoped_index = -1;
+
+	fs::CreateDir(account_dir);
+	std::ifstream input = open_ifstream(account_file.c_str(), false);
+	std::string line;
+	while (std::getline(input, line)) {
+		if (line.rfind(prefix, 0) == 0) {
+			size_t password_end = line.find('|', prefix.size());
+			if (password_end != std::string::npos) {
+				const std::string saved_server = line.substr(password_end + 1);
+				if (saved_server == server)
+					exact_index = lines.size();
+				else if (saved_server.empty() && unscoped_index < 0)
+					unscoped_index = lines.size();
+			}
+		}
+		lines.push_back(line);
+	}
+
+	const std::string new_line = m_playername + "|" + m_login_password + "|" + server;
+	if (exact_index >= 0) {
+		lines[exact_index] = new_line;
+	} else if (unscoped_index >= 0) {
+		lines[unscoped_index] = new_line;
+	} else {
+		lines.push_back(new_line);
+	}
+
+	std::ostringstream output;
+	for (const std::string &saved_line : lines)
+		output << saved_line << "\n";
+	if (!fs::safeWriteToFile(account_file, output.str()))
+		errorstream << "Unable to save registered account to accounts.txt." << std::endl;
 }
 
 

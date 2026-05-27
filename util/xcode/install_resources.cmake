@@ -23,11 +23,6 @@ execute_process(
 )
 execute_process(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
-	"$ENV{SOURCE_ROOT}/themes"
-	"${RESOURCES_DIR}/themes"
-)
-execute_process(
-	COMMAND ${CMAKE_COMMAND} -E copy_directory
 	"$ENV{SOURCE_ROOT}/builtin"
 	"${RESOURCES_DIR}/builtin"
 )
@@ -50,7 +45,7 @@ execute_process(
 	COMMAND ${CMAKE_COMMAND} -E make_directory
 	"${RESOURCES_DIR}/$ENV{PRODUCT_NAME}"
 )
-set(RESOURCE_CLOAKV4_FILES
+set(RESOURCE_LUNARCHY_FILES
 	"$ENV{SOURCE_ROOT}/README.md"
 	"$ENV{SOURCE_ROOT}/doc/client_lua_api.md"
 	"$ENV{SOURCE_ROOT}/doc/lua_api.md"
@@ -59,7 +54,7 @@ set(RESOURCE_CLOAKV4_FILES
 	"$ENV{SOURCE_ROOT}/doc/texture_packs.md"
 	"$ENV{SOURCE_ROOT}/doc/world_format.md"
 )
-foreach (file ${RESOURCE_CLOAKV4_FILES})
+foreach (file ${RESOURCE_LUNARCHY_FILES})
 	execute_process(
 		COMMAND ${CMAKE_COMMAND} -E copy
 		"${file}"

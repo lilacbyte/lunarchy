@@ -493,6 +493,24 @@ int ModApiUtil::l_safe_file_write(lua_State *L)
 	return 1;
 }
 
+// safe_file_read(path) -> content or nil
+int ModApiUtil::l_safe_file_read(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *path = luaL_checkstring(L, 1);
+
+	CHECK_SECURE_PATH(L, path, false);
+
+	std::string content;
+	if (!fs::ReadFile(path, content)) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushlstring(L, content.data(), content.size());
+	return 1;
+}
+
 // request_insecure_environment()
 int ModApiUtil::l_request_insecure_environment(lua_State *L)
 {
@@ -725,6 +743,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(mvdir);
 	API_FCT(get_dir_list);
 	API_FCT(safe_file_write);
+	API_FCT(safe_file_read);
 
 	API_FCT(request_insecure_environment);
 
@@ -762,8 +781,15 @@ void ModApiUtil::InitializeClient(lua_State *L, int top)
 
 	API_FCT(is_yes);
 
+	API_FCT(get_builtin_path);
+	API_FCT(get_user_path);
+
 	API_FCT(compress);
 	API_FCT(decompress);
+
+	API_FCT(mkdir);
+	API_FCT(safe_file_write);
+	API_FCT(safe_file_read);
 
 	API_FCT(encode_base64);
 	API_FCT(decode_base64);

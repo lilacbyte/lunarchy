@@ -153,6 +153,8 @@ void Client::handleCommand_AuthAccept(NetworkPacket* pkt)
 	resp_pkt << lang;
 	Send(&resp_pkt);
 
+	savePendingRegisteredAccount();
+
 	m_state = LC_Init;
 }
 
@@ -178,6 +180,7 @@ void Client::handleCommand_DenySudoMode(NetworkPacket* pkt)
 	pushToChatQueue(chatMessage);
 	// reset everything and be sad
 	deleteAuthData();
+	m_pending_account_password.clear();
 }
 
 void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
@@ -383,6 +386,18 @@ void Client::handleCommand_ChatMessage(NetworkPacket *pkt)
 	chatMessage->timestamp = static_cast<std::time_t>(timestamp);
 
 	chatMessage->type = (ChatMessageType) message_type;
+
+	if (chatMessage->type == CHATMESSAGE_TYPE_SYSTEM &&
+			chatMessage->message == L"Password change successful." &&
+			!m_pending_account_password.empty()) {
+		updateSavedAccountPassword(m_pending_account_password);
+		m_login_password = m_pending_account_password;
+		m_pending_account_password.clear();
+	} else if (chatMessage->type == CHATMESSAGE_TYPE_SYSTEM &&
+			(chatMessage->message == L"Password change failed or unavailable." ||
+			chatMessage->message == L"Changing to an empty password is not allowed.")) {
+		m_pending_account_password.clear();
+	}
 
 	// @TODO send this to CSM using ChatMessage object
 	if (modsLoaded() && m_script->on_receiving_message(

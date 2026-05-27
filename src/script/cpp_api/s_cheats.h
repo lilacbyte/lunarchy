@@ -84,6 +84,7 @@ public:
 	virtual ~ScriptApiCheats();
 	void init_cheats();
 	void init_cheat_settings();
+	void reload_cheat_settings();
 	void update_infotexts();
 	void toggle_cheat(ScriptApiCheatsCheat *cheat);
 	u32 get_cheat_state_revision() const { return m_cheat_state_revision; }

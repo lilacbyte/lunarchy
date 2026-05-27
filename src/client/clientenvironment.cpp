@@ -398,6 +398,11 @@ void ClientEnvironment::damageLocalPlayer(u16 damage, bool handle_hp)
 	LocalPlayer *lplayer = getLocalPlayer();
 	assert(lplayer);
 
+	if (damage > 0 && g_settings->getBool("freecam") &&
+			g_settings->getBool("freecam.disable_on_damage")) {
+		g_settings->setBool("freecam", false);
+	}
+
 	if (handle_hp) {
 		if (lplayer->hp > damage)
 			lplayer->hp -= damage;

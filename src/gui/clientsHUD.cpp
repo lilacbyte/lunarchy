@@ -1,24 +1,78 @@
 #include "gui/clientsHUD.h"
 
+#include "gui/moduleColor.h"
 #include "client/content_cao.h"
+#include "client/client.h"
 #include "client/localplayer.h"
+#include "client/playerstats.h"
 #include "util/string.h"
+#include <cctype>
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <sstream>
 
 namespace {
-static std::vector<std::wstring> buildClientLines(ClientEnvironment &env)
+static std::string getClientsMode()
+{
+	std::string mode = g_settings->exists("clients.mode") ? g_settings->get("clients.mode") : "both";
+	std::transform(mode.begin(), mode.end(), mode.begin(), [](unsigned char c) {
+		return static_cast<char>(std::tolower(c));
+	});
+	return mode;
+}
+
+static float getNearbyRange()
+{
+	return g_settings->getFloat("nearby_clients.range", 16.0f, 512.0f);
+}
+
+static bool getNearbyDistanceEnabled()
+{
+	if (g_settings->exists("clients.nearby_distance"))
+		return g_settings->getBool("clients.nearby_distance");
+	return g_settings->getBool("nearby_clients.distance");
+}
+
+static bool getNearbyHealthEnabled()
+{
+	if (g_settings->exists("clients.nearby_health"))
+		return g_settings->getBool("clients.nearby_health");
+	return g_settings->getBool("nearby_clients.health");
+}
+
+static void appendStats(std::wstringstream &line, const std::string &name)
+{
+	const auto stats = player_stats::getLine(name);
+	if (stats)
+		line << L" [" << *stats << L"]";
+}
+
+static std::vector<std::wstring> buildOnlineLines(ClientEnvironment &env)
 {
 	std::vector<std::wstring> lines;
-	const std::set<std::string> &names = env.getPlayerNames();
+	const std::set<std::string> *names = nullptr;
+	Client *client = env.getGameDef();
+	if (client)
+		names = &client->getConnectedPlayerNames();
+	if (!names)
+		names = &env.getPlayerNames();
 
 	std::wstringstream header;
-	header << L"client list (" << names.size() << L")";
+	header << L"online (" << names->size() << L")";
+	if (names->empty())
+		return lines;
+
 	lines.push_back(header.str());
 
-	for (const std::string &name : names)
-		lines.push_back(utf8_to_wide(name));
+	for (const std::string &name : *names) {
+		std::wstringstream line;
+		line << utf8_to_wide(name);
+		if (g_settings->getBool("luna_stats.enabled") &&
+				g_settings->getBool("luna_stats.client_list.online"))
+			appendStats(line, name);
+		lines.push_back(line.str());
+	}
 
 	return lines;
 }
@@ -29,18 +83,18 @@ static std::vector<std::wstring> buildNearbyLines(ClientEnvironment &env, float 
 		std::wstring text;
 		float distance;
 	};
+
 	std::vector<Entry> entries;
 	LocalPlayer *lp = env.getLocalPlayer();
 	if (!lp)
-		return {L"nearby (0)"};
+		return {};
 
 	const v3f origin = lp->getPosition();
 	std::vector<DistanceSortedActiveObject> objects;
 	env.getAllActiveObjects(origin, objects);
 
 	for (const auto &sortedObj : objects) {
-		auto *cao = sortedObj.obj;
-		auto *obj = dynamic_cast<GenericCAO *>(cao);
+		auto *obj = dynamic_cast<GenericCAO *>(sortedObj.obj);
 		if (!obj || !obj->isPlayer() || obj->isLocalPlayer())
 			continue;
 
@@ -50,9 +104,9 @@ static std::vector<std::wstring> buildNearbyLines(ClientEnvironment &env, float 
 
 		std::wstringstream line;
 		line << utf8_to_wide(obj->getName());
-		if (g_settings->getBool("nearby_clients.distance"))
-			line << L" [" << static_cast<int>(std::round(dist_blocks)) << L" blocks away]";
-		if (g_settings->getBool("nearby_clients.health")) {
+		if (getNearbyDistanceEnabled())
+			line << L" (" << static_cast<int>(std::round(dist_blocks)) << L"m away)";
+		if (getNearbyHealthEnabled()) {
 			const u16 hp = obj->getHp();
 			const u16 hp_max = obj->getProperties().hp_max;
 			if (hp_max > 0)
@@ -65,6 +119,9 @@ static std::vector<std::wstring> buildNearbyLines(ClientEnvironment &env, float 
 		const auto &a, const auto &b) { return a.distance < b.distance; });
 
 	std::vector<std::wstring> lines;
+	if (entries.empty())
+		return lines;
+
 	std::wstringstream header;
 	header << L"nearby (" << entries.size() << L")";
 	lines.push_back(header.str());
@@ -74,18 +131,34 @@ static std::vector<std::wstring> buildNearbyLines(ClientEnvironment &env, float 
 
 	return lines;
 }
+
+static void appendSection(std::vector<std::wstring> &lines, const std::vector<std::wstring> &section)
+{
+	if (section.empty())
+		return;
+
+	if (!lines.empty())
+		lines.emplace_back(L"");
+	lines.insert(lines.end(), section.begin(), section.end());
+}
 } // namespace
 
-clientsHUD::clientsHUD(const core::rect<s32> &rect) : CheatUIElement(rect) {}
+clientsHUD::clientsHUD(const core::rect<s32> &rect, Section section) :
+	CheatUIElement(rect),
+	m_section(section)
+{}
 
 std::vector<std::wstring> clientsHUD::buildLines(ClientEnvironment &env) const
 {
-	std::vector<std::wstring> lines = buildClientLines(env);
-	std::vector<std::wstring> nearby = buildNearbyLines(env, 128.0f);
-	if (nearby.size() > 1) {
-		lines.emplace_back(L"");
-		lines.insert(lines.end(), nearby.begin(), nearby.end());
-	}
+	const std::string mode = getClientsMode();
+	const float nearby_range = getNearbyRange();
+	std::vector<std::wstring> lines;
+
+	if (m_section == Section::Online && (mode == "online" || mode == "both"))
+		appendSection(lines, buildOnlineLines(env));
+	if (m_section == Section::Nearby && (mode == "nearby" || mode == "both"))
+		appendSection(lines, buildNearbyLines(env, nearby_range));
+
 	return lines;
 }
 
@@ -140,13 +213,26 @@ void clientsHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dt
 	}
 
 	const std::vector<std::wstring> lines = m_cached_lines;
-	core::rect<s32> draw_bounds = bounds;
-	if (draw_bounds.getWidth() <= 0 || draw_bounds.getHeight() <= 0)
-		draw_bounds = calculateBounds(driver, font, lines);
+	if (lines.empty() && !editing)
+		return;
 
-	const video::SColor outline_color(255, 0, 0, 0);
-	const video::SColor background_color(180, 25, 25, 25);
-	const video::SColor text_color(255, 255, 255, 255);
+	s32 max_width = 0;
+	s32 total_height = 0;
+	for (const auto &line : lines) {
+		const core::dimension2d<u32> dim = font->getDimension(line.c_str());
+		max_width = std::max(max_width, static_cast<s32>(dim.Width));
+		total_height += static_cast<s32>(dim.Height);
+	}
+	if (lines.empty()) {
+		const core::dimension2d<u32> dim = font->getDimension(L"clients");
+		max_width = dim.Width;
+		total_height = dim.Height;
+	}
+	const core::rect<s32> draw_bounds = fitModuleHudBounds(*this, max_width, total_height);
+
+	const video::SColor outline_color = readModuleBorderColor();
+	const video::SColor background_color = readModuleBackgroundColor();
+	const video::SColor text_color = readModuleTextColor();
 
 	const bool draw_background = editing || g_settings->getBool("clients.background");
 	if (draw_background) {
@@ -154,11 +240,12 @@ void clientsHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dt
 		driver->draw2DRectangleOutline(draw_bounds, outline_color, 2);
 	}
 
-	s32 y = draw_bounds.UpperLeftCorner.Y + 5;
+	const s32 padding = moduleHudPadding();
+	s32 y = draw_bounds.UpperLeftCorner.Y + padding;
 	for (const std::wstring &line : lines) {
 		const core::dimension2d<u32> dim_u32 = font->getDimension(line.c_str());
 		const core::dimension2d<s32> dim(dim_u32.Width, dim_u32.Height);
-		const s32 x = draw_bounds.UpperLeftCorner.X + 5;
+		const s32 x = draw_bounds.UpperLeftCorner.X + padding;
 		font->draw(line.c_str(), core::rect<s32>(x, y, x + dim.Width, y + dim.Height), text_color);
 		y += dim.Height;
 	}

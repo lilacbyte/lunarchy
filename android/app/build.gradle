@@ -95,7 +95,8 @@ task prepareAssets() {
 			def moPath = "${assetsFolder}/locale/${poFile.parentFile.name}/LC_MESSAGES/"
 			file(moPath).mkdirs()
 			exec {
-				commandLine 'msgfmt', '-o', "${moPath}/luanti.mo", poFile
+				// Native gettext keeps the existing catalog domain through the executable rename.
+				commandLine 'msgfmt', '-o', "${moPath}/cloakv4.mo", poFile
 			}
 		}
 

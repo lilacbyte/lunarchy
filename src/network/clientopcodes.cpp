@@ -9,7 +9,7 @@
 const static ToClientCommandHandler null_command_handler =
 	{"TOCLIENT_NULL", TOCLIENT_STATE_ALL, &Client::handleCommand_Null};
 
-const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
+extern const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 {
 	null_command_handler, // 0x00 (never use this)
 	null_command_handler, // 0x01
@@ -125,7 +125,7 @@ const static ServerCommandFactory null_command_factory = { nullptr, 0, false };
 	the same objects are *required* to be in the same channel.
 */
 
-const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
+extern const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_factory, // 0x00
 	null_command_factory, // 0x01

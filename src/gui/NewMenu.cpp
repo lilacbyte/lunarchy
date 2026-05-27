@@ -39,7 +39,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "porting.h"
 #include "filesys.h"
 #include <chrono>
+#include "client/localplayer.h"
 #include "client/color_theme.h"
+#include "gui/moduleColor.h"
+#include "util/string.h"
 #include <iomanip>
 #include <optional>
 #include <random>
@@ -120,6 +123,14 @@ static bool loadHudBounds(const std::string &primary_key, const std::string &leg
 
 static std::optional<video::SColor> readAccentColor()
 {
+	if (g_settings->getBool("hud.enabled")) {
+		video::SColor hud_color(255, 255, 255, 255);
+		if (parseColorString(g_settings->get("hud.accent_color"), hud_color, true, 0xff))
+			return hud_color;
+	}
+	if (g_settings->existsLocal("hud.enabled"))
+		return std::nullopt;
+
 	if (g_settings->existsLocal("hud_color")) {
 		if (!g_settings->getBool("hud_color"))
 			return std::nullopt;
@@ -141,9 +152,11 @@ static std::optional<video::SColor> readAccentColor()
 	if (g_settings->existsLocal("global_color") &&
 			parseColorString(g_settings->get("global_color"), color, true, 0xff))
 		return color;
-	if (parseColorString(g_settings->get("globalcolor"), color, true, 0xff))
+	if (g_settings->exists("globalcolor") &&
+			parseColorString(g_settings->get("globalcolor"), color, true, 0xff))
 		return color;
-	if (parseColorString(g_settings->get("global_color"), color, true, 0xff))
+	if (g_settings->exists("global_color") &&
+			parseColorString(g_settings->get("global_color"), color, true, 0xff))
 		return color;
 
 	std::optional<v3f> legacy;
@@ -168,6 +181,13 @@ static video::SColor colorForTextField(const std::string &setting_name, const vi
 		return color;
 
 	return fallback;
+}
+
+static void syncHudAccentFromTheme(const ColorTheme &theme)
+{
+	const std::string accent = encodeHexColorString(theme.primary);
+	g_settings->set("hud.accent_color", accent);
+	g_settings->setBool("hud.enabled", true);
 }
 
 static video::SColor shadeColor(const video::SColor &color, float factor)
@@ -208,8 +228,10 @@ static bool isColorTextSetting(const std::string &setting_id)
 {
 	return setting_id == "globalcolor" ||
 		setting_id == "global_color" ||
+		setting_id == "hud.accent_color" ||
 		setting_id == "hud_color" ||
 		setting_id == "hudcolor" ||
+		setting_id.find("_color") != std::string::npos ||
 		setting_id.find(".color") != std::string::npos;
 }
 
@@ -224,6 +246,38 @@ static bool isChatColorSetting(const ScriptApiCheatsCheatSetting *setting)
 	return setting != nullptr &&
 		setting->m_type == "text" &&
 		setting->m_setting == "chat_color";
+}
+
+static bool isBetterDropFilterSetting(const ScriptApiCheatsCheatSetting *setting)
+{
+	return setting != nullptr &&
+		setting->m_type == "text" &&
+		(setting->m_setting == "betterdrop_whitelist" ||
+			setting->m_setting == "betterdrop_antidrop" ||
+			setting->m_setting == "betterdrop_blacklist");
+}
+
+static bool isHudColorSetting(const ScriptApiCheatsCheatSetting *setting)
+{
+	return setting != nullptr &&
+		setting->m_type == "text" &&
+		(setting->m_setting == "hud.accent_color" ||
+			setting->m_setting == "hud.text_color" ||
+			setting->m_setting == "hud.background_color" ||
+			setting->m_setting == "hud.border_color" ||
+			setting->m_setting == "hand_view.color" ||
+			setting->m_setting == "chatplus_background_color" ||
+			setting->m_setting == "chatplus_border_color");
+}
+
+static bool isHudAccentColorSetting(const ScriptApiCheatsCheatSetting *setting)
+{
+	return setting != nullptr &&
+		setting->m_type == "text" &&
+		(setting->m_setting == "hud.accent_color" ||
+			setting->m_setting == "globalcolor" ||
+			setting->m_setting == "global_color" ||
+			setting->m_setting == "hudcolor");
 }
 
 static std::vector<std::string> splitChatColorStops(const std::string &value)
@@ -326,6 +380,31 @@ static std::string appendChatColorStop(const std::string &value)
 		return next_color;
 
 	return joinChatColorStops(stops) + "," + next_color;
+}
+
+static std::string appendUniqueCsvValue(const std::string &value, const std::string &next)
+{
+	if (next.empty())
+		return value;
+
+	std::vector<std::string> values;
+	for (const std::string &entry : str_split(value, ',')) {
+		const std::string trimmed = std::string(trim(entry));
+		if (trimmed.empty())
+			continue;
+		if (trimmed == next)
+			return value;
+		values.push_back(trimmed);
+	}
+	values.push_back(next);
+
+	std::ostringstream out;
+	for (size_t i = 0; i < values.size(); ++i) {
+		if (i > 0)
+			out << ",";
+		out << values[i];
+	}
+	return out.str();
 }
 
 static std::string clearChatColorStops()
@@ -467,6 +546,35 @@ static core::rect<s32> getColorValueRect(const core::rect<s32> &setting_rect, s3
 		setting_rect.LowerRightCorner.Y - setting_bar_padding);
 }
 
+static core::rect<s32> getHudColorSwatchRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width, bool include_sync = false)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const s32 left = setting_rect.UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width;
+	const s32 button_count = include_sync ? 2 : 1;
+	const s32 right = setting_rect.LowerRightCorner.X - setting_bar_padding -
+		(button_size * button_count) - (setting_bar_padding * button_count);
+	const s32 top = setting_rect.UpperLeftCorner.Y + category_height + setting_bar_padding;
+	return core::rect<s32>(left, top, std::max(left + 1, right), top + button_size);
+}
+
+static core::rect<s32> getHudColorRandomRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width, bool include_sync = false)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const core::rect<s32> swatch_rect = getHudColorSwatchRect(setting_rect, category_height, setting_bar_padding, setting_bar_width, include_sync);
+	const s32 left = swatch_rect.LowerRightCorner.X + setting_bar_padding;
+	const s32 top = swatch_rect.UpperLeftCorner.Y;
+	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
+static core::rect<s32> getHudColorSyncRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const core::rect<s32> random_rect = getHudColorRandomRect(setting_rect, category_height, setting_bar_padding, setting_bar_width, true);
+	const s32 left = random_rect.LowerRightCorner.X + setting_bar_padding;
+	const s32 top = random_rect.UpperLeftCorner.Y;
+	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
 static core::rect<s32> getChatColorSwatchRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
 {
 	const s32 button_size = category_height - (setting_bar_padding * 2);
@@ -483,6 +591,15 @@ static core::rect<s32> getChatColorPlusRect(const core::rect<s32> &setting_rect,
 	const s32 left = swatch_rect.LowerRightCorner.X + setting_bar_padding;
 	const s32 top = swatch_rect.UpperLeftCorner.Y;
 	return core::rect<s32>(left, top, left + button_size, top + button_size);
+}
+
+static core::rect<s32> getInlineSettingButtonRect(const core::rect<s32> &setting_rect,
+	s32 category_height, s32 setting_bar_padding)
+{
+	const s32 button_size = category_height - (setting_bar_padding * 2);
+	const s32 right = setting_rect.LowerRightCorner.X - setting_bar_padding;
+	const s32 top = setting_rect.UpperLeftCorner.Y + setting_bar_padding;
+	return core::rect<s32>(right - button_size, top, right, top + button_size);
 }
 
 static core::rect<s32> getChatColorClearRect(const core::rect<s32> &setting_rect, s32 category_height, s32 setting_bar_padding, s32 setting_bar_width)
@@ -568,6 +685,24 @@ static video::SColor colorFromSettingText(const std::string &stored, const video
 	return fallback;
 }
 
+static void syncHudColorTargets(const std::string &setting_id)
+{
+	const video::SColor parsed_color = colorFromSettingText(
+		g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
+	const std::string color = colorToHex(parsed_color);
+	std::ostringstream quickmenu_color;
+	quickmenu_color << "(" << static_cast<unsigned int>(parsed_color.getRed())
+		<< ", " << static_cast<unsigned int>(parsed_color.getGreen())
+		<< ", " << static_cast<unsigned int>(parsed_color.getBlue()) << ")";
+
+	g_settings->set("hud.text_color", color);
+	g_settings->set("hud.background_color", color);
+	g_settings->set("hud.border_color", color);
+	g_settings->set("chatplus_background_color", color);
+	g_settings->set("chatplus_border_color", color);
+	g_settings->set("cheat_menu_active_bg_color", quickmenu_color.str());
+}
+
 float NewMenu::getDeltaTime() {
     auto currentTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<float> deltaTime = currentTime - lastTime;
@@ -641,7 +776,8 @@ void NewMenu::commitColorSetting(size_t category_index, size_t cheat_index, size
 		cheatSettingTextLasts[category_index][cheat_index][setting_index] = wide_color;
 	}
 
-	if (setting_id == "globalcolor" ||
+	if (setting_id == "hud.accent_color" ||
+			setting_id == "globalcolor" ||
 			setting_id == "global_color" ||
 			setting_id == "hud_color" ||
 			setting_id == "hudcolor") {
@@ -1002,22 +1138,67 @@ void NewMenu::create()
         hudElements[1]->elementName = "coords";
 
         {
-            core::rect<s32> clients_bounds;
-            if (loadHudBounds("clients_hud", "clients", clients_bounds)) {
+            core::rect<s32> stats_bounds;
+            if (loadHudBounds("stats_hud", "stats", stats_bounds)) {
                 if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
-                    hudElements.push_back(new clientsHUD(core::rect<s32>(
-                        roundToGrid(clients_bounds.UpperLeftCorner.X),
-                        roundToGrid(clients_bounds.UpperLeftCorner.Y),
-                        roundToGrid(clients_bounds.LowerRightCorner.X),
-                        roundToGrid(clients_bounds.LowerRightCorner.Y))));
+                    hudElements.push_back(new StatsHUD(core::rect<s32>(
+                        roundToGrid(stats_bounds.UpperLeftCorner.X),
+                        roundToGrid(stats_bounds.UpperLeftCorner.Y),
+                        roundToGrid(stats_bounds.LowerRightCorner.X),
+                        roundToGrid(stats_bounds.LowerRightCorner.Y))));
                 } else {
-                    hudElements.push_back(new clientsHUD(clients_bounds));
+                    hudElements.push_back(new StatsHUD(stats_bounds));
                 }
             } else {
-                hudElements.push_back(new clientsHUD(core::rect<s32>(10, 10, 310, 180)));
+                hudElements.push_back(new StatsHUD(core::rect<s32>(10, 330, 250, 435)));
             }
         }
-        hudElements[2]->elementName = "clients_hud";
+        hudElements.back()->elementName = "stats_hud";
+
+        {
+            core::rect<s32> online_bounds;
+            if (loadHudBounds("online_hud", "clients_hud", online_bounds) ||
+                    loadHudBounds("clients", "", online_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new clientsHUD(core::rect<s32>(
+                        roundToGrid(online_bounds.UpperLeftCorner.X),
+                        roundToGrid(online_bounds.UpperLeftCorner.Y),
+                        roundToGrid(online_bounds.LowerRightCorner.X),
+                        roundToGrid(online_bounds.LowerRightCorner.Y)),
+                        clientsHUD::Section::Online));
+                } else {
+                    hudElements.push_back(new clientsHUD(online_bounds, clientsHUD::Section::Online));
+                }
+            } else {
+                hudElements.push_back(new clientsHUD(core::rect<s32>(10, 10, 310, 90), clientsHUD::Section::Online));
+            }
+        }
+        hudElements.back()->elementName = "online_hud";
+
+        {
+            core::rect<s32> nearby_bounds;
+            if (loadHudBounds("nearby_hud", "", nearby_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new clientsHUD(core::rect<s32>(
+                        roundToGrid(nearby_bounds.UpperLeftCorner.X),
+                        roundToGrid(nearby_bounds.UpperLeftCorner.Y),
+                        roundToGrid(nearby_bounds.LowerRightCorner.X),
+                        roundToGrid(nearby_bounds.LowerRightCorner.Y)),
+                        clientsHUD::Section::Nearby));
+                } else {
+                    hudElements.push_back(new clientsHUD(nearby_bounds, clientsHUD::Section::Nearby));
+                }
+            } else {
+                core::rect<s32> old_clients_bounds;
+                if (loadHudBounds("clients_hud", "clients", old_clients_bounds)) {
+                    old_clients_bounds += core::position2d<s32>(0, old_clients_bounds.getHeight() + 8);
+                    hudElements.push_back(new clientsHUD(old_clients_bounds, clientsHUD::Section::Nearby));
+                } else {
+                    hudElements.push_back(new clientsHUD(core::rect<s32>(10, 105, 310, 220), clientsHUD::Section::Nearby));
+                }
+            }
+        }
+        hudElements.back()->elementName = "nearby_hud";
 
         {
             core::rect<s32> ping_bounds;
@@ -1031,11 +1212,65 @@ void NewMenu::create()
                 } else {
                     hudElements.push_back(new pingHUD(m_client, ping_bounds));
                 }
+        } else {
+            hudElements.push_back(new pingHUD(m_client, core::rect<s32>(10, 150, 190, 190)));
+        }
+        }
+        hudElements.back()->elementName = "ping_hud";
+
+        {
+            core::rect<s32> fps_bounds;
+            if (loadHudBounds("fps_hud", "fps", fps_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new FpsHUD(core::rect<s32>(
+                        roundToGrid(fps_bounds.UpperLeftCorner.X),
+                        roundToGrid(fps_bounds.UpperLeftCorner.Y),
+                        roundToGrid(fps_bounds.LowerRightCorner.X),
+                        roundToGrid(fps_bounds.LowerRightCorner.Y))));
+                } else {
+                    hudElements.push_back(new FpsHUD(fps_bounds));
+                }
             } else {
-                hudElements.push_back(new pingHUD(m_client, core::rect<s32>(10, 150, 190, 190)));
+                hudElements.push_back(new FpsHUD(core::rect<s32>(10, 195, 140, 230)));
             }
         }
-        hudElements[3]->elementName = "ping_hud";
+        hudElements.back()->elementName = "fps_hud";
+
+        {
+            core::rect<s32> totems_bounds;
+            if (loadHudBounds("totems_hud", "totems", totems_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new TotemsHUD(m_client, core::rect<s32>(
+                        roundToGrid(totems_bounds.UpperLeftCorner.X),
+                        roundToGrid(totems_bounds.UpperLeftCorner.Y),
+                        roundToGrid(totems_bounds.LowerRightCorner.X),
+                        roundToGrid(totems_bounds.LowerRightCorner.Y))));
+                } else {
+                    hudElements.push_back(new TotemsHUD(m_client, totems_bounds));
+                }
+            } else {
+                hudElements.push_back(new TotemsHUD(m_client, core::rect<s32>(10, 235, 170, 270)));
+            }
+        }
+        hudElements.back()->elementName = "totems_hud";
+
+        {
+            core::rect<s32> waila_bounds;
+            if (loadHudBounds("waila_hud", "waila", waila_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new WailaHUD(m_client, core::rect<s32>(
+                        roundToGrid(waila_bounds.UpperLeftCorner.X),
+                        roundToGrid(waila_bounds.UpperLeftCorner.Y),
+                        roundToGrid(waila_bounds.LowerRightCorner.X),
+                        roundToGrid(waila_bounds.LowerRightCorner.Y))));
+                } else {
+                    hudElements.push_back(new WailaHUD(m_client, waila_bounds));
+                }
+            } else {
+                hudElements.push_back(new WailaHUD(m_client, core::rect<s32>(10, 275, 260, 325)));
+            }
+        }
+        hudElements.back()->elementName = "waila_hud";
 
         {
             core::rect<s32> cheathud_bounds;
@@ -1049,12 +1284,12 @@ void NewMenu::create()
                 } else {
                     hudElements.push_back(new CheatHUD(m_client, cheathud_bounds));
                 }
-            } else {
-                hudElements.push_back(new CheatHUD(m_client, core::rect<s32>(400, 400, 650, 520)));
-            }
+        } else {
+            hudElements.push_back(new CheatHUD(m_client, core::rect<s32>(400, 400, 650, 520)));
+        }
         }
 
-        hudElements[4]->elementName = "cheathud";
+        hudElements.back()->elementName = "cheathud";
 
         {
             core::rect<s32> equipment_bounds;
@@ -1073,26 +1308,26 @@ void NewMenu::create()
             }
         }
 
-        hudElements[5]->elementName = "equipment_hud";
+        hudElements.back()->elementName = "equipment_hud";
 
         {
-            core::rect<s32> welcome_bounds;
-            if (loadHudBounds("welcome_hud", "welcome", welcome_bounds)) {
+            core::rect<s32> chat_bounds;
+            if (loadHudBounds("chat_hud", "", chat_bounds)) {
                 if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
-                    hudElements.push_back(new WelcomeHUD(core::rect<s32>(
-                        roundToGrid(welcome_bounds.UpperLeftCorner.X),
-                        roundToGrid(welcome_bounds.UpperLeftCorner.Y),
-                        roundToGrid(welcome_bounds.LowerRightCorner.X),
-                        roundToGrid(welcome_bounds.LowerRightCorner.Y))));
+                    hudElements.push_back(new ChatHUD(core::rect<s32>(
+                        roundToGrid(chat_bounds.UpperLeftCorner.X),
+                        roundToGrid(chat_bounds.UpperLeftCorner.Y),
+                        roundToGrid(chat_bounds.LowerRightCorner.X),
+                        roundToGrid(chat_bounds.LowerRightCorner.Y))));
                 } else {
-                    hudElements.push_back(new WelcomeHUD(welcome_bounds));
+                    hudElements.push_back(new ChatHUD(chat_bounds));
                 }
             } else {
-                hudElements.push_back(new WelcomeHUD(core::rect<s32>(10, 200, 310, 250)));
+                hudElements.push_back(new ChatHUD(core::rect<s32>(10, 5, 460, 120)));
             }
         }
 
-        hudElements[6]->elementName = "welcome_hud";
+        hudElements.back()->elementName = "chat_hud";
         editHUDbuttonBounds = core::rect<s32>(
             roundToGrid(lastScreenSize.Width - ((category_height/2) * 9)),
             roundToGrid(lastScreenSize.Height - ((category_height/2) * 3)),
@@ -1168,6 +1403,7 @@ void NewMenu::create()
         cheatSettingPlusRects.resize(script->m_cheat_categories.size());
         cheatSettingClearRects.resize(script->m_cheat_categories.size());
         cheatSettingRandomRects.resize(script->m_cheat_categories.size());
+        cheatSettingSyncRects.resize(script->m_cheat_categories.size());
         cheatSettingTextFields.resize(script->m_cheat_categories.size());
         cheatSettingTextLasts.resize(script->m_cheat_categories.size());
         cheatSettingTextHovered.resize(script->m_cheat_categories.size());
@@ -1214,6 +1450,7 @@ void NewMenu::create()
             cheatSettingPlusRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingClearRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingRandomRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
+            cheatSettingSyncRects[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextFields[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextLasts[i].resize(script->m_cheat_categories[i]->m_cheats.size());
             cheatSettingTextHovered[i].resize(script->m_cheat_categories[i]->m_cheats.size());
@@ -1236,6 +1473,7 @@ void NewMenu::create()
                 cheatSettingPlusRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingClearRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingRandomRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
+                cheatSettingSyncRects[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextFields[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextLasts[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size());
                 cheatSettingTextHovered[i][c].resize(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings.size(), false);
@@ -1416,6 +1654,13 @@ s32 NewMenu::respaceMenu(size_t i)
                     } else if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "text") {
                         cheatSettingRects[i][c][s] = core::rect<s32>(cheat_setting_positions[i][c][s].X,                  cheat_setting_positions[i][c][s].Y, 
                                                                     cheat_setting_positions[i][c][s].X + category_width, cheat_setting_positions[i][c][s].Y + category_height * 4);
+                        if (isHudColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            cheatSettingRects[i][c][s].LowerRightCorner.Y =
+                                cheat_setting_positions[i][c][s].Y + category_height * 2;
+                        } else if (isBetterDropFilterSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            cheatSettingRects[i][c][s].LowerRightCorner.Y =
+                                cheat_setting_positions[i][c][s].Y + category_height * 3;
+                        }
                         if (isChatColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
                             cheatSettingColorRects[i][c][s] = getChatColorSwatchRect(
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
@@ -1428,10 +1673,32 @@ s32 NewMenu::respaceMenu(size_t i)
                             cheatSettingTextRects[i][c][s] = getChatColorTextRect(
                                 cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
                             cheatSettingTextFields[i][c][s]->setRelativePosition(cheatSettingTextRects[i][c][s]);
+                        } else if (isBetterDropFilterSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            cheatSettingPlusRects[i][c][s] = getInlineSettingButtonRect(
+                                cheatSettingRects[i][c][s], category_height, setting_bar_padding);
+                            cheatSettingTextFields[i][c][s]->setRelativePosition(core::rect<s32>(
+                                cheatSettingRects[i][c][s].UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width,
+                                cheatSettingRects[i][c][s].UpperLeftCorner.Y + category_height + setting_bar_padding,
+                                cheatSettingRects[i][c][s].LowerRightCorner.X - setting_bar_padding,
+                                cheatSettingRects[i][c][s].LowerRightCorner.Y - setting_bar_padding
+                            ));
                         } else if (isColorCheatSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
                             cheatSettingTextFields[i][c][s] = nullptr;
-                            cheatSettingTextRects[i][c][s] = getColorValueRect(
-                                cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            if (isHudColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                                const bool include_sync = isHudAccentColorSetting(
+                                    script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]);
+                                cheatSettingTextRects[i][c][s] = getHudColorSwatchRect(
+                                    cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width, include_sync);
+                                cheatSettingRandomRects[i][c][s] = getHudColorRandomRect(
+                                    cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width, include_sync);
+                                if (include_sync) {
+                                    cheatSettingSyncRects[i][c][s] = getHudColorSyncRect(
+                                        cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                                }
+                            } else {
+                                cheatSettingTextRects[i][c][s] = getColorValueRect(
+                                    cheatSettingRects[i][c][s], category_height, setting_bar_padding, setting_bar_width);
+                            }
                         } else {
                             cheatSettingTextFields[i][c][s]->setRelativePosition(core::rect<s32>(
                                 cheatSettingRects[i][c][s].UpperLeftCorner.X + (setting_bar_padding * 2) + setting_bar_width,
@@ -1527,8 +1794,10 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                             current_theme_name = g_settings->get("ColorTheme");
                             current_theme = theme_manager.GetThemeByName(current_theme_name);
                             setColorsFromTheme(current_theme);
+                            syncHudAccentFromTheme(current_theme);
                             applyAppearanceOverrides();
-                        } else if (setting_id == "globalcolor" ||
+                        } else if (setting_id == "hud.accent_color" ||
+                                setting_id == "globalcolor" ||
                                 setting_id == "global_color" ||
                                 setting_id == "hud_color" ||
                                 setting_id == "hudcolor") {
@@ -1570,6 +1839,8 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                     for (size_t c = 0; c < script->m_cheat_categories[i]->m_cheats.size(); ++c) {
                         if (cheatTextRects[i][c].isPointInside(core::vector2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
                             script->toggle_cheat(script->m_cheat_categories[i]->m_cheats[c]);
+                            if (script->m_cheat_categories[i]->m_cheats[c]->m_setting == "hud.enabled")
+                                applyAppearanceOverrides();
                             return true;
                         }
 
@@ -1641,6 +1912,85 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                                 selectingColorStopIndex = 0;
                                 return true;
                             }
+                        } else if (isBetterDropFilterSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            const core::rect<s32> plus_rect = cheatSettingPlusRects[i][c][s];
+                            const core::vector2d<s32> pointer(event.MouseInput.X, event.MouseInput.Y);
+                            if (plus_rect.isPointInside(pointer)) {
+                                std::string item_name;
+                                if (m_client) {
+                                    if (LocalPlayer *player = m_client->getEnv().getLocalPlayer()) {
+                                        ItemStack selected_item;
+                                        player->getWieldedItem(&selected_item, nullptr);
+                                        item_name = selected_item.name;
+                                    }
+                                }
+                                const std::string new_value = appendUniqueCsvValue(g_settings->get(setting_id), item_name);
+                                g_settings->set(setting_id, new_value);
+                                if (cheatSettingTextFields[i][c][s] != nullptr) {
+                                    const std::wstring wide_value = utf8_to_wide(new_value);
+                                    cheatSettingTextFields[i][c][s]->setText(wide_value.c_str());
+                                    cheatSettingTextLasts[i][c][s] = wide_value;
+                                }
+                                return true;
+                            }
+                        } else if (isHudColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            const core::vector2d<s32> pointer(event.MouseInput.X, event.MouseInput.Y);
+                            const core::rect<s32> color_rect = cheatSettingTextRects[i][c][s];
+                            const core::rect<s32> random_rect = cheatSettingRandomRects[i][c][s];
+                            const core::rect<s32> sync_rect = cheatSettingSyncRects[i][c][s];
+                            if (color_rect.isPointInside(pointer)) {
+                                selectingColorStopIndex = 0;
+                                if (isColorSelecting &&
+                                        selectingColorCategoryIndex == static_cast<int>(i) &&
+                                        selectingColorCheatIndex == static_cast<int>(c) &&
+                                        selectingColorSettingIndex == static_cast<int>(s)) {
+                                    isColorSelecting = false;
+                                    ignoreColorPickerMouseUp = false;
+                                    colorPickerAnchorValid = false;
+                                } else {
+                                    isColorSelecting = true;
+                                    ignoreColorPickerMouseUp = true;
+                                    selectingColorCategoryIndex = static_cast<int>(i);
+                                    selectingColorCheatIndex = static_cast<int>(c);
+                                    selectingColorSettingIndex = static_cast<int>(s);
+                                    colorPickerAnchor = core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y);
+                                    colorPickerAnchorValid = true;
+                                }
+                                return true;
+                            }
+                            if (random_rect.isPointInside(pointer)) {
+                                const std::string new_value = colorToHex(randomChatColor());
+                                g_settings->set(setting_id, new_value);
+                                applyAppearanceOverrides();
+                                return true;
+                            }
+                            if (isHudAccentColorSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]) &&
+                                    sync_rect.isPointInside(pointer)) {
+                                syncHudColorTargets(setting_id);
+                                return true;
+                            }
+                        } else if (isColorCheatSetting(script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s])) {
+                            const core::vector2d<s32> pointer(event.MouseInput.X, event.MouseInput.Y);
+                            if (cheatSettingTextRects[i][c][s].isPointInside(pointer)) {
+                                selectingColorStopIndex = 0;
+                                if (isColorSelecting &&
+                                        selectingColorCategoryIndex == static_cast<int>(i) &&
+                                        selectingColorCheatIndex == static_cast<int>(c) &&
+                                        selectingColorSettingIndex == static_cast<int>(s)) {
+                                    isColorSelecting = false;
+                                    ignoreColorPickerMouseUp = false;
+                                    colorPickerAnchorValid = false;
+                                } else {
+                                    isColorSelecting = true;
+                                    ignoreColorPickerMouseUp = true;
+                                    selectingColorCategoryIndex = static_cast<int>(i);
+                                    selectingColorCheatIndex = static_cast<int>(c);
+                                    selectingColorSettingIndex = static_cast<int>(s);
+                                    colorPickerAnchor = core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y);
+                                    colorPickerAnchorValid = true;
+                                }
+                                return true;
+                            }
                         }
                         if (cheatSettingTextRects[i][c][s].isPointInside(core::vector2d<s32>(event.MouseInput.X, event.MouseInput.Y))) {
                             if (script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_type == "selectionbox") {
@@ -1659,7 +2009,8 @@ bool NewMenu::OnEvent(const irr::SEvent& event)
                                     } else {
                                         script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->toggle();
                                         const std::string setting_id = script->m_cheat_categories[i]->m_cheats[c]->m_cheat_settings[s]->m_setting;
-                                        if (setting_id == "globalcolor" ||
+                                        if (setting_id == "hud.accent_color" ||
+                                                setting_id == "globalcolor" ||
                                                 setting_id == "global_color" ||
                                                 setting_id == "hud_color" ||
                                                 setting_id == "hudcolor") {
@@ -1943,6 +2294,10 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
                                                                             cheatSettingRects[i][cheat_index][s].UpperLeftCorner.Y, 
                                                                             cheatSettingRects[i][cheat_index][s].LowerRightCorner.X,
                                                                             cheatSettingRects[i][cheat_index][s].UpperLeftCorner.Y + category_height);
+                            if (isBetterDropFilterSetting(cheatSetting)) {
+                                settingTextRect.LowerRightCorner.X =
+                                    cheatSettingPlusRects[i][cheat_index][s].UpperLeftCorner.X - setting_bar_padding;
+                            }
 
                             s32 textX = settingTextRect.UpperLeftCorner.X + (settingTextRect.getWidth() - textSize.Width) / 2;
                             s32 textY = settingTextRect.UpperLeftCorner.Y + (settingTextRect.getHeight() - textSize.Height) / 2;
@@ -2173,6 +2528,68 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
                                         colorForTextField(cheatSetting->m_setting, current_theme.text)
                                     );
                                 }
+                            } else if (isBetterDropFilterSetting(cheatSetting)) {
+                                const core::rect<s32> plus_rect = cheatSettingPlusRects[i][cheat_index][s];
+                                driver->draw2DRectangle(current_theme.background_bottom, plus_rect);
+                                driver->draw2DRectangleOutline(plus_rect, current_theme.primary, 2);
+                                const std::wstring plus_wide = L"+";
+                                const core::dimension2d<u32> plus_size = cachedTextDimension(font, plus_wide);
+                                const s32 plus_x = plus_rect.UpperLeftCorner.X + (plus_rect.getWidth() - static_cast<s32>(plus_size.Width)) / 2;
+                                const s32 plus_y = plus_rect.UpperLeftCorner.Y + (plus_rect.getHeight() - static_cast<s32>(plus_size.Height)) / 2;
+                                font->draw(plus_wide.c_str(), core::rect<s32>(
+                                    plus_x, plus_y,
+                                    plus_x + static_cast<s32>(plus_size.Width),
+                                    plus_y + static_cast<s32>(plus_size.Height)),
+                                    current_theme.text);
+
+                                if (cheatSettingTextFields[i][cheat_index][s] != nullptr) {
+                                    std::wstring currentText = cheatSettingTextFields[i][cheat_index][s]->getText();
+                                    if (currentText != cheatSettingTextLasts[i][cheat_index][s]) {
+                                        const std::string new_value = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(cheatSettingTextFields[i][cheat_index][s]->getText());
+                                        g_settings->set(setting_id, new_value);
+                                        cheatSettingTextLasts[i][cheat_index][s] = cheatSettingTextFields[i][cheat_index][s]->getText();
+                                    }
+                                    cheatSettingTextFields[i][cheat_index][s]->setOverrideColor(
+                                        colorForTextField(cheatSetting->m_setting, current_theme.text)
+                                    );
+                                }
+                            } else if (isHudColorSetting(cheatSetting)) {
+                                const core::rect<s32> color_rect = cheatSettingTextRects[i][cheat_index][s];
+                                const core::rect<s32> random_rect = cheatSettingRandomRects[i][cheat_index][s];
+                                const core::rect<s32> sync_rect = cheatSettingSyncRects[i][cheat_index][s];
+                                const std::string value = g_settings->get(setting_id);
+                                const video::SColor swatch_color = colorFromSettingText(value, video::SColor(255, 255, 255, 255));
+
+                                driver->draw2DRectangle(current_theme.background_bottom, color_rect);
+                                driver->draw2DRectangle(swatch_color, color_rect);
+                                driver->draw2DRectangleOutline(color_rect, current_theme.primary, 2);
+
+                                driver->draw2DRectangle(current_theme.background_bottom, random_rect);
+                                driver->draw2DRectangleOutline(random_rect, current_theme.primary, 2);
+                                const std::wstring random_wide = L"R";
+                                const core::dimension2d<u32> random_size = cachedTextDimension(font, random_wide);
+                                const s32 random_x = random_rect.UpperLeftCorner.X + (random_rect.getWidth() - static_cast<s32>(random_size.Width)) / 2;
+                                const s32 random_y = random_rect.UpperLeftCorner.Y + (random_rect.getHeight() - static_cast<s32>(random_size.Height)) / 2;
+                                font->draw(random_wide.c_str(), core::rect<s32>(
+                                    random_x, random_y,
+                                    random_x + static_cast<s32>(random_size.Width),
+                                    random_y + static_cast<s32>(random_size.Height)),
+                                    current_theme.text);
+
+                                if (isHudAccentColorSetting(cheatSetting)) {
+                                    driver->draw2DRectangle(current_theme.background_bottom, sync_rect);
+                                    driver->draw2DRectangleOutline(sync_rect, current_theme.primary, 2);
+                                    const std::wstring sync_wide = L"S";
+                                    const core::dimension2d<u32> sync_size = cachedTextDimension(font, sync_wide);
+                                    const s32 sync_x = sync_rect.UpperLeftCorner.X + (sync_rect.getWidth() - static_cast<s32>(sync_size.Width)) / 2;
+                                    const s32 sync_y = sync_rect.UpperLeftCorner.Y + (sync_rect.getHeight() - static_cast<s32>(sync_size.Height)) / 2;
+                                    font->draw(sync_wide.c_str(), core::rect<s32>(
+                                        sync_x, sync_y,
+                                        sync_x + static_cast<s32>(sync_size.Width),
+                                        sync_y + static_cast<s32>(sync_size.Height)),
+                                        current_theme.text);
+                                }
+
                             } else if (isColorCheatSetting(cheatSetting)) {
                                 const core::rect<s32> color_rect = cheatSettingTextRects[i][cheat_index][s];
                                 const video::SColor swatch_color = colorFromSettingText(g_settings->get(setting_id), video::SColor(255, 255, 255, 255));
@@ -2314,8 +2731,14 @@ void NewMenu::drawHints(video::IVideoDriver* driver, gui::IGUIFont* font, const 
                backgroundY = 0;
 
                 if (!wCheatDes.empty()) {
-                    driver->draw2DRectangle(current_theme.secondary_muted, core::rect<s32>(backgroundX, backgroundY, backgroundX + backgroundWidth, backgroundY + backgroundHeight));
-                    driver->draw2DRectangleOutline(core::rect<s32>(backgroundX, backgroundY, backgroundX + backgroundWidth, backgroundY + backgroundHeight), current_theme.secondary, 2);
+                    const core::rect<s32> tooltip_rect(backgroundX, backgroundY,
+                        backgroundX + backgroundWidth, backgroundY + backgroundHeight);
+                    const bool hud_style = g_settings->getBool("hud.enabled") &&
+                        g_settings->getBool("hud.tooltips_theme");
+                    driver->draw2DRectangle(hud_style ? readModuleBackgroundColor() :
+                        current_theme.secondary_muted, tooltip_rect);
+                    driver->draw2DRectangleOutline(tooltip_rect, hud_style ?
+                        readModuleBorderColor() : current_theme.secondary, 2);
                 }
 
                 // Text should be inside the padded area
@@ -2339,8 +2762,6 @@ void NewMenu::draw()
         return;
     }
 
-    GET_SCRIPT_POINTER
-
     float dtime = getDeltaTime();
 
     video::IVideoDriver* driver = Environment->getVideoDriver();
@@ -2361,6 +2782,8 @@ void NewMenu::draw()
     }
     
     if (m_is_open) {
+        GET_SCRIPT_POINTER
+
         if (isEditing) {
             for (auto element : hudElements) {
                 element->draw(driver, font, dtime, m_client->getEnv(), true);

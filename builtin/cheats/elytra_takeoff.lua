@@ -143,6 +143,6 @@ core.register_globalstep(function(dtime)
 	jump_state.pressed = jumping
 end)
 
-core.register_cheat("ElytraTakeoff", "Movement", "elytra_takeoff")
-core.register_cheat_description("ElytraTakeoff", "Movement", "elytra_takeoff",
+core.register_cheat("elytratakeoff", "Movement", "elytra_takeoff")
+core.register_cheat_description("elytratakeoff", "Movement", "elytra_takeoff",
 	"Double-jump while holding a firework rocket to equip an elytra and launch.")

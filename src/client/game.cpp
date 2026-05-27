@@ -4,6 +4,7 @@
 
 #include "game.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include "client/renderingengine.h"
@@ -54,6 +55,7 @@
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
+#include "util/string.h"
 #include "irr_ptr.h"
 #include "version.h"
 #include "script/scripting_client.h"
@@ -69,6 +71,56 @@
 //MARKMARKMARK1
 
 //MARKMARKMARK2
+static bool commaListContains(const std::string &list, const std::string &needle)
+{
+	if (needle.empty())
+		return false;
+
+	for (const std::string &entry : str_split(list, ',')) {
+		if (trim(entry) == needle)
+			return true;
+	}
+	return false;
+}
+
+static std::string getServerKey(Client *client)
+{
+	if (!client)
+		return "";
+
+	return client->getAddressName() + ":" +
+		toPaddedString(client->getServerAddress().getPort());
+}
+
+static bool toggleServerPlayerList(const std::string &setting, const std::string &server_key,
+		const std::string &name, std::string *message)
+{
+	if (server_key.empty() || name.empty())
+		return false;
+
+	Json::Value data = {};
+	try {
+		data = g_settings->getJson(setting);
+	} catch (const std::exception &) {
+		g_settings->set(setting, "{}");
+	}
+	std::string current = data[server_key].isString() ? data[server_key].asString() : "";
+	std::vector<std::string> list = current.empty() ? std::vector<std::string>() : str_split(current, ',');
+	const auto it = std::find(list.begin(), list.end(), name);
+	const bool was_present = it != list.end();
+	if (it != list.end()) {
+		list.erase(it);
+	} else {
+		list.push_back(name);
+	}
+	data[server_key] = str_join(list, ",");
+	g_settings->setJson(setting, data);
+	if (message)
+		*message = std::string(was_present ? "Removed " : "Added ") + name +
+			(was_present ? " from the friend list." : " to the friend list.");
+	return true;
+}
+
 Game::Game() :
 	m_chat_log_buf(g_logger),
 	m_game_ui(new GameUI())
@@ -1405,11 +1457,23 @@ void Game::processItemSelection(u16 *new_playeritem)
 
 void Game::dropSelectedItem(bool single_item)
 {
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+	if (!player)
+		return;
+
+	ItemStack selected_item;
+	player->getWieldedItem(&selected_item, nullptr);
+	if (g_settings->getBool("betterdrop") &&
+			commaListContains(g_settings->get("betterdrop_antidrop"), selected_item.name))
+		return;
+
 	IDropAction *a = new IDropAction();
 	a->count = single_item ? 1 : 0;
+	if (g_settings->getBool("betterdrop"))
+		a->drop_distance = g_settings->getFloat("betterdrop_distance");
 	a->from_inv.setCurrentPlayer();
 	a->from_list = "main";
-	a->from_i = client->getEnv().getLocalPlayer()->getWieldIndex();
+	a->from_i = player->getWieldIndex();
 	client->inventoryAction(a);
 }
 
@@ -2272,32 +2336,7 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 	// Clear the old textures out in case we switch rendering type.
 	sky->clearSkyboxTextures();
 	// Handle according to type
-	if (g_settings->getBool("force_custom_skybox"))
-		{
-			// Disable the dyanmic mesh skybox:
-			sky->setVisible(false);
-			// Set fog colors:
-			sky->setFallbackBgColor(event->set_sky->bgcolor);
-			// Set sunrise and sunset fog tinting:
-			sky->setHorizonTint(
-				event->set_sky->fog_sun_tint,
-				event->set_sky->fog_moon_tint,
-				event->set_sky->fog_tint_type
-			);
-
-			sky->setCloudsEnabled(false);
-
-			
-			for (int i = 0; i < 6; i++)
-				sky->addTextureToSkybox(event->set_sky->textures[i], i, texture_src);
-
-			
-			delete event->set_sky;
-			return;
-		}
-	else
-	{
-		if (event->set_sky->type == "regular") {
+	if (event->set_sky->type == "regular") {
 			// Shows the mesh skybox
 			sky->setVisible(true);
 			// Update mesh based skybox colours if applicable.
@@ -2335,8 +2374,7 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 				event->set_sky->bgcolor,
 				"custom"
 				);
-			}
-	}
+		}
 
 	// Orbit Tilt:
 	sky->setBodyOrbitTilt(event->set_sky->body_orbit_tilt);
@@ -2633,6 +2671,9 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 			selected_def.pointabilities,
 			!runData.btn_down_for_dig,
 			camera_offset);
+	const f32 reach_world = d * BS;
+	hud->setNodeHighlightInReach(pointed.type == POINTEDTHING_NODE &&
+			pointed.distanceSq <= reach_world * reach_world);
 
 	if (pointed != runData.pointed_old)
 		infostream << "Pointing at " << pointed.dump() << std::endl;
@@ -3157,6 +3198,17 @@ void Game::handlePointingAtObject(const PointedThing &pointed, const ItemStack &
 
 	m_game_ui->setInfoText(infotext);
 
+	if (g_settings->getBool("friends.middle_click") && wasKeyPressed(KeyType::FRIEND_TOGGLE)) {
+		GenericCAO *object = client->getEnv().getGenericCAO(pointed.object_id);
+		if (object && object->isPlayer() && !object->isLocalPlayer()) {
+			std::string status;
+			if (toggleServerPlayerList("friends", getServerKey(client), object->getName(), &status)) {
+				m_game_ui->showStatusText(utf8_to_wide(status));
+				return;
+			}
+		}
+	}
+
 	if (isKeyDown(KeyType::DIG) || g_settings->getBool("autohit") || (hud->pointing_at_object = true && g_settings->getBool("tbot"))) {
 		bool do_punch = false;
 		bool do_punch_damage = false;
@@ -3224,8 +3276,11 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 	} else {
 		runData.dig_time_complete = params.time;
 
-		client->getParticleManager()->addNodeParticle(client,
-				player, nodepos, n, features);
+		if (!g_settings->getBool("lag_optimizer") ||
+				!g_settings->getBool("lag_optimizer.no_break_particles")) {
+			client->getParticleManager()->addNodeParticle(client,
+					player, nodepos, n, features);
+		}
 	}
 
 	if (g_settings->getBool("fastdig")) {
@@ -3317,8 +3372,11 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 
 		client->interact(INTERACT_DIGGING_COMPLETED, pointed);
 
-		client->getParticleManager()->addDiggingParticles(client,
-			player, nodepos, n, features);
+		if (!g_settings->getBool("lag_optimizer") ||
+				!g_settings->getBool("lag_optimizer.no_break_particles")) {
+			client->getParticleManager()->addDiggingParticles(client,
+				player, nodepos, n, features);
+		}
 
 		// Send event to trigger sound
 		client->getEventManager()->put(new NodeDugEvent(nodepos, n));

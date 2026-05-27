@@ -16,7 +16,7 @@
 #endif
 
 #ifdef __MINGW32__
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "luanti.exe.manifest"
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "lunarchy.exe.manifest"
 #endif
 
 LANGUAGE 0, SUBLANG_NEUTRAL
@@ -62,4 +62,3 @@ BEGIN
     VALUE "Translation", 0x409, 1200
 END
 END
-

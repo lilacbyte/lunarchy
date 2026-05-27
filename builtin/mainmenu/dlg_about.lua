@@ -161,7 +161,7 @@ local function get_formspec(dlgview, name, tabdata)
 	}
 
 	table.insert_all(hypertext, {
-		"<heading>", fgettext_ne("Team Acedia"), "</heading>\n",
+		"<heading>", fgettext_ne("Client Developers"), "</heading>\n",
 	})
 	prepare_credits(hypertext, client_core_developers)
 

@@ -227,19 +227,6 @@ void ModApiHttp::Initialize(lua_State *L, int top)
 #endif
 }
 
-void ModApiHttp::InitializeClientSide(lua_State *L, int top)
-{
-#if USE_CURL
-	API_FCT(get_http_api);
-
-#else
-
-	// Define this function anyway so builtin can call it without checking
-	API_FCT(set_http_api_lua);
-
-#endif
-}
-
 void ModApiHttp::InitializeAsync(lua_State *L, int top)
 {
 #if USE_CURL

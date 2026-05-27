@@ -101,6 +101,10 @@ local function find_selected_server()
 	end
 end
 
+local function account_label(account)
+	return account.username
+end
+
 local function account_list_text()
 	local accounts = account_manager and account_manager.get_accounts and account_manager.get_accounts() or {}
 	local names = {}
@@ -108,13 +112,18 @@ local function account_list_text()
 		return fgettext("No accounts saved")
 	end
 	for i, account in ipairs(accounts) do
-		if account.server and account.server ~= "" then
-			names[i] = account.username .. " @ " .. account.server
-		else
-			names[i] = account.username
-		end
+		names[i] = core.formspec_escape(account_label(account))
 	end
 	return table.concat(names, ",")
+end
+
+local function get_selected_online_account()
+	local accounts = account_manager and account_manager.get_accounts and account_manager.get_accounts() or {}
+	local index = tonumber(tabdata.selected_account_index)
+	if not index and account_manager and account_manager.get_selected_index then
+		index = account_manager.get_selected_index()
+	end
+	return accounts[index or 1]
 end
 
 local function get_formspec(tabview, name, tabdata_etc)
@@ -125,26 +134,27 @@ local function get_formspec(tabview, name, tabdata_etc)
 	if not tabdata.search_for then
 		tabdata.search_for = ""
 	end
-
 	local profile_names = get_profile_names()
 	local dropdown_options = table.concat(profile_names, ",")
 	local accounts = account_manager and account_manager.get_accounts and account_manager.get_accounts() or {}
-	local selected_account_index = account_manager and account_manager.get_selected_index and
-		(account_manager.get_selected_index() or 1) or 1
-	if #accounts == 0 then
-		selected_account_index = 1
+	local selected_account_index = tonumber(tabdata.selected_account_index) or
+		(account_manager and account_manager.get_selected_index and
+		(account_manager.get_selected_index() or 1) or 1)
+	local selected_account = accounts[selected_account_index]
+	local selected_account_server = selected_account and selected_account.server or ""
+	if selected_account_server == "" then
+		selected_account_server = fgettext("None")
 	end
+	local manual_login = tabdata.manual_login == true
+	local mode_button = manual_login and fgettext("Accounts") or fgettext("Manual")
 
 	local selected_index = tonumber(core.settings:get("selected_profile"))
-	local announce_join = tostring(core.settings:get_bool("announce_join"))
 	local retval =
 		-- Main container and back
 		"size[16.5,9.1,true]" .. "field[0.54,0.54;6,0.75;te_search;;" .. core.formspec_escape(tabdata.search_for) .. "]" ..
 		"button[0.25,8.4;4.25,0.8;back;" .. fgettext("Back") .. "]" ..
 		
 		-- announce join checkbox
-		--"checkbox[0.25,7.43;announce_join;Show other Lunarchy users you joined;" .. announce_join .. "]" .. 
-		--"tooltip[announce_join;Tell the TeamAcedia server you connected, only works when signed in.]" ..
 
 		-- Personality profile selector
 		"dropdown[4.58,8.4;4.25,0.8;profile_dropdown;" ..
@@ -175,18 +185,34 @@ local function get_formspec(tabview, name, tabdata_etc)
 
 		-- Description Background
 		"label[0.2,1.4;" .. fgettext("Server Description") .. "]" ..
-		"box[0.25,2.1;7.15,4.7;#999999]"..
+		"box[0.25,2.1;7.15,4.1;#999999]"
 
-		-- Account selector
-		"container[0,7.18]" ..
-		"label[0.25,0.15;" .. fgettext("Account") .. ":]" ..
-		"container[1.55,0.02]" ..
-		"dropdown[0,0;5.15,0.8;account_list;" .. account_list_text() .. ";" .. selected_account_index .. ";true]" ..
-		"container_end[]" ..
-		"container_end[]" ..
+	if manual_login then
+		retval = retval ..
+			"container[0.55,6.2]" ..
+			"box[0,0;6.95,1.8;#11111188]" ..
+			"label[0.25,0.08;" .. fgettext("Name") .. ":]" ..
+			"label[2.55,0.08;" .. fgettext("Password") .. ":]" ..
+			"field[0.25,0.88;2.15,0.7;te_name;;" ..
+				core.formspec_escape(tabdata.manual_name or core.settings:get("name") or "") .. "]" ..
+			"pwdfield[2.55,0.88;2.75,0.7;te_pwd;]" ..
+			"button[4.95,0.46;1.8,0.7;account_mode_toggle;" .. mode_button .. "]" ..
+			"container_end[]"
+	else
+		retval = retval ..
+			"container[0.55,6.18]" ..
+			"box[0,0;6.95,1.86;#11111188]" ..
+			"label[0.25,0.1;" .. fgettext("Account") .. ":]" ..
+			"button[4.95,0.02;1.8,0.62;account_mode_toggle;" .. mode_button .. "]" ..
+			"dropdown[0.25,0.72;3.85,0.7;account_list;" .. account_list_text() .. ";" .. selected_account_index .. ";true]" ..
+			"button[4.2,0.72;2.15,0.7;account_set_default;" .. fgettext("Set Default") .. "]" ..
+			"label[0.25,1.5;" .. fgettext("Server") .. ": " ..
+				core.formspec_escape(selected_account_server) .. "]" ..
+			"container_end[]"
+	end
 
-		-- Connect
-		"button[4,8.4;3.8,0.8;btn_mp_login;" .. fgettext("Login") .. "]"
+	-- Connect
+	retval = retval .. "button[4,8.4;3.8,0.8;btn_mp_login;" .. fgettext("Login") .. "]"
 
 	if core.settings:get_bool("enable_split_login_register") then
 		retval = retval .. "button[0.0,8.4;3.8,0.8;btn_mp_register;" .. fgettext("Register") .. "]"
@@ -196,7 +222,7 @@ local function get_formspec(tabview, name, tabdata_etc)
 
 	if selected_server then
 		if gamedata.serverdescription then
-			retval = retval .. "textarea[0.6,2.17;7.2,5.3;;;" ..
+			retval = retval .. "textarea[0.6,2.17;7.2,4.35;;;" ..
 				core.formspec_escape(gamedata.serverdescription) .. "]"
 		end
 
@@ -490,6 +516,15 @@ local function search_server_list(input, tabdata)
 end
 
 local function main_button_handler(tabview, fields, name, tabdata_etc)
+	if tabdata.manual_login then
+		if fields.te_name ~= nil then
+			tabdata.manual_name = fields.te_name
+			core.settings:set("name", fields.te_name)
+		end
+		if fields.te_pwd ~= nil then
+			tabdata.manual_password = fields.te_pwd
+		end
+	end
 
 	if fields.profile_dropdown then
 		local selected_index = tonumber(fields.profile_dropdown)
@@ -526,11 +561,26 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 		end
 	end
 
+	if fields.account_mode_toggle then
+		tabdata.manual_login = not tabdata.manual_login
+		tabdata.manual_password = ""
+		return true
+	end
+
 	if fields.account_list then
 		local selected = tonumber(fields.account_list)
-		if selected and account_manager and account_manager.select_index then
+		if selected and selected ~= tonumber(tabdata.selected_account_index) then
+			tabdata.selected_account_index = selected
+			return true
+		end
+	end
+
+	if fields.account_set_default and account_manager and account_manager.select_index then
+		local selected = tonumber(tabdata.selected_account_index)
+		if selected then
 			account_manager.select_index(selected)
 		end
+		return true
 	end
 
 	if fields.servers then
@@ -546,12 +596,15 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 
 				gamedata.address    = server.address
 				gamedata.port       = server.port
-				gamedata.playername = (account_manager and account_manager.get_selected_account and
-					(account_manager.get_selected_account() and account_manager.get_selected_account().username or "")) or ""
+				local selected_account = get_selected_online_account()
+				gamedata.playername = tabdata.manual_login and
+					(tabdata.manual_name or "") or
+					(selected_account and selected_account.username or "")
 				gamedata.selected_world = 0
 
-				local selected_account = account_manager and account_manager.get_selected_account and account_manager.get_selected_account()
-				gamedata.password = selected_account and selected_account.password or ""
+				gamedata.password = tabdata.manual_login and
+					(tabdata.manual_password or "") or
+					(selected_account and selected_account.password or "")
 
 				gamedata.servername        = server.name
 				gamedata.serverdescription = server.description
@@ -636,22 +689,24 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 
 	if (fields.btn_mp_login or fields.key_enter) and host_filled then
 		core.settings:set("mainmenu_last_page", "online")
-		local selected_account = account_manager and account_manager.get_selected_account and account_manager.get_selected_account()
-		if not selected_account then
-			gamedata.errormessage = fgettext("Select an account first.")
-			return true
-		end
-		if not selected_account.password or selected_account.password == "" then
-			gamedata.errormessage = fgettext("Password is required.")
-			return true
+		local selected_account = get_selected_online_account()
+		if not tabdata.manual_login then
+			if not selected_account then
+				gamedata.errormessage = fgettext("Select an account first.")
+				return true
+			end
+			if not selected_account.password or selected_account.password == "" then
+				gamedata.errormessage = fgettext("Password is required.")
+				return true
+			end
 		end
 		local server_key = tostring(fields.te_address or "") .. ":" .. tostring(te_port_number or "")
-		if selected_account.server and selected_account.server ~= "" and selected_account.server ~= server_key then
+		if not tabdata.manual_login and selected_account.server and selected_account.server ~= "" and selected_account.server ~= server_key then
 			gamedata.errormessage = fgettext("Access denied. Reason: Incorrect server for the account")
 			return true
 		end
-		gamedata.playername = selected_account.username or ""
-		gamedata.password   = selected_account.password
+		gamedata.playername = tabdata.manual_login and (fields.te_name or tabdata.manual_name or "") or (selected_account.username or "")
+		gamedata.password   = tabdata.manual_login and (fields.te_pwd or tabdata.manual_password or "") or selected_account.password
 		gamedata.address    = fields.te_address
 		gamedata.port       = te_port_number
 
@@ -712,9 +767,6 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 			return true
 		end
 
-	if fields.announce_join then
-		core.settings:set("announce_join", fields.announce_join)
-	end
 
 	return false
 end
@@ -730,6 +782,11 @@ function create_online_dlg()
 	mm_game_theme.set_engine()
 	serverlistmgr.sync()
 	core.settings:set("mainmenu_last_page", "online")
+	tabdata.manual_login = false
+	tabdata.manual_name = core.settings:get("name") or ""
+	tabdata.manual_password = ""
+	tabdata.selected_account_index = account_manager and account_manager.get_selected_index and
+		(account_manager.get_selected_index() or 1) or 1
 	local retval = dialog_create("online",
 					get_formspec,
 					main_button_handler,

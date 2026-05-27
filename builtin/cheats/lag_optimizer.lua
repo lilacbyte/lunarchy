@@ -1,20 +1,77 @@
 local lag_optimizer_state = {
-	old_inventory_items_animations = nil,
-	old_no_item_spin = nil,
 	was_enabled = nil,
-	last_no_item_spin = nil,
-	last_no_inventory_animations = nil,
-	last_no_hand_animation = nil,
+	saved = {},
 }
 
-core.register_cheat_description("LagOptimizer", "Client", "lag_optimizer",
-	"Reduce visual lag, first-person motion, inventory animations, and item motion")
-core.register_cheat_with_infotext("LagOptimizer", "Client", "lag_optimizer", "")
+local forced_settings = {
+	{ option = "lag_optimizer.no_inventory_animations", target = "inventory_items_animations", value = false },
+	{ option = "lag_optimizer.no_particles", target = "norender.particles", value = true },
+	{ option = "lag_optimizer.no_clouds", target = "no_clouds", value = true },
+	{ option = "lag_optimizer.no_fog", target = "no_fog", value = true },
+	{ option = "lag_optimizer.no_view_bobbing", target = "nobob", value = true },
+	{ option = "lag_optimizer.no_water_animation", target = "enable_waving_water", value = false },
+	{ option = "lag_optimizer.clearer_water", target = "translucent_liquids", value = true },
+	{ option = "lag_optimizer.low_fx", target = "enable_post_processing", value = false },
+	{ option = "lag_optimizer.low_fx", target = "enable_bloom", value = false },
+	{ option = "lag_optimizer.low_fx", target = "enable_volumetric_lighting", value = false },
+	{ option = "lag_optimizer.low_fx", target = "enable_auto_exposure", value = false },
+	{ option = "lag_optimizer.no_minimap", target = "enable_minimap", value = false },
+}
+
+local function save_target(setting)
+	if lag_optimizer_state.saved[setting] == nil then
+		lag_optimizer_state.saved[setting] = core.settings:get_bool(setting)
+	end
+end
+
+local function restore_target(setting)
+	local old_value = lag_optimizer_state.saved[setting]
+	if old_value ~= nil then
+		core.settings:set_bool(setting, old_value)
+		lag_optimizer_state.saved[setting] = nil
+	end
+end
+
+local function restore_all_targets()
+	for setting, old_value in pairs(lag_optimizer_state.saved) do
+		core.settings:set_bool(setting, old_value)
+		lag_optimizer_state.saved[setting] = nil
+	end
+end
+
+local function apply_forced_settings()
+	for _, entry in ipairs(forced_settings) do
+		save_target(entry.target)
+		if core.settings:get_bool(entry.option) then
+			core.settings:set_bool(entry.target, entry.value)
+		else
+			restore_target(entry.target)
+		end
+	end
+end
+
+core.register_cheat_description("lagoptimizer", "Client", "lag_optimizer",
+	"Reduce visual lag, particles, clouds, post effects, first-person motion, inventory animations, and item motion")
+core.register_cheat_with_infotext("lagoptimizer", "Client", "lag_optimizer", "")
 core.register_cheat_setting("No Inventory Animations", "Client", "lag_optimizer",
 	"lag_optimizer.no_inventory_animations", {type="bool"})
 core.register_cheat_setting("No Item Spin", "Client", "lag_optimizer", "lag_optimizer.no_item_spin", {type="bool"})
 core.register_cheat_setting("No Hand Animation", "Client", "lag_optimizer",
 	"lag_optimizer.no_hand_animation", {type="bool"})
+core.register_cheat_setting("No Particles", "Client", "lag_optimizer", "lag_optimizer.no_particles", {type="bool"})
+core.register_cheat_setting("No Ground Items", "Client", "lag_optimizer", "lag_optimizer.no_ground_items", {type="bool"})
+core.register_cheat_setting("No Clouds", "Client", "lag_optimizer", "lag_optimizer.no_clouds", {type="bool"})
+core.register_cheat_setting("No Fog", "Client", "lag_optimizer", "lag_optimizer.no_fog", {type="bool"})
+core.register_cheat_setting("No View Bob", "Client", "lag_optimizer", "lag_optimizer.no_view_bobbing", {type="bool"})
+core.register_cheat_setting("No Break Particles", "Client", "lag_optimizer", "lag_optimizer.no_break_particles", {type="bool"})
+core.register_cheat_setting("No Water Animation", "Client", "lag_optimizer", "lag_optimizer.no_water_animation", {type="bool"})
+core.register_cheat_setting("No Lava Animation", "Client", "lag_optimizer", "lag_optimizer.no_lava_animation", {type="bool"})
+core.register_cheat_setting("Clearer Water", "Client", "lag_optimizer", "lag_optimizer.clearer_water", {type="bool"})
+core.register_cheat_setting("Low FX", "Client", "lag_optimizer", "lag_optimizer.low_fx", {type="bool"})
+core.register_cheat_setting("No Minimap", "Client", "lag_optimizer", "lag_optimizer.no_minimap", {type="bool"})
+core.register_cheat_setting("No Achievement Overlay", "Client", "lag_optimizer",
+	"lag_optimizer.no_achievement_overlay", {type="bool"})
+core.register_cheat_setting("No Bossbar", "Client", "lag_optimizer", "lag_optimizer.no_bossbar", {type="bool"})
 
 core.register_globalstep(function(dtime)
 	local ok, err = pcall(function()
@@ -23,66 +80,21 @@ core.register_globalstep(function(dtime)
 		if enabled ~= lag_optimizer_state.was_enabled then
 			lag_optimizer_state.was_enabled = enabled
 			if enabled then
-				lag_optimizer_state.old_inventory_items_animations =
-					core.settings:get_bool("inventory_items_animations")
-				lag_optimizer_state.old_no_item_spin =
-					core.settings:get_bool("lag_optimizer.no_item_spin")
-				lag_optimizer_state.last_no_inventory_animations =
-					core.settings:get_bool("lag_optimizer.no_inventory_animations")
-				lag_optimizer_state.last_no_item_spin =
-					core.settings:get_bool("lag_optimizer.no_item_spin")
-				lag_optimizer_state.last_no_hand_animation =
-					core.settings:get_bool("lag_optimizer.no_hand_animation")
-
-				if core.settings:get_bool("lag_optimizer.no_inventory_animations") then
-					core.settings:set_bool("inventory_items_animations", false)
-				end
-				if core.settings:get_bool("lag_optimizer.no_item_spin") then
-					core.settings:set_bool("lag_optimizer.no_item_spin", true)
-				end
-				core.update_infotext("LagOptimizer", "Client", "lag_optimizer", "")
+				apply_forced_settings()
+				core.update_infotext("lagoptimizer", "Client", "lag_optimizer", "")
 			else
-				if lag_optimizer_state.old_inventory_items_animations ~= nil then
-					core.settings:set_bool("inventory_items_animations", lag_optimizer_state.old_inventory_items_animations)
-					lag_optimizer_state.old_inventory_items_animations = nil
-				end
-				if lag_optimizer_state.old_no_item_spin ~= nil then
-					core.settings:set_bool("lag_optimizer.no_item_spin", lag_optimizer_state.old_no_item_spin)
-					lag_optimizer_state.old_no_item_spin = nil
-				end
-				lag_optimizer_state.last_no_inventory_animations = nil
-				lag_optimizer_state.last_no_item_spin = nil
-				lag_optimizer_state.last_no_hand_animation = nil
-				core.update_infotext("LagOptimizer", "Client", "lag_optimizer", "")
+				restore_all_targets()
+				core.update_infotext("lagoptimizer", "Client", "lag_optimizer", "")
 			end
 		elseif enabled then
-			local no_inventory_animations = core.settings:get_bool("lag_optimizer.no_inventory_animations")
-			if no_inventory_animations ~= lag_optimizer_state.last_no_inventory_animations then
-				lag_optimizer_state.last_no_inventory_animations = no_inventory_animations
-				core.settings:set_bool("inventory_items_animations", not no_inventory_animations)
-			end
-
-			local no_item_spin = core.settings:get_bool("lag_optimizer.no_item_spin")
-			if no_item_spin ~= lag_optimizer_state.last_no_item_spin then
-				lag_optimizer_state.last_no_item_spin = no_item_spin
-				core.settings:set_bool("lag_optimizer.no_item_spin", no_item_spin)
-			end
-
-			local no_hand_animation = core.settings:get_bool("lag_optimizer.no_hand_animation")
-			if no_hand_animation ~= lag_optimizer_state.last_no_hand_animation then
-				lag_optimizer_state.last_no_hand_animation = no_hand_animation
-			end
+			apply_forced_settings()
 		end
 	end)
 
 	if not ok then
 		core.log("error", "LagOptimizer error: " .. tostring(err))
 		core.settings:set_bool("lag_optimizer", false)
-		lag_optimizer_state.old_inventory_items_animations = nil
-		lag_optimizer_state.old_no_item_spin = nil
+		restore_all_targets()
 		lag_optimizer_state.was_enabled = nil
-		lag_optimizer_state.last_no_inventory_animations = nil
-		lag_optimizer_state.last_no_item_spin = nil
-		lag_optimizer_state.last_no_hand_animation = nil
 	end
 end)

@@ -52,6 +52,12 @@ public:
 	//! Sets whether to draw the border
 	void setDrawBorder(bool draw) override;
 
+	//! Sets the inner padding between the border/background and the text.
+	void setTextPadding(s32 padding) override;
+
+	//! Sets the border color used when drawing a custom border.
+	void setBorderColor(video::SColor color) override;
+
 	//! Checks if border drawing is enabled
 	bool isDrawBorderEnabled() const override;
 
@@ -117,10 +123,13 @@ private:
 	bool OverrideBGColorEnabled;
 	bool WordWrap;
 	bool Background;
+	s32 TextPadding;
 	bool RestrainTextInside;
 	bool RightToLeft;
+	bool CustomBorderColor;
 
 	video::SColor OverrideColor, BGColor;
+	video::SColor BorderColor;
 	gui::IGUIFont *OverrideFont;
 	gui::IGUIFont *LastBreakFont; // stored because: if skin changes, line break must be recalculated.
 

@@ -3,10 +3,22 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "tile.h"
+#include "settings.h"
 #include <cassert>
 
 void AnimationInfo::updateTexture(video::SMaterial &material, float animation_time)
 {
+	if (g_settings->getBool("lag_optimizer") &&
+			((m_is_water && g_settings->getBool("lag_optimizer.no_water_animation")) ||
+			(m_is_lava && g_settings->getBool("lag_optimizer.no_lava_animation")))) {
+		if (m_frame != 0) {
+			m_frame = 0;
+			assert(m_frames && !m_frames->empty());
+			material.setTexture(0, (*m_frames)[m_frame].texture);
+		}
+		return;
+	}
+
 	// Figure out current frame
 	u16 frame = (u16)(animation_time * 1000 / m_frame_length_ms) % m_frame_count;
 	// Only adjust if frame changed

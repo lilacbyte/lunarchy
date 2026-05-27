@@ -56,4 +56,43 @@ void migrate_settings()
 		}
 		g_settings->remove("hudcolor");
 	}
+
+	// Merge the old separate HUD/module color controls into the central HUD style.
+	if (!g_settings->existsLocal("hud.enabled")) {
+		const bool old_hud = g_settings->existsLocal("hud_color") &&
+			g_settings->getBool("hud_color");
+		const bool old_modules = g_settings->existsLocal("module_color") &&
+			g_settings->getBool("module_color");
+		if (old_hud || old_modules)
+			g_settings->setBool("hud.enabled", true);
+	}
+	if (!g_settings->existsLocal("hud.accent_color") &&
+			g_settings->existsLocal("globalcolor"))
+		g_settings->set("hud.accent_color", g_settings->get("globalcolor"));
+	if (!g_settings->existsLocal("hud.text_color") &&
+			g_settings->existsLocal("module_color.color"))
+		g_settings->set("hud.text_color", g_settings->get("module_color.color"));
+	if (g_settings->existsLocal("hud.enabled")) {
+		g_settings->remove("hud_color");
+		g_settings->remove("globalcolor");
+		g_settings->remove("global_color");
+		g_settings->remove("module_color");
+		g_settings->remove("module_color.color");
+	}
+
+	// Remove settings for displays which no longer exist in the client.
+	g_settings->remove("enable_stats_esp");
+	g_settings->remove("statsesp.messages");
+	g_settings->remove("statsesp.joins");
+	g_settings->remove("statsesp.leaves");
+	g_settings->remove("statsesp.joined");
+	g_settings->remove("luna_stats.statsesp");
+	g_settings->remove("luna_stats.statsesp.pvp");
+	g_settings->remove("luna_stats.statsesp.messages");
+	g_settings->remove("luna_stats.statsesp.joins");
+	g_settings->remove("luna_stats.statsesp.leaves");
+	g_settings->remove("luna_stats.statsesp.joined");
+	g_settings->remove("luna_stats.client_list.nearby");
+	g_settings->remove("nametags.scale");
+	g_settings->remove("nametags.stats");
 }

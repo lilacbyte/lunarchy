@@ -16,6 +16,7 @@
 #include "client/tile.h"
 #include "client/texturesource.h"
 #include "log.h"
+#include "util/string.h"
 #include "util/numeric.h"
 #include <map>
 #include <IMeshManipulator.h>
@@ -34,6 +35,17 @@ static f32 getHandViewScale()
 		return 1.0f;
 
 	return core::clamp(g_settings->getFloat("hand_view.scale", 0.1f, 3.0f), 0.5f, 1.5f);
+}
+
+static video::SColor getHandViewColor()
+{
+	if (!g_settings->getBool("hand_view"))
+		return video::SColor(255, 255, 255, 255);
+
+	video::SColor color(255, 255, 255, 255);
+	parseColorString(g_settings->get("hand_view.color"), color, true, 0xff);
+	color.setAlpha(255);
+	return color;
 }
 
 #define MIN_EXTRUSION_MESH_RESOLUTION 16
@@ -384,7 +396,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		// overlay is white, if present
 		m_buffer_info.emplace_back(true, video::SColor(0xFFFFFFFF));
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(getHandViewColor());
 		return;
 	}
 
@@ -454,7 +466,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		}
 
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(getHandViewColor());
 		return;
 	} else {
 		const std::string inventory_image = item.getInventoryImage(idef);
@@ -470,7 +482,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 		m_buffer_info.emplace_back(true, video::SColor(0xFFFFFFFF));
 
 		// initialize the color
-		setColor(video::SColor(0xFFFFFFFF));
+		setColor(getHandViewColor());
 		return;
 	}
 
@@ -487,6 +499,7 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 	u8 red = c.getRed();
 	u8 green = c.getGreen();
 	u8 blue = c.getBlue();
+	u8 alpha = c.getAlpha();
 
 	const u32 mc = mesh->getMeshBufferCount();
 	if (mc > m_buffer_info.size())
@@ -494,11 +507,17 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 	for (u32 j = 0; j < mc; j++) {
 		video::SColor bc(m_base_color);
 		m_buffer_info[j].applyOverride(bc);
-		video::SColor buffercolor(255,
+		video::SColor buffercolor(alpha,
 			bc.getRed() * red / 255,
 			bc.getGreen() * green / 255,
 			bc.getBlue() * blue / 255);
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
+		if (j < m_meshnode->getMaterialCount()) {
+			video::SMaterial &material = m_meshnode->getMaterial(j);
+			material.MaterialType = m_material_type;
+			material.MaterialTypeParam = 0.5f;
+			material.ZWriteEnable = video::EZW_AUTO;
+		}
 
 		if (m_buffer_info[j].needColorize(buffercolor)) {
 			buf->setDirty(scene::EBT_VERTEX);
