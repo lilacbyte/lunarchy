@@ -119,6 +119,7 @@ Client::Client(
 	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
+	m_playername(playername),
 	m_login_password(password),
 	m_password(password),
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
