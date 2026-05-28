@@ -619,7 +619,7 @@ core.register_globalstep(function(dtime)
 
 		core.localplayer:set_pos(target_pos)
 
--- 		local enemyPos = target_enemy:get_pos()
+		local enemyPos = target_enemy:get_pos()
 		if enemyPos then
 			enemyPos.y = enemyPos.y - 1
 			enemyPos.y = enemyPos.y + (minetest.settings:get("autoaim.y_offset") or 0) / 10
