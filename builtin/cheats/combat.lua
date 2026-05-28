@@ -591,40 +591,47 @@ core.register_globalstep(function(dtime)
 
 	if target_enemy and core.settings:get_bool("orbit") then
 		local opos = target_enemy:get_pos()
+		local ppos = player:get_pos()
 
-		local distance = tonumber(core.settings:get("orbit.radius")) - 0.5
+		if not ppos or not opos then
+			Strata.clear_controls()
+			goto continue_orbit
+		end
 
-		local dir=vector.direction(ppos,opos)
-		local yyaw=0;
+		local distance = tonumber(core.settings:get("orbit.radius")) or 2.5
+		distance = distance - 0.5
+
+		local dir = vector.direction(ppos, opos)
+		if dir.x == 0 and dir.y == 0 and dir.z == 0 then
+			dir = vector.new(1, 0, 0)
+		end
+
+		local yyaw = 0
 		if dir.x < 0 then
 			yyaw = math.atan2(-dir.x, dir.z) + (math.pi * 2)
 		else
 			yyaw = math.atan2(-dir.x, dir.z)
 		end
-		yyaw = ws.round2(math.deg(yyaw),2)
+		yyaw = ws.round2(math.deg(yyaw), 2)
 
-		
-
-		local target_pos = vector.add(extendPoint(yyaw-90, distance), opos)
+		local target_pos = vector.add(extendPoint(yyaw - 90, distance), opos)
 		target_pos.y = ppos.y
-		local temp_pos = vector.new(ppos.x, opos.y, ppos.z)
-		local current_distance = vector.distance(ppos, opos)
 
 		core.localplayer:set_pos(target_pos)
 
-		local vec = vector.subtract(ppos, opos)
-		local yaw = math.atan(vec.z / vec.x) - math.pi/2
-		yaw = yaw + (opos.x >= ppos.x and math.pi or 0)
-		local y = vec.y
-		vec.y = 0
-		local x = vector.length(vec)+90
-		local enemyPos = target_enemy:get_pos();
-		enemyPos.y = enemyPos.y - 1
-		enemyPos.y = enemyPos.y + minetest.settings:get("autoaim.y_offset")/10
-		ws.aim(enemyPos)
+-- 		local enemyPos = target_enemy:get_pos()
+		if enemyPos then
+			enemyPos.y = enemyPos.y - 1
+			enemyPos.y = enemyPos.y + (minetest.settings:get("autoaim.y_offset") or 0) / 10
+			ws.aim(enemyPos)
+		end
+
 		Strata.set_controls({left = true, jump = true})
+
+		::continue_orbit::
 	else
 		Strata.clear_controls()
+	end
 	end
 end)
 
