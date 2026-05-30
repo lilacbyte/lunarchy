@@ -10,6 +10,7 @@ local OBSIDIAN_ITEM_NAMES = {
 
 local SUPPORT_BLOCK_NAMES = {
 	["mcl_core:obsidian"] = true,
+	["mcl_core:crying_obsidian"] = true,
 	["mcl_core:bedrock"] = true,
 	["default:obsidian"] = true,
 }
@@ -239,31 +240,48 @@ local function clear_dodge_controls()
 	return
 end
 
-local function has_nearby_support_block(center_pos, radius)
+local find_nearby_support_block
+
+find_nearby_support_block = function(center_pos, player_pos, radius)
 	if not center_pos then
-		return false
+		return nil
 	end
 
 	local search_radius = radius or 1
+	local best_pos = nil
+	local best_score = math.huge
+
 	for dx = -search_radius, search_radius do
-		for dy = -search_radius, search_radius do
+		for dy = -1, 1 do
 			for dz = -search_radius, search_radius do
-				if not (dx == 0 and dy == 0 and dz == 0) then
-					local node_pos = {
-						x = center_pos.x + dx,
-						y = center_pos.y + dy,
-						z = center_pos.z + dz,
-					}
-					local node = core.get_node_or_nil(node_pos)
-					if node and is_support_block(node.name) then
-						return true
+				local node_pos = {
+					x = center_pos.x + dx,
+					y = center_pos.y + dy,
+					z = center_pos.z + dz,
+				}
+				local node = core.get_node_or_nil(node_pos)
+				if node and is_support_block(node.name) then
+					local clearance_pos = vector.add(node_pos, {x = 0, y = 1, z = 0})
+					local clearance_node = core.get_node_or_nil(clearance_pos)
+					local in_range = not player_pos or
+						vector.distance(player_pos, node_pos) <= get_max_place_distance()
+					if in_range and clearance_node and is_buildable(clearance_node) then
+						local score = math.abs(dx) + math.abs(dz) + math.abs(dy) * 2
+						if score < best_score then
+							best_score = score
+							best_pos = node_pos
+						end
 					end
 				end
 			end
 		end
 	end
 
-	return false
+	return best_pos
+end
+
+local function has_nearby_support_block(center_pos, radius)
+	return find_nearby_support_block(center_pos, nil, radius) ~= nil
 end
 
 local function try_place_spam(target)
@@ -281,10 +299,30 @@ local function try_place_spam(target)
 		support_pos = nil
 	end
 
+	if support_pos then
+		local support_node = core.get_node_or_nil(support_pos)
+		if not support_node or not is_support_block(support_node.name) then
+			local target_pos = target and target:get_pos() or nil
+			local nearby_support = target_pos and
+				find_nearby_support_block(vector.round(target_pos), player_pos, 2) or nil
+			if nearby_support then
+				support_pos = nearby_support
+				spam_state.support_pos = support_pos
+			end
+		end
+	end
+
 	if not support_pos then
 		local candidates = get_target_support_candidates(target)
 		local fallback_pos = nil
+		local target_pos = target and target:get_pos() or nil
+		if target_pos then
+			support_pos = find_nearby_support_block(vector.round(target_pos), player_pos, 2)
+		end
 		for _, candidate in ipairs(candidates) do
+			if support_pos then
+				break
+			end
 			local clearance_pos = vector.add(candidate, {x = 0, y = 1, z = 0})
 			local support_node = core.get_node_or_nil(candidate)
 			local clearance_node = core.get_node_or_nil(clearance_pos)
