@@ -96,6 +96,8 @@ void DrawTracersAndESP::run(PipelineContext &context)
 	draw_player_tracers = g_settings->getBool("enable_player_tracers");
 	draw_node_esp = g_settings->getBool("enable_node_esp");
 	draw_node_tracers = g_settings->getBool("enable_node_tracers");
+	bool draw_killaura_target_esp =
+		g_settings->getBool("killaura") && g_settings->getBool("killaura.highlight");
 
 	v3f entity_color = g_settings->getV3F("entity_esp_color").value();
 	v3f friend_color = g_settings->getV3F("friend_esp_color").value();
@@ -122,8 +124,14 @@ void DrawTracersAndESP::run(PipelineContext &context)
 	nodeEO = g_settings->getU32("esp.node.edgeOpacity");
 	nodeFO = g_settings->getU32("esp.node.faceOpacity");
 	// Keep all ESP overlays outline-only so they cannot render as giant filled cubes.
-	playerDT = 0;
-	playerFO = 0;
+	if (!g_settings->getBool("playeresp.solid")) {
+		playerDT = 0;
+		playerFO = 0;
+	} else {
+		playerDT = 2;
+		if (playerFO == 0)
+			playerFO = 100;
+	}
 	targetDT = 0;
 	nodeFO = 0;
 
@@ -149,7 +157,8 @@ void DrawTracersAndESP::run(PipelineContext &context)
 	material.ZWriteEnable = irr::video::EZW_OFF;
 	driver->setMaterial(material);
 
- 	if (draw_entity_esp || draw_entity_tracers || draw_player_esp || draw_player_tracers) {
+ 	if (draw_entity_esp || draw_entity_tracers || draw_player_esp ||
+			draw_player_tracers || draw_killaura_target_esp) {
  		v3f current_pos = context.client->getEnv().getLocalPlayer()->getPosition();
  		std::vector<DistanceSortedActiveObject> allObjects;
 		env.getAllActiveObjects(current_pos, allObjects);
@@ -163,7 +172,10 @@ void DrawTracersAndESP::run(PipelineContext &context)
 			}
 			EntityRelationship relationship = player->getEntityRelationship(obj);
 			bool is_player = obj->isPlayer();
-			bool draw_esp = is_player ? draw_player_esp : draw_entity_esp;
+			bool is_combat_target =
+				RenderingCore::combat_target != 0 && obj->getId() == RenderingCore::combat_target;
+			bool draw_esp = (is_player ? draw_player_esp : draw_entity_esp) ||
+				(is_combat_target && draw_killaura_target_esp);
 			bool draw_tracers = is_player ? draw_player_tracers : draw_entity_tracers;
 			video::SColor color;
 			switch (relationship) {
@@ -205,8 +217,17 @@ void DrawTracersAndESP::run(PipelineContext &context)
 
 			if (draw_esp) {
 				// Fixed the != NULL warning here by changing it to != 0
-				if (RenderingCore::combat_target != 0 && obj->getId() == RenderingCore::combat_target && (g_settings->getBool("enable_combat_target_hud.target_highlight") && g_settings->getBool("enable_combat_target_hud"))) {
-					driver->draw3DBox(box, RenderingCore::target_esp_color, targetDT, targetEO, targetFO);
+				if (is_combat_target) {
+					if (draw_killaura_target_esp) {
+						driver->draw3DBox(box, video::SColor(255, 255, 0, 0),
+							playerDT, playerEO, playerFO);
+					} else if (g_settings->getBool("enable_combat_target_hud.target_highlight") && g_settings->getBool("enable_combat_target_hud")) {
+						driver->draw3DBox(box, RenderingCore::target_esp_color, targetDT, targetEO, targetFO);
+					} else if (is_player) {
+						driver->draw3DBox(box, color, playerDT, playerEO, playerFO);
+					} else if (!cao->getParent()) {
+						driver->draw3DBox(box, color, entityDT, entityEO, entityFO);
+					}
 				} else {
 					if (is_player) {
 						driver->draw3DBox(box, color, playerDT, playerEO, playerFO);

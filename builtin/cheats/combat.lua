@@ -10,6 +10,7 @@ core.register_cheat_setting("Assist", "Combat", "killaura", "killaura.assist", {
 core.register_cheat_setting("Many Punches", "Combat", "killaura", "killaura.manypunches", {type="bool"})
 core.register_cheat_setting("Mode", "Combat", "killaura", "killaura.mode", {type="selectionbox", options={"Blatant", "Silent"}})
 core.register_cheat_setting("Fake aiming time", "Combat", "killaura", "killaura.simtime", {type="bool"})
+core.register_cheat_setting("Highlight", "Combat", "killaura", "killaura.highlight", {type="bool"})
 core.register_cheat_setting("Mace", "Combat", "killaura", "killaura.mace", {type="bool"})
 core.register_cheat_setting("Mace Jump Supress", "Combat", "killaura", "killaura.mace_jump_suppress", {type="bool"})
 
@@ -488,6 +489,8 @@ core.register_globalstep(function(dtime)
 
 		local player = core.localplayer
 		if not player then return end
+		local ppos = player:get_pos()
+		if not ppos then return end
 		local target_enemy = nil
 		local target_mode = core.settings:get("targeting.target_mode")
 		local target_type = core.settings:get("targeting.target_type")
@@ -583,23 +586,22 @@ core.register_globalstep(function(dtime)
 	
 
 	if target_enemy and core.settings:get_bool("autoaim") then
-		local enemyPos = target_enemy:get_pos();
-		enemyPos.y = enemyPos.y - 1
-		enemyPos.y = enemyPos.y + minetest.settings:get("autoaim.y_offset")/10
-		ws.aim(enemyPos)
+		local enemyPos = target_enemy:get_pos()
+		if enemyPos then
+			enemyPos.y = enemyPos.y - 1
+			enemyPos.y = enemyPos.y + (tonumber(minetest.settings:get("autoaim.y_offset")) or 0) / 10
+			ws.aim(enemyPos)
+		end
 	end
 
 	if target_enemy and core.settings:get_bool("orbit") then
 		local opos = target_enemy:get_pos()
-		local ppos = player:get_pos()
-
-		if not ppos or not opos then
+		if not opos then
 			Strata.clear_controls()
-			goto continue_orbit
+			return
 		end
 
-		local distance = tonumber(core.settings:get("orbit.radius")) or 2.5
-		distance = distance - 0.5
+		local distance = (tonumber(core.settings:get("orbit.radius")) or 2.5) - 0.5
 
 		local dir = vector.direction(ppos, opos)
 		if dir.x == 0 and dir.y == 0 and dir.z == 0 then
@@ -622,19 +624,14 @@ core.register_globalstep(function(dtime)
 		local enemyPos = target_enemy:get_pos()
 		if enemyPos then
 			enemyPos.y = enemyPos.y - 1
-			enemyPos.y = enemyPos.y + (minetest.settings:get("autoaim.y_offset") or 0) / 10
+			enemyPos.y = enemyPos.y + (tonumber(minetest.settings:get("autoaim.y_offset")) or 0) / 10
 			ws.aim(enemyPos)
 		end
-
 		Strata.set_controls({left = true, jump = true})
-
-		::continue_orbit::
 	else
 		Strata.clear_controls()
 	end
-	end
 end)
-
 
 
 core.register_cheat("criticals", "Combat", "critical_hits")

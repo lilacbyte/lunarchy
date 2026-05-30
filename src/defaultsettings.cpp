@@ -197,6 +197,7 @@ void set_default_settings()
 	settings->setDefault("killaura.doubletap", "false"); // not used
 	settings->setDefault("killaura.mode", "Silent");
 	settings->setDefault("killaura.simtime", "false");
+	settings->setDefault("killaura.highlight", "false");
 	settings->setDefault("killaura.mace", "false");
 	settings->setDefault("killaura.mace_jump_suppress", "false");
 	settings->setDefault("killaura.mace_suppress_jump_multiplier", "false");
@@ -345,6 +346,7 @@ void set_default_settings()
 	settings->setDefault("esp.player.drawType", "0");
 	settings->setDefault("esp.player.edgeOpacity", "255");
 	settings->setDefault("esp.player.faceOpacity", "0");
+	settings->setDefault("playeresp.solid", "false");
 	settings->setDefault("esp.entity.drawType", "0");
 	settings->setDefault("esp.entity.edgeOpacity", "255");
 	settings->setDefault("esp.entity.faceOpacity", "100");

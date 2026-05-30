@@ -73,7 +73,6 @@
 	["Combat"] = {
 		["antiknockback"] = "antiknockback",
 		["attachmentfloat"] = "float_above_parent",
-		["throughwalls"] = "throughwalls",
     },
 	["Interact"] = {
 		["blink"] = "blink",
@@ -193,7 +192,6 @@ core.register_cheat_setting("nametag", "Combat", "autowither", "autowither.namet
 core.register_cheat_description("killaura", "Combat", "killaura", "Attacks a specified target. Silent mode is recommended in PVP servers, as it makes Killaura undetectable")
 core.register_cheat_description("orbit", "Combat", "orbit", "Moves around a specified target")
 core.register_cheat_description("triggerbot", "Combat", "tbot", "Automatically punch when aiming at an entity")
-core.register_cheat_description("throughwalls", "Combat", "throughwalls", "Lets you hit players or entities through walls")
 --Interact
 core.register_cheat_description("fastdig", "Interact", "fastdig", "No block break cooldown")
 core.register_cheat_with_infotext("blink", "Interact", "blink", "0ms")
@@ -361,6 +359,7 @@ core.register_cheat_setting("scale", "Render", "hand_view", "hand_view.scale", {
 core.register_cheat_setting("color", "Render", "hand_view", "hand_view.color", {type="text", size=18})
 core.register_cheat_setting("type", "Render", "enable_health_esp", "enable_health_esp.type", {type="selectionbox", options={"Health Bar", "Above Head"}})
 core.register_cheat_setting("players only", "Render", "enable_health_esp", "enable_health_esp.players_only", {type="bool"})
+core.register_cheat_setting("Solid", "Render", "enable_player_esp", "playeresp.solid", {type="bool"})
 core.register_cheat_setting("target highlight", "Render", "enable_combat_target_hud", "enable_combat_target_hud.target_highlight", {type="bool"})
 core.register_cheat_setting("target mode", "Combat", "crystalspam", "crystalspam.target_mode", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
