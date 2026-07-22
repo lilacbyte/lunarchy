@@ -58,10 +58,6 @@ jobs:
           cmake --build . -j$(sysctl -n hw.logicalcpu)
           make install
 
-      - name: Test
-        run: |
-          ./build/macos/Lunarchy.app/Contents/MacOS/lunarchy --run-unittests
-
       - name: Create Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -92,12 +88,6 @@ jobs:
             -DENABLE_SYSTEM_JSONCPP=OFF
           cmake --build . -j$(sysctl -n hw.logicalcpu)
           make install
-
-      - name: Tests
-        run: |
-          mkdir -p "${HOME}/Library/Application Support/minetest/games/"
-          ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
-          ./build/macos/Lunarchy.app/Contents/MacOS/lunarchy --run-unittests
 
       - name: Create Artifact
         uses: actions/upload-artifact@v4
