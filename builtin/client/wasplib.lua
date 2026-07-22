@@ -3,9 +3,9 @@
 ws = {}
 autotool = {}
 ws.registered_globalhacks = {}
-ws.displayed_wps={}
 
 ws.c = core
+ws.displayed_wps = {}
 
 local nextact = {}
 local ghwason={}
@@ -137,23 +137,23 @@ function ws.do_area(radius,func,plane)
     end
 end
 
-
 function ws.display_wp(pos,name)
     table.insert(ws.displayed_wps,minetest.localplayer:hud_add({
-            hud_elem_type = 'waypoint',
-            name          = name,
-            text          = name,
-            number        = 0x00ff00,
-            world_pos     = pos
-        }))
+        hud_elem_type = "waypoint",
+        name = name,
+        text = name,
+        number = 0x00ff00,
+        world_pos = pos,
+    }))
 end
 
 function ws.clear_wps()
-    for k,v in pairs(ws.displayed_wps) do
-        minetest.localplayer:hud_remove(v)
-        table.remove(ws.displayed_wps,k)
+    for i = #ws.displayed_wps, 1, -1 do
+        minetest.localplayer:hud_remove(ws.displayed_wps[i])
+        table.remove(ws.displayed_wps, i)
     end
 end
+
 
 function ws.register_chatcommand_alias(old, ...)
       local def = assert(minetest.registered_chatcommands[old])

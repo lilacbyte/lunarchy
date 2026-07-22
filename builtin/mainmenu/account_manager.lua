@@ -159,6 +159,23 @@ function account_manager.select_username(username)
 	return account_manager.select_index(index)
 end
 
+function account_manager.mark_used(index)
+	index = tonumber(index)
+	if not index or index < 1 or index > #accounts then
+		return false
+	end
+
+	if index > 1 then
+		local account = table.remove(accounts, index)
+		table.insert(accounts, 1, account)
+		account_manager.save()
+	end
+
+	selected_index = 1
+	apply_selected_account()
+	return true
+end
+
 function account_manager.upsert(username, password, server)
 	username = trim(username)
 	password = trim(password)

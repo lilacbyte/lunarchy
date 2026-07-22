@@ -2336,6 +2336,13 @@ font_path_bold (Bold font path) filepath fonts/Arimo-Bold.ttf
 font_path_italic (Italic font path) filepath fonts/Arimo-Italic.ttf
 font_path_bold_italic (Bold and italic font path) filepath fonts/Arimo-BoldItalic.ttf
 
+#    Global client font size where 1 unit = 1 pixel at 96 DPI.
+hd_font_size (Client font size) int 16 5 72
+
+#    Path to the global client font. Must be a TrueType font.
+#    Relative paths are resolved from Lunarchy's shared data directory.
+font_path_hd (Client font path) filepath fonts/hd.ttf
+
 #    Font size of the monospace font where 1 unit = 1 pixel at 96 DPI
 mono_font_size (Monospace font size) int 16 5 72
 
@@ -2741,7 +2748,7 @@ More actions
 
 ~#   Font to use for cheat menu
 
-~cheat_menu_font (MenuFont) enum FM_HD FM_Standard,FM_Mono,FM_Fallback,FM_Simple,FM_SimpleMono,FM_MaxMode,FM_Unspecified
+~cheat_menu_font (Menu font) enum FM_HD FM_HD,FM_Standard,FM_Mono,FM_Fallback
 
 ~
 

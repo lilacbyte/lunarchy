@@ -611,6 +611,11 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 
 				if gamedata.address and gamedata.port then
 					set_selected_server(server)
+					if not tabdata.manual_login and account_manager and account_manager.mark_used then
+						account_manager.mark_used(tabdata.selected_account_index or
+								account_manager.get_selected_index())
+						tabdata.selected_account_index = 1
+					end
 					core.start()
 				end
 				return true
@@ -741,6 +746,11 @@ local function main_button_handler(tabview, fields, name, tabdata_etc)
 
 		core.settings:set("address",     gamedata.address)
 		core.settings:set("remote_port", gamedata.port)
+		if not tabdata.manual_login and account_manager and account_manager.mark_used then
+			account_manager.mark_used(tabdata.selected_account_index or
+					account_manager.get_selected_index())
+			tabdata.selected_account_index = 1
+		end
 
 		core.start()
 		return true

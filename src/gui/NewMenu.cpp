@@ -2162,7 +2162,6 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
 
     const video::SColor rainbow_category_color = video::SColor(255, 21, 21, 21);
     const video::SColor rainbow_cheat_color = getNextRainbowColor();
-    const video::SColor rainbow_cheat_color_enabled = video::SColor(255, 21, 21, 21);
     const video::SColor rainbow_outline_color = getNextRainbowColor();
     
     ///////////////////////// DRAW CATEGORY HEADER /////////////////////////
@@ -2221,11 +2220,9 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
             } else if (script->m_cheat_categories[i]->m_cheats[cheat_index]->is_enabled() && cheatRectAnimationProgress[i][cheat_index] >= 0) {
                 cheatRectAnimationProgress[i][cheat_index] -= dtime * 8;
             }
-            if (g_settings->get("ColorTheme") == "Rainbow") {
-                drawInterpolatedRectangle(driver, cheatRects[i][cheat_index], rainbow_cheat_color, rainbow_cheat_color_enabled, cheatRectAnimationProgress[i][cheat_index]);
-            } else {
-                drawInterpolatedRectangle(driver, cheatRects[i][cheat_index], current_theme.primary, current_theme.background_bottom, cheatRectAnimationProgress[i][cheat_index]);
-            }
+            drawInterpolatedRectangle(driver, cheatRects[i][cheat_index],
+                    readModuleBackgroundColor(), current_theme.background_bottom,
+                    cheatRectAnimationProgress[i][cheat_index]);
 
             const std::string& cheatName = script->m_cheat_categories[i]->m_cheats[cheat_index]->m_name;
             const std::wstring &wCheatName = cachedWideFromUtf8(cheatName);

@@ -157,8 +157,7 @@ local last_mace_punch_time = 0
 local mace_jump_suppress_until = 0
 local mace_drop_target = nil
 local mace_drop_started_at = 0
-local mace_noclip_forced = false
-local mace_noclip_was_enabled = false
+local mace_noclip_active = false
 local target_is_in_wall
 
 local function set_mace_jump_suppress(active)
@@ -301,21 +300,18 @@ local function get_target_upward_speed(target)
 end
 
 local function set_mace_noclip(active)
-	if active and not mace_noclip_forced then
-		mace_noclip_was_enabled = core.settings:get_bool("noclip")
-		core.settings:set_bool("noclip", true)
-		mace_noclip_forced = true
-	elseif not active and mace_noclip_forced then
-		if not mace_noclip_was_enabled then
-			core.settings:set_bool("noclip", false)
-		end
-		mace_noclip_forced = false
-		mace_noclip_was_enabled = false
+	active = active == true
+	if mace_noclip_active == active then
+		return
 	end
+
+	mace_noclip_active = active
 	core.settings:set_bool("killaura.mace_noclip_active", active)
 end
 
-set_mace_noclip(false)
+-- This is runtime state, not an option users need to enable. Always clear a
+-- value left in minetest.conf by an interrupted previous session.
+core.settings:set_bool("killaura.mace_noclip_active", false)
 
 local function clear_mace_drop()
 	mace_drop_target = nil

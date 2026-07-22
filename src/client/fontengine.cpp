@@ -5,6 +5,8 @@
 #include "fontengine.h"
 
 #include "client/renderingengine.h"
+#include "filesys.h"
+#include "porting.h"
 #include "settings.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "util/numeric.h" // rangelim
@@ -152,10 +154,11 @@ unsigned int FontEngine::getFontSize(FontMode mode)
 
 void FontEngine::readSettings()
 {
-	m_default_size[FM_Standard]  = rangelim(g_settings->getU16("font_size"), 5, 72);
+	const u16 global_font_size = rangelim(g_settings->getU16("hd_font_size"), 5, 72);
+	m_default_size[FM_Standard]  = global_font_size;
 	m_default_size[_FM_Fallback] = m_default_size[FM_Standard];
-	m_default_size[FM_Mono]      = rangelim(g_settings->getU16("mono_font_size"), 5, 72);
-	m_default_size[FM_HD]      = m_default_size[FM_Standard];
+	m_default_size[FM_Mono]      = global_font_size;
+	m_default_size[FM_HD]        = global_font_size;
 
 	m_default_bold = g_settings->getBool("font_bold");
 	m_default_italic = g_settings->getBool("font_italic");
@@ -229,8 +232,10 @@ gui::IGUIFont *FontEngine::initFont(FontSpec spec)
 	assert(spec.mode != FM_Unspecified);
 	assert(spec.size != FONT_SIZE_UNSPECIFIED);
 
-	if (spec.mode == _FM_Fallback)
-		spec.allow_server_media = false;
+	// The client-selected font is a global override. Do not let server font
+	// media replace it for standard or monospace UI elements. Fallback fonts
+	// have never accepted server media either.
+	spec.allow_server_media = false;
 
 	std::string setting_prefix = "";
 	if (spec.mode == FM_Mono)
@@ -300,27 +305,28 @@ gui::IGUIFont *FontEngine::initFont(FontSpec spec)
 	std::string path_setting;
 	if (spec.mode == _FM_Fallback)
 		path_setting = "fallback_font_path";
-	else if (spec.mode == FM_HD)
-		path_setting = "font_path_hd";
 	else
-		path_setting = setting_prefix + "font_path" + setting_suffix;
+		path_setting = "font_path_hd";
 
-	std::string fallback_settings[] = {
+	const std::string fallback_settings[] = {
 		g_settings->get(path_setting),
 		Settings::getLayer(SL_DEFAULTS)->get(path_setting)
 	};
 	for (const std::string &font_path : fallback_settings) {
-		infostream << "Creating new font: " << font_path.c_str()
+		const std::string resolved_path = fs::IsPathAbsolute(font_path) ?
+				font_path : porting::getDataPath(font_path.c_str());
+
+		infostream << "Creating new font: " << resolved_path
 				<< " " << size << "pt" << std::endl;
 
 		// Grab the face.
-		if (auto *face = irr::gui::SGUITTFace::loadFace(font_path)) {
+		if (auto *face = irr::gui::SGUITTFace::loadFace(resolved_path)) {
 			auto *font = createFont(face);
 			face->drop();
 			return font;
 		}
 
-		errorstream << "FontEngine: Cannot load '" << font_path <<
+		errorstream << "FontEngine: Cannot load '" << resolved_path <<
 			"'. Trying to fall back to another path." << std::endl;
 	}
 	return nullptr;

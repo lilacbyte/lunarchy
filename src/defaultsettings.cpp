@@ -203,6 +203,7 @@ void set_default_settings()
 	settings->setDefault("killaura.mace_height", "5");
 	settings->setDefault("killaura.mace_jump_suppress", "true");
 	settings->setDefault("killaura.mace_suppress_jump_multiplier", "false");
+	settings->setDefault("killaura.mace_noclip_active", "false");
 	settings->setDefault("chatplus_offset_x", "0");
 	settings->setDefault("chatplus_offset_y", "0");
 	settings->setDefault("chatplus_background", "false");
@@ -394,6 +395,7 @@ void set_default_settings()
 	settings->setDefault("logoutspots.limit", "20");
 	settings->setDefault("logoutspots.scale", "1.0");
 	settings->setDefault("deathmarker", "false");
+	settings->setDefault("deathmarker.display", "true");
 	settings->setDefault("ignore", "false");
 	settings->setDefault("ignore.players", "");
 	settings->setDefault("ignore.whitelist", "");
@@ -758,7 +760,7 @@ void set_default_settings()
 	std::string font_size_str = std::to_string(TTF_DEFAULT_FONT_SIZE);
 	settings->setDefault("font_size", font_size_str);
 	settings->setDefault("mono_font_size", font_size_str);
-    settings->setDefault("hd_font_size", font_size_str);
+	settings->setDefault("hd_font_size", font_size_str);
 	settings->setDefault("chat_font_size", "0"); // Default "font_size"
 
 	// ContentDB

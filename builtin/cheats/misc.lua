@@ -20,6 +20,7 @@ local logoutspots_markers_by_name = {}
 local logoutspots_marker_names = {}
 local logoutspots_server_key = nil
 local deathmarker_id = nil
+local deathmarker_pos = nil
 local deathmarker_last_alive_pos = nil
 local deathmarker_was_dead = false
 local deathmarker_owner_key = nil
@@ -33,41 +34,31 @@ local function remove_waypoint(id)
     end
 end
 
-local function clear_waypoint_ids(ids)
-    if not ids then
+local function clear_logoutspot_marker(name)
+    local id = logoutspots_markers_by_name[name]
+    if not id then
         return
     end
 
-    for _, id in ipairs(ids) do
-        remove_waypoint(id)
-    end
-
-    for i = #ids, 1, -1 do
-        ids[i] = nil
-    end
-end
-
-local function clear_logoutspot_marker(name)
-    local id = logoutspots_markers_by_name[name]
-    if id then
-        remove_waypoint(id)
-        logoutspots_markers_by_name[name] = nil
-
-        for i = #logoutspots_marker_ids, 1, -1 do
-            if logoutspots_marker_ids[i] == id then
-                table.remove(logoutspots_marker_ids, i)
-            end
+    remove_waypoint(id)
+    logoutspots_markers_by_name[name] = nil
+    for i = #logoutspots_marker_ids, 1, -1 do
+        if logoutspots_marker_ids[i] == id then
+            table.remove(logoutspots_marker_ids, i)
         end
-        for i = #logoutspots_marker_names, 1, -1 do
-            if logoutspots_marker_names[i] == name then
-                table.remove(logoutspots_marker_names, i)
-            end
+    end
+    for i = #logoutspots_marker_names, 1, -1 do
+        if logoutspots_marker_names[i] == name then
+            table.remove(logoutspots_marker_names, i)
         end
     end
 end
 
 local function clear_logoutspot_markers()
-    clear_waypoint_ids(logoutspots_marker_ids)
+    for _, id in ipairs(logoutspots_marker_ids) do
+        remove_waypoint(id)
+    end
+    logoutspots_marker_ids = {}
     logoutspots_markers_by_name = {}
     logoutspots_marker_names = {}
 end
@@ -100,11 +91,7 @@ local function marker_pos_from(pos)
     end
 
     local rounded = vector.round(pos)
-    return {
-        x = rounded.x,
-        y = rounded.y,
-        z = rounded.z,
-    }
+    return {x = rounded.x, y = rounded.y, z = rounded.z}
 end
 
 local function logoutspot_scale()
@@ -112,24 +99,19 @@ local function logoutspot_scale()
     return math.max(0.1, math.min(2.0, scale))
 end
 
-local function add_waypoint_marker(name, pos, color, scale)
+local function add_logoutspot_marker(name, pos, scale)
     if not core.localplayer or not pos then
-        return nil
-    end
-
-    local marker_pos = marker_pos_from(pos)
-    if not marker_pos then
         return nil
     end
 
     return core.localplayer:hud_add({
         hud_elem_type = "waypoint",
-        name = name,
+        name = "Logout: " .. name,
         text = "m away",
-        number = color or 0xff5555,
-        world_pos = marker_pos,
+        number = 0xff8c00,
+        world_pos = marker_pos_from(pos),
         item = 2,
-        scale = scale and {x = scale, y = scale} or nil,
+        scale = {x = scale, y = scale},
     })
 end
 
@@ -143,8 +125,7 @@ local function sync_logoutspots()
         logoutspots_server_key = server_key
     end
 
-    local enabled = core.settings:get_bool("logoutspots")
-    if not enabled then
+    if not core.settings:get_bool("logoutspots") then
         logoutspots_last_online_players = {}
         logoutspots_seen_positions = {}
         clear_logoutspot_markers()
@@ -183,7 +164,7 @@ local function sync_logoutspots()
         end
     end
 
-    for name, _ in pairs(current_set) do
+    for name in pairs(current_set) do
         clear_logoutspot_marker(name)
     end
     trim_logoutspot_markers()
@@ -194,18 +175,18 @@ local function sync_logoutspots()
         return
     end
 
-    for name, _ in pairs(logoutspots_seen_positions) do
+    for name in pairs(logoutspots_seen_positions) do
         if current_set[name] and not nearby_set[name] then
             logoutspots_seen_positions[name] = nil
         end
     end
 
-    for name, _ in pairs(logoutspots_last_online_players) do
+    for name in pairs(logoutspots_last_online_players) do
         if not current_set[name] then
             local pos = logoutspots_seen_positions[name]
             if pos then
                 clear_logoutspot_marker(name)
-                local id = add_waypoint_marker("Logout: " .. name, pos, 0xff8c00, scale)
+                local id = add_logoutspot_marker(name, pos, scale)
                 if id then
                     logoutspots_markers_by_name[name] = id
                     table.insert(logoutspots_marker_ids, id)
@@ -225,14 +206,30 @@ local function clear_deathmarker()
     deathmarker_id = nil
 end
 
-local function set_deathmarker(pos)
-    if not core.settings:get_bool("deathmarker") then
+local function refresh_deathmarker_display()
+    if not core.settings:get_bool("deathmarker") or
+            not core.settings:get_bool("deathmarker.display") then
         clear_deathmarker()
         return
     end
+    if deathmarker_id or not deathmarker_pos or not core.localplayer then
+        return
+    end
 
+    deathmarker_id = core.localplayer:hud_add({
+        hud_elem_type = "waypoint",
+        name = "Last death",
+        text = "m away",
+        number = 0xff5555,
+        world_pos = deathmarker_pos,
+        item = 2,
+    })
+end
+
+local function set_deathmarker(pos)
+    deathmarker_pos = marker_pos_from(pos)
     clear_deathmarker()
-    deathmarker_id = add_waypoint_marker("Last death", pos, 0xff5555)
+    refresh_deathmarker_display()
 end
 
 local function normalize_message_lines(value)
@@ -384,27 +381,24 @@ core.register_globalstep(function(dtime)
     local owner_key = tostring(marker_server_key() or "") .. "|" .. player:get_name()
     if deathmarker_owner_key ~= owner_key then
         clear_deathmarker()
+        deathmarker_pos = nil
         deathmarker_last_alive_pos = nil
         deathmarker_was_dead = false
         deathmarker_owner_key = owner_key
     end
-    if not core.settings:get_bool("deathmarker") then
-        clear_deathmarker()
-        deathmarker_last_alive_pos = nil
-        deathmarker_was_dead = false
-    else
-        local hp = player:get_hp() or 0
-        if hp > 0 then
-            local pos = player:get_pos()
-            if pos then
-                deathmarker_last_alive_pos = marker_pos_from(pos)
-            end
-            deathmarker_was_dead = false
-        elseif not deathmarker_was_dead then
-            set_deathmarker(deathmarker_last_alive_pos or player:get_pos())
-            deathmarker_was_dead = true
+
+    local hp = player:get_hp() or 0
+    if hp > 0 then
+        local pos = player:get_pos()
+        if pos then
+            deathmarker_last_alive_pos = marker_pos_from(pos)
         end
+        deathmarker_was_dead = false
+    elseif not deathmarker_was_dead then
+        set_deathmarker(deathmarker_last_alive_pos or player:get_pos())
+        deathmarker_was_dead = true
     end
+    refresh_deathmarker_display()
     --AppleAura
     if minetest.settings:get_bool("appleaura") then
         local player_pos = player:get_pos()
@@ -568,7 +562,6 @@ core.register_on_shutdown(function()
     clear_deathmarker()
     clear_logoutspot_markers()
 end)
-
 
 --Commands
 

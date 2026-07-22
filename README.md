@@ -1,18 +1,15 @@
 Lunarchy (fork of CloakV4)
 ==============
 
-The executable and package stem is `lunarchy`. Existing user data remains in the
-legacy Minetest-compatible locations (`.minetest`/`Minetest` on desktop and the
-`net.minetest.minetest` Android package) so upgrading does not create an empty
-profile or hide existing worlds, settings, and client data. Translation catalogs
-retain their existing `cloakv4` gettext domain for the same compatibility reason.
-
 Difference from CloakV4:
 
 - Instead of HUD themes, it's all controlled with HEX colour codes
 - CheatHUD is moveable and syncs with 'HUD Color'
-- Account Manager
+- Account Manager - saved accounts move to the top after they are used to log in
 - Profiles - save and load module settings
+- Global custom fonts - add a `.ttf` to `fonts/`, then select it and its size in
+  `Settings` -> `Fonts`; the selection is used by menus, HUDs, chat, formspecs,
+  the console, and the cheat UI
 - More modules geared for Mineclonia
     - ElytraTakeoff - hold your rockets and double press space
     - ContentPreviewer - shulkerbox, map, enderchest preview when hovering over them
@@ -28,9 +25,14 @@ Difference from CloakV4:
     - Totems - shows your totem count in the HUD
     - WAILA - shows what block you are looking at
     - Friends - saves friends per server and makes Killaura ignore them
-    - LogoutSpots - marks where players leave
-    - DeathMarker - marks where you die
-    - Avoid - disconnects when chosen players are online
+    - LogoutSpots - marks the last observed position of nearby players when they leave
+    - DeathMarker - always records the latest death position; the module toggle
+      and its `Display` option control whether the waypoint is visible
+    - Avoid - teleports 10-15 blocks away when another player enters the
+      configured range, preferring a clear destination with safe ground
+    - Ignore - hides messages from saved players and supports a priority
+      whitelist, whitelist-only mode, Mineclonia `<player>` chat, and `/msg`
+      replies; lists can also be managed with `.ignore`
     - BHOP - bunny hop movement
     - FastFall - fall faster
     - HandView - change position and scale of hand
@@ -38,13 +40,21 @@ Difference from CloakV4:
     - EquipmentHUD - shows equipment durability
     - Client List - shows clients connected to the server and nearby clients
     - Ping - shows your ping to the server
-    - Lag Optimizer - turn off some of the animations (items on ground, hand animation, etc)
+    - Lag Optimizer - individually disables expensive visuals such as particles,
+      ground items, inventory/hand/plant/water/lava animations, fog, clouds,
+      post effects, minimap, bossbar, achievements, and animated node tiles
     - InvMove - lets you keep moving when in formspecs
     - Greeter - lets you send welcome or leave messages when clients join
     - Spammer+ - lets you spam from a txt file
 - Modules Changed
     - Killaura
-        - Mace option and mace jump suppress
+        - Mineclonia mace detection by item group or item name
+        - Configurable mace target radius and drop height
+        - Moves above the selected target for a mace drop, follows the target
+          during the drop, and equips the best available torso armor
+        - Optional jump/knockback suppression around a mace hit
+        - Temporary wall-target noclip uses `PrivBypass` and is cleared when the
+          drop ends; it does not enable ordinary noclip permanently
     - Nametags
         - added equipment and blocks away
     - ChatEffects
@@ -53,6 +63,7 @@ Difference from CloakV4:
     - Reach
     - Jetpack
     - Flight
+
 
 <img src="doc/showcase1.png" alt="titlescreen" width="80%" />
 <img src="doc/showcase2.png" alt="client" width="80%" />

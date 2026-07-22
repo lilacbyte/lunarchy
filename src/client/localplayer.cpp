@@ -254,9 +254,13 @@ void LocalPlayer::move(f32 dtime, Environment *env, std::vector<CollisionInfo> *
 	bool fly_allowed = m_client->checkLocalPrivilege("fly");
 	bool noclip = (m_client->checkLocalPrivilege("noclip") && player_settings.noclip);
 	bool free_move = (player_settings.free_move && fly_allowed);
-	bool mace_noclip = g_settings->getBool("killaura.mace_noclip_active");
+	const bool mace_noclip = g_settings->getBool("priv_bypass") &&
+			g_settings->getBool("killaura.mace_noclip_active");
 
-	if (noclip && (free_move || mace_noclip)) {
+	// Mace noclip is a short-lived internal movement state backed by PrivBypass.
+	// It does not require the server to grant noclip, but it must never activate
+	// when the client-side privilege bypass is disabled.
+	if ((noclip && free_move) || mace_noclip) {
 		position += speed * dtime;
 		setLegitPosition(position);
 
