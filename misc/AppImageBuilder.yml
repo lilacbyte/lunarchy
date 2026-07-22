@@ -46,7 +46,6 @@ AppImage:
   update-information: guess
   sign-key: None
   arch: x86_64
-  comp: gzip
 script: |
     # Compile and install binaries into AppDir
     cmake -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release -DRUN_IN_PLACE=FALSE
