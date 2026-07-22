@@ -138,18 +138,6 @@ private:
 	// get_node_name(pos)
 	static int l_get_node_name(lua_State *L);
 
-    // add_task_node(pos, color)
-	static int l_add_task_node(lua_State *L);
-
-    // clear_task_node(pos)
-	static int l_clear_task_node(lua_State *L);
-
-	// add_task_tracer(start_pos, end_pos, color)
-	static int l_add_task_tracer(lua_State *L);
-
-	// clear_task_tracer(start_pos, end_pos)
-	static int l_clear_task_tracer(lua_State *L);
-
 	// send_inventory_fields(formname, fields)
 	static int l_send_inventory_fields(lua_State *L);
 

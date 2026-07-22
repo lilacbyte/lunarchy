@@ -86,13 +86,6 @@ void migrate_settings()
 	g_settings->remove("statsesp.joins");
 	g_settings->remove("statsesp.leaves");
 	g_settings->remove("statsesp.joined");
-	g_settings->remove("luna_stats.statsesp");
-	g_settings->remove("luna_stats.statsesp.pvp");
-	g_settings->remove("luna_stats.statsesp.messages");
-	g_settings->remove("luna_stats.statsesp.joins");
-	g_settings->remove("luna_stats.statsesp.leaves");
-	g_settings->remove("luna_stats.statsesp.joined");
-	g_settings->remove("luna_stats.client_list.nearby");
-	g_settings->remove("nametags.scale");
+		g_settings->remove("nametags.scale");
 	g_settings->remove("nametags.stats");
 }

@@ -12,7 +12,6 @@
 #include <cmath>
 #include "client/renderingengine.h"
 #include "client/content_cao.h"
-#include "client/playerstats.h"
 #include "client/item_visuals_manager.h"
 #include "gui/moduleColor.h"
 #include "settings.h"
@@ -1065,9 +1064,6 @@ void Camera::drawDiffNametag(float dtime)
         const bool showItemNames = g_settings->getBool("nametags.item_names");
         const bool showWieldedItems = g_settings->getBool("nametags.wielded_items");
         const bool showEquipment = g_settings->getBool("nametags.armor");
-        const bool showLunaStats = g_settings->getBool("luna_stats.enabled") &&
-            g_settings->getBool("luna_stats.nametags");
-
         LocalPlayer *lp = m_client->getEnv().getLocalPlayer();
         if (!lp)
             continue;
@@ -1117,12 +1113,6 @@ void Camera::drawDiffNametag(float dtime)
         auto dim_hp = font->getDimension(whp.c_str());
         auto dim_rel = font->getDimension(wrelation.c_str());
         auto dim_distance = showDistance ? font->getDimension(wdistance.c_str()) : core::dimension2d<u32>(0, 0);
-        auto luna_stats = showLunaStats ? player_stats::getLine(name) : std::nullopt;
-        if (luna_stats)
-            *luna_stats = L"[" + *luna_stats + L"]";
-        const auto dim_luna_stats = luna_stats ? font->getDimension(luna_stats->c_str()) :
-            core::dimension2d<u32>(0, 0);
-
         std::vector<NametagItemToken> item_tokens;
         if (showWieldedItems)
             collect_visible_wield_tokens(item_tokens, m_client, obj, allowSelf);
@@ -1138,8 +1128,6 @@ void Camera::drawDiffNametag(float dtime)
         int lineWidth = dim_name.Width;
         if (showDistance)
             lineWidth += 8 + dim_distance.Width;
-        if (luna_stats)
-            lineWidth += 8 + dim_luna_stats.Width;
         if (showHp)
             lineWidth += 8 + dim_hp.Width;
         if (showStatus)
@@ -1219,18 +1207,6 @@ void Camera::drawDiffNametag(float dtime)
                        false, false);
 
             offsetX += dim_distance.Width + 8;
-        }
-
-        if (luna_stats) {
-            core::rect<s32> rectStats(offsetX, y,
-                                      offsetX + dim_luna_stats.Width,
-                                      y + dim_luna_stats.Height);
-
-            font->draw(luna_stats->c_str(), rectStats,
-                       video::SColor(255, 160, 160, 160),
-                       false, false);
-
-            offsetX += dim_luna_stats.Width + 8;
         }
 
         if (showHp) {

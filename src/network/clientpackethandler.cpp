@@ -1620,6 +1620,8 @@ void Client::handleCommand_PlayerSpeed(NetworkPacket *pkt)
 	v3f added_vel;
 
 	*pkt >> added_vel;
+	if (g_settings->getBool("killaura.mace_suppress_jump_multiplier") && added_vel.Y > 0.0f)
+		added_vel.Y = 0.0f;
 
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);

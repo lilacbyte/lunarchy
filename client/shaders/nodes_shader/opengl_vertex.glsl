@@ -5,6 +5,7 @@ uniform vec3 dayLight;
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 cameraOffset;
 uniform float animationTimer;
+uniform float lagOptimizerNoPlantAnimation;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -181,7 +182,7 @@ void main(void)
 	pos.y += disp_z * 0.1;
 	pos.z += disp_z;
 #elif MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS
-	if (varTexCoord.y < 0.05) {
+	if (lagOptimizerNoPlantAnimation < 0.5 && varTexCoord.y < 0.05) {
 		pos.x += disp_x;
 		pos.z += disp_z;
 	}

@@ -26,6 +26,7 @@ local spam_state = {
 	cooldown = 0,
 	obsidian_cooldown = 0,
 	placing_node_token = 0,
+	pattern_index = 1,
 	target = nil,
 	support_pos = nil,
 }
@@ -35,6 +36,12 @@ local function select_hotbar_item(names)
 	local inv = core.get_inventory("current_player")
 	if not player or not inv or not inv.main then
 		return false
+	end
+
+	for _, item_name in ipairs(names) do
+		if core.switch_to_item and core.switch_to_item(item_name) then
+			return true
+		end
 	end
 
 	for index, stack in ipairs(inv.main) do
@@ -63,6 +70,15 @@ local function is_buildable(node)
 	return def and def.buildable_to
 end
 
+local function is_diggable(node)
+	if not node then
+		return false
+	end
+
+	local def = core.get_node_def(node.name)
+	return def and def.diggable
+end
+
 local function get_target_mode()
 	local mode = core.settings:get("crystalspam.target_mode")
 	if mode == "Entities" or mode == "Both" then
@@ -72,10 +88,14 @@ local function get_target_mode()
 end
 
 local function get_infotext_mode()
+	local modes = {}
 	if core.settings:get_bool("crystalspam.safe") then
-		return "SAFE"
+		modes[#modes + 1] = "SAFE"
 	end
-	return ""
+	if core.settings:get_bool("crystalspam.3x3") then
+		modes[#modes + 1] = "3x3"
+	end
+	return table.concat(modes, " ")
 end
 
 local function stop_placing_node()
@@ -86,6 +106,7 @@ end
 local function clear_locked_support()
 	spam_state.target = nil
 	spam_state.support_pos = nil
+	spam_state.pattern_index = 1
 end
 
 local function get_target_key(target)
@@ -123,7 +144,12 @@ local function get_nearest_target(max_distance)
 	for _, obj in ipairs(core.get_nearby_objects(max_distance) or {}) do
 		if obj and not (obj.is_local_player and obj:is_local_player()) then
 			if is_valid_target(obj, get_target_mode(), max_distance, player_pos) then
-				local obj_pos = obj:get_pos()
+				local safe_target = true
+				if core.settings:get_bool("crystalspam.safe") and obj:is_player() then
+					safe_target = player:get_entity_relationship(obj:get_id()) ==
+						core.EntityRelationship.ENEMY
+				end
+				local obj_pos = safe_target and obj:get_pos() or nil
 				if obj_pos then
 					local distance = vector.distance(player_pos, obj_pos)
 					if distance <= best_distance then
@@ -139,11 +165,8 @@ local function get_nearest_target(max_distance)
 end
 
 local function get_target_search_radius()
-	if not core.settings:get_bool("reach") then
-		return 8
-	end
-	local reach_bonus = tonumber(core.settings:get("reach.range")) or 2
-	return 8 + reach_bonus
+	local radius = tonumber(core.settings:get("crystalspam.target_radius")) or 20
+	return math.max(5, math.min(50, radius))
 end
 
 local function get_max_place_distance()
@@ -183,6 +206,21 @@ local function get_target_support_candidates(target)
 
 	local base = vector.round(target_pos)
 	local candidates = {}
+	if core.settings:get_bool("crystalspam.3x3") then
+		local pattern = {}
+		for dx = -1, 1 do
+			for dz = -1, 1 do
+				pattern[#pattern + 1] = {x = dx, y = -1, z = dz}
+			end
+		end
+
+		for offset = 0, #pattern - 1 do
+			local index = ((spam_state.pattern_index + offset - 1) % #pattern) + 1
+			candidates[#candidates + 1] = vector.add(base, pattern[index])
+		end
+		return candidates
+	end
+
 	local offsets = {
 		{x = 0, y = -1, z = 0},
 		{x = 1, y = -1, z = 0},
@@ -200,6 +238,59 @@ local function get_target_support_candidates(target)
 	end
 
 	return candidates
+end
+
+local function advance_pattern(target, support_pos)
+	local target_pos = target and target:get_pos() or nil
+	if not target_pos or not support_pos then
+		spam_state.pattern_index = (spam_state.pattern_index % 9) + 1
+		return
+	end
+
+	local base = vector.round(target_pos)
+	local dx = support_pos.x - base.x
+	local dz = support_pos.z - base.z
+	if dx >= -1 and dx <= 1 and dz >= -1 and dz <= 1 then
+		local used_index = (dx + 1) * 3 + (dz + 1) + 1
+		spam_state.pattern_index = (used_index % 9) + 1
+	else
+		spam_state.pattern_index = (spam_state.pattern_index % 9) + 1
+	end
+end
+
+local function move_below_obsidian(target)
+	if not core.settings:get_bool("crystalspam.safe") then
+		return
+	end
+
+	local player = core.localplayer
+	local target_pos = target and target:get_pos() or nil
+	if player and target_pos then
+		player:set_pos(vector.add(target_pos, {x = 0, y = -5, z = 0}))
+	end
+end
+
+local function move_to_target_for_placement(target)
+	local player = core.localplayer
+	local player_pos = player and player:get_pos() or nil
+	local target_pos = target and target:get_pos() or nil
+	if not player or not player_pos or not target_pos then
+		return false
+	end
+
+	local support_pos = vector.add(vector.round(target_pos), {x = 0, y = -1, z = 0})
+	if vector.distance(player_pos, support_pos) <= get_max_place_distance() then
+		return false
+	end
+
+	player:set_pos({
+		x = target_pos.x,
+		y = target_pos.y + 3,
+		z = target_pos.z,
+	})
+	player:set_velocity({x = 0, y = 0, z = 0})
+	spam_state.support_pos = nil
+	return true
 end
 
 local function punch_crystals_near(target_pos, radius)
@@ -234,6 +325,24 @@ local function punch_crystals_near_later(target_pos, radius)
 	core.after(0.05, function()
 		punch_crystals_near(punch_pos, radius or 2.25)
 	end)
+end
+
+local function replace_with_obsidian(pos)
+	if not select_hotbar_item(OBSIDIAN_ITEM_NAMES) then
+		stop_placing_node()
+		return false
+	end
+
+	pulse_placing_node()
+	core.dig_node(pos)
+	core.after(0, function()
+		if select_hotbar_item(OBSIDIAN_ITEM_NAMES) then
+			pulse_placing_node()
+			core.place_node(pos)
+		end
+	end)
+	spam_state.obsidian_cooldown = 0.1
+	return true
 end
 
 local function clear_dodge_controls()
@@ -287,6 +396,8 @@ end
 local function try_place_spam(target)
 	local player = core.localplayer
 	local player_pos = player and player:get_pos() or nil
+	move_to_target_for_placement(target)
+	player_pos = player and player:get_pos() or nil
 	local target_key = get_target_key(target)
 	if spam_state.target ~= target_key then
 		clear_locked_support()
@@ -294,6 +405,13 @@ local function try_place_spam(target)
 	end
 
 	local support_pos = spam_state.support_pos
+	local target_pos = target and target:get_pos() or nil
+	local target_support_pos = target_pos and
+		vector.add(vector.round(target_pos), {x = 0, y = -1, z = 0}) or nil
+	if support_pos and target_support_pos and vector.distance(support_pos, target_support_pos) > 1.5 then
+		spam_state.support_pos = nil
+		support_pos = nil
+	end
 	if support_pos and player_pos and vector.distance(player_pos, support_pos) > get_max_place_distance() then
 		spam_state.support_pos = nil
 		support_pos = nil
@@ -302,23 +420,14 @@ local function try_place_spam(target)
 	if support_pos then
 		local support_node = core.get_node_or_nil(support_pos)
 		if not support_node or not is_support_block(support_node.name) then
-			local target_pos = target and target:get_pos() or nil
-			local nearby_support = target_pos and
-				find_nearby_support_block(vector.round(target_pos), player_pos, 2) or nil
-			if nearby_support then
-				support_pos = nearby_support
-				spam_state.support_pos = support_pos
-			end
+			spam_state.support_pos = nil
+			support_pos = nil
 		end
 	end
 
 	if not support_pos then
 		local candidates = get_target_support_candidates(target)
 		local fallback_pos = nil
-		local target_pos = target and target:get_pos() or nil
-		if target_pos then
-			support_pos = find_nearby_support_block(vector.round(target_pos), player_pos, 2)
-		end
 		for _, candidate in ipairs(candidates) do
 			if support_pos then
 				break
@@ -333,7 +442,8 @@ local function try_place_spam(target)
 					support_pos = candidate
 					break
 				end
-				if not fallback_pos and support_node and is_buildable(support_node) then
+				if not fallback_pos and support_node and
+						(is_buildable(support_node) or is_diggable(support_node)) then
 					fallback_pos = candidate
 				end
 			end
@@ -371,10 +481,15 @@ local function try_place_spam(target)
 				stop_placing_node()
 				return false
 			end
+		elseif is_diggable(support_node) then
+			if spam_state.obsidian_cooldown > 0 then
+				return false
+			end
+			replace_with_obsidian(support_pos)
+			return false
 		else
 			stop_placing_node()
-			core.dig_node(support_pos)
-			spam_state.cooldown = 0.25
+			spam_state.support_pos = nil
 			return false
 		end
 	end
@@ -391,6 +506,12 @@ local function try_place_spam(target)
 		core.place_node(support_pos)
 		punch_crystals_near(support_pos, 0.4)
 		punch_crystals_near_later(support_pos, 0.4)
+		move_below_obsidian(target)
+		spam_state.cooldown = 0.1
+		if core.settings:get_bool("crystalspam.3x3") then
+			advance_pattern(target, support_pos)
+			spam_state.support_pos = nil
+		end
 		return true
 	end
 
@@ -431,6 +552,9 @@ core.register_globalstep(function(dtime)
 		clear_locked_support()
 		stop_placing_node()
 		return
+	end
+	if safe and not core.settings:get_bool("autototem") then
+		core.settings:set_bool("autototem", true)
 	end
 
 	local target = get_nearest_target(get_target_search_radius())

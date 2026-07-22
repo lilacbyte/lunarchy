@@ -1138,24 +1138,6 @@ void NewMenu::create()
         hudElements[1]->elementName = "coords";
 
         {
-            core::rect<s32> stats_bounds;
-            if (loadHudBounds("stats_hud", "stats", stats_bounds)) {
-                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
-                    hudElements.push_back(new StatsHUD(core::rect<s32>(
-                        roundToGrid(stats_bounds.UpperLeftCorner.X),
-                        roundToGrid(stats_bounds.UpperLeftCorner.Y),
-                        roundToGrid(stats_bounds.LowerRightCorner.X),
-                        roundToGrid(stats_bounds.LowerRightCorner.Y))));
-                } else {
-                    hudElements.push_back(new StatsHUD(stats_bounds));
-                }
-            } else {
-                hudElements.push_back(new StatsHUD(core::rect<s32>(10, 330, 250, 435)));
-            }
-        }
-        hudElements.back()->elementName = "stats_hud";
-
-        {
             core::rect<s32> online_bounds;
             if (loadHudBounds("online_hud", "clients_hud", online_bounds) ||
                     loadHudBounds("clients", "", online_bounds)) {

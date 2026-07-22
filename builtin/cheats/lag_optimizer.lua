@@ -9,6 +9,8 @@ local forced_settings = {
 	{ option = "lag_optimizer.no_clouds", target = "no_clouds", value = true },
 	{ option = "lag_optimizer.no_fog", target = "no_fog", value = true },
 	{ option = "lag_optimizer.no_view_bobbing", target = "nobob", value = true },
+	{ option = "lag_optimizer.fast_chunks", target = "smooth_lighting", value = false },
+	{ option = "lag_optimizer.fast_chunks", target = "performance_tradeoffs", value = true },
 	{ option = "lag_optimizer.no_water_animation", target = "enable_waving_water", value = false },
 	{ option = "lag_optimizer.clearer_water", target = "translucent_liquids", value = true },
 	{ option = "lag_optimizer.low_fx", target = "enable_post_processing", value = false },
@@ -43,7 +45,9 @@ local function apply_forced_settings()
 	for _, entry in ipairs(forced_settings) do
 		save_target(entry.target)
 		if core.settings:get_bool(entry.option) then
-			core.settings:set_bool(entry.target, entry.value)
+			if core.settings:get_bool(entry.target) ~= entry.value then
+				core.settings:set_bool(entry.target, entry.value)
+			end
 		else
 			restore_target(entry.target)
 		end
@@ -64,6 +68,10 @@ core.register_cheat_setting("No Clouds", "Client", "lag_optimizer", "lag_optimiz
 core.register_cheat_setting("No Fog", "Client", "lag_optimizer", "lag_optimizer.no_fog", {type="bool"})
 core.register_cheat_setting("No View Bob", "Client", "lag_optimizer", "lag_optimizer.no_view_bobbing", {type="bool"})
 core.register_cheat_setting("No Break Particles", "Client", "lag_optimizer", "lag_optimizer.no_break_particles", {type="bool"})
+core.register_cheat_setting("Fast Chunks", "Client", "lag_optimizer",
+	"lag_optimizer.fast_chunks", {type="bool"})
+core.register_cheat_setting("No Plant Animation", "Client", "lag_optimizer",
+	"lag_optimizer.no_plant_animation", {type="bool"})
 core.register_cheat_setting("No Water Animation", "Client", "lag_optimizer", "lag_optimizer.no_water_animation", {type="bool"})
 core.register_cheat_setting("No Lava Animation", "Client", "lag_optimizer", "lag_optimizer.no_lava_animation", {type="bool"})
 core.register_cheat_setting("Clearer Water", "Client", "lag_optimizer", "lag_optimizer.clearer_water", {type="bool"})
@@ -72,6 +80,8 @@ core.register_cheat_setting("No Minimap", "Client", "lag_optimizer", "lag_optimi
 core.register_cheat_setting("No Achievement Overlay", "Client", "lag_optimizer",
 	"lag_optimizer.no_achievement_overlay", {type="bool"})
 core.register_cheat_setting("No Bossbar", "Client", "lag_optimizer", "lag_optimizer.no_bossbar", {type="bool"})
+core.register_cheat_setting("Suppress Tiles", "Client", "lag_optimizer",
+	"lag_optimizer.suppress_tiles", {type="bool"})
 
 core.register_globalstep(function(dtime)
 	local ok, err = pcall(function()

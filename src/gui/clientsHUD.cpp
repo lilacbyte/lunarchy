@@ -4,7 +4,6 @@
 #include "client/content_cao.h"
 #include "client/client.h"
 #include "client/localplayer.h"
-#include "client/playerstats.h"
 #include "util/string.h"
 #include <cctype>
 #include <algorithm>
@@ -41,13 +40,6 @@ static bool getNearbyHealthEnabled()
 	return g_settings->getBool("nearby_clients.health");
 }
 
-static void appendStats(std::wstringstream &line, const std::string &name)
-{
-	const auto stats = player_stats::getLine(name);
-	if (stats)
-		line << L" [" << *stats << L"]";
-}
-
 static std::vector<std::wstring> buildOnlineLines(ClientEnvironment &env)
 {
 	std::vector<std::wstring> lines;
@@ -68,9 +60,6 @@ static std::vector<std::wstring> buildOnlineLines(ClientEnvironment &env)
 	for (const std::string &name : *names) {
 		std::wstringstream line;
 		line << utf8_to_wide(name);
-		if (g_settings->getBool("luna_stats.enabled") &&
-				g_settings->getBool("luna_stats.client_list.online"))
-			appendStats(line, name);
 		lines.push_back(line.str());
 	}
 

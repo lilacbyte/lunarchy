@@ -34,7 +34,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <chrono>
 #include "gui/targetHUD.h"
 #include "gui/coordsHUD.h"
-#include "gui/statsHUD.h"
 #include "gui/clientsHUD.h"
 #include "gui/pingHUD.h"
 #include "gui/fpsHUD.h"

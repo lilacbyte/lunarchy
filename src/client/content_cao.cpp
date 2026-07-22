@@ -407,11 +407,32 @@ scene::IAnimatedMeshSceneNode *GenericCAO::getAnimatedMeshSceneNode() const
 
 bool GenericCAO::isHiddenByLagOptimizer() const
 {
-	if (!g_settings->getBool("lag_optimizer") ||
-			!g_settings->getBool("lag_optimizer.no_ground_items"))
+	if (!g_settings->getBool("lag_optimizer"))
 		return false;
 
-	if (m_attachment_parent_id != 0 || m_is_player)
+	if (m_is_player)
+		return false;
+
+	if (g_settings->getBool("lag_optimizer.suppress_tiles")) {
+		static constexpr const char *tile_entities[] = {
+			"mcl_chests:chest", "mcl_signs:text",
+			"mcl_banners:standing_banner", "mcl_banners:hanging_banner",
+			"mcl_itemframes:item", "mcl_campfires:food_entity",
+			"mcl_enchanting:book", "mcl_bells:bell_ent",
+			"mcl_conduits:conduit", "mcl_mobspawners:doll",
+			"mcl_pottery_sherds:pot_face", "mcl_vaults:item_entity",
+			"mcl_trial_spawners:ominous_item_spawner",
+		};
+		for (const char *name : tile_entities) {
+			if (m_name == name)
+				return true;
+		}
+		if (m_name.rfind("mcl_heads:", 0) == 0)
+			return true;
+	}
+
+	if (!g_settings->getBool("lag_optimizer.no_ground_items") ||
+			m_attachment_parent_id != 0)
 		return false;
 
 	if (m_name == "__builtin:item")

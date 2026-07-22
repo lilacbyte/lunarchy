@@ -254,8 +254,9 @@ void LocalPlayer::move(f32 dtime, Environment *env, std::vector<CollisionInfo> *
 	bool fly_allowed = m_client->checkLocalPrivilege("fly");
 	bool noclip = (m_client->checkLocalPrivilege("noclip") && player_settings.noclip);
 	bool free_move = (player_settings.free_move && fly_allowed);
-	
-	if (noclip && free_move) {
+	bool mace_noclip = g_settings->getBool("killaura.mace_noclip_active");
+
+	if (noclip && (free_move || mace_noclip)) {
 		position += speed * dtime;
 		setLegitPosition(position);
 
@@ -707,6 +708,9 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	bool superspeed = false;
 
 	const f32 speed_walk = movement_speed_walk * physics_override.speed_walk;
+	const f32 speed_climb = g_settings->getBool("no_slow_plus")
+		? speed_walk
+		: movement_speed_climb * physics_override.speed_climb;
 	// const f32 speed_fast = movement_speed_fast * physics_override.speed_fast;
 
 	f32 new_speed_fast = g_settings->getFloat("movement_speed_fast") * BS;
@@ -734,7 +738,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 				speedV.Y = -speed_walk;
 				swimming_vertical = true;
 			} else if (is_climbing && !m_disable_descend) {
-				speedV.Y = -movement_speed_climb * physics_override.speed_climb;
+				speedV.Y = -speed_climb;
 			} else {
 				// If not free movement but fast is allowed, aux1 is
 				// "Turbo button"
@@ -772,7 +776,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 				if (fast_climb)
 					speedV.Y = -new_speed_fast;
 				else
-					speedV.Y = -movement_speed_climb * physics_override.speed_climb;
+					speedV.Y = -speed_climb;
 			}
 		}
 	}
@@ -837,7 +841,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			if (fast_climb)
 				speedV.Y = new_speed_fast;
 			else
-				speedV.Y = movement_speed_climb * physics_override.speed_climb;
+				speedV.Y = speed_climb;
 		}
 	}
 

@@ -23,7 +23,6 @@ Difference from CloakV4:
         - can also apply nametags too
     - NoArmor - hides player's armor
 - Extra Modules
-    - Luna Stats - player stats HUD, nametags and online client list stats
     - ChatPlus - customize the chat position, colour, background and border
     - FPS - shows FPS in the HUD
     - Totems - shows your totem count in the HUD
@@ -47,7 +46,7 @@ Difference from CloakV4:
     - Killaura
         - Mace option and mace jump suppress
     - Nametags
-        - added equipment, blocks away, Luna Stats etc
+        - added equipment and blocks away
     - ChatEffects
         - ChatColor can have gradients too
         - Derp, redacted, Reversed and random gradient options

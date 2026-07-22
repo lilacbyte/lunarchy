@@ -1,76 +1,13 @@
 Strata = {
 	formatted_string = core.colorize("white", "[") .. core.colorize("purple", "Strata") .. core.colorize("white", "] -> "),
 
-	task_tracers = {},
-	task_nodes = {},
-
 	next_actions = {},
 	current_action = nil,
 	current_target = {}, 
 	pathfinding_complete = false,
-	visual_started = false,
 	current_pos = nil,
 	action_timer = 0
 }
-
-Strata.clear_path_visuals = function()
-	for _, pos in ipairs(Strata.task_nodes) do
-		core.clear_task_node(pos)
-	end
-	Strata.task_nodes = {}
-
-	for _, tracer in ipairs(Strata.task_tracers) do
-		core.clear_task_tracer(tracer[1], tracer[2])
-	end
-	Strata.task_tracers = {}
-end
-
-Strata.visualize_actions = function(start_pos, end_pos, actions, reached_goal)
-	if not Strata.visual_started then
-		Strata.clear_path_visuals()
-		Strata.visual_started = true
-	end
-
-	local function add_task_node(pos, color)
-		core.add_task_node(pos, color)
-		table.insert(Strata.task_nodes, pos)
-	end
-
-	-- Start and End Nodes (only draw end once)
-	add_task_node(start_pos, {r=0, g=0, b=255})
-	if reached_goal then
-		add_task_node(end_pos, {r=0, g=255, b=0})
-	else
-		add_task_node(actions[#actions].to, {r=255, g=0, b=255})
-		add_task_node(end_pos, {r=0, g=255, b=0})
-	end
-
-	for _, step in ipairs(actions) do
-		local curr = step.from
-		local next = step.to
-		local tracer_color = {r=200, g=200, b=200} -- Default
-
-		for _, action in ipairs(step.actions) do
-			if action.action == "mine_block" then
-				add_task_node(action.pos, {r=255, g=0, b=0})
-				tracer_color = {r=255, g=0, b=0}
-			elseif action.action == "place_block" then
-				add_task_node(action.pos, {r=0, g=255, b=0})
-				tracer_color = {r=0, g=0, b=255}
-			elseif action.action == "jump" then
-				tracer_color = {r=255, g=0, b=0}
-			elseif action.action == "fall" then
-				tracer_color = {r=255, g=0, b=0}
-			elseif action.action == "walk" then
-				tracer_color = {r=255, g=0, b=0}
-			end
-		end
-
-		core.add_task_tracer(curr, next, tracer_color)
-		table.insert(Strata.task_tracers, {curr, next})
-	end
-end
-
 
 Strata.compute_actions_required_to_complete_path = function(path)
 	local actions = {}
@@ -206,7 +143,6 @@ Strata.clear_actions = function()
 	Strata.current_target = {}
 	Strata.current_pos = nil
 	Strata.pathfinding_complete = false
-	Strata.visual_started = false
 end
 
 
@@ -428,9 +364,6 @@ core.register_globalstep(function(dtime)
 				table.insert(Strata.next_actions, step)
 			end
 
-			-- Visualize current segment
-			Strata.visualize_actions(start_pos, end_pos, new_actions, reached_goal)
-
 			-- Update current_pos and completion status
 			Strata.current_pos = path[#path]
 			Strata.pathfinding_complete = reached_goal
@@ -460,7 +393,6 @@ core.register_globalstep(function(dtime)
 			Strata.current_pos = vector.round(core.localplayer:get_pos())
 			Strata.next_actions = {}
 			Strata.current_action = nil
-			Strata.visual_started = false
 			return
 		end
 	end
@@ -475,7 +407,6 @@ core.register_globalstep(function(dtime)
 		local player_pos = core.localplayer:get_pos()
 		if current_action.type == "walk" then
 			if Strata.position_equals(player_pos, current_action.to) then
-				core.clear_task_tracer(current_action.from, current_action.to)
 				Strata.get_next_action()
 				return
 			else
@@ -484,7 +415,6 @@ core.register_globalstep(function(dtime)
 			end
 		elseif current_action.type == "jump" then
 			if Strata.position_equals(player_pos, current_action.to) then
-				core.clear_task_tracer(current_action.from, current_action.to)
 				Strata.get_next_action()
 				return
 			else
@@ -493,7 +423,6 @@ core.register_globalstep(function(dtime)
 			end
 		elseif current_action.type == "fall" then
 			if Strata.position_equals(player_pos, current_action.to) then
-				core.clear_task_tracer(current_action.from, current_action.to)
 				Strata.get_next_action()
 				return
 			else
@@ -502,7 +431,6 @@ core.register_globalstep(function(dtime)
 			end
 		elseif current_action.type == "mine_block" then
 			if ws.can_place_at(current_action.action_pos) then
-				core.clear_task_node(current_action.action_pos)
 				Strata.get_next_action()
 				return
 			else
@@ -512,7 +440,6 @@ core.register_globalstep(function(dtime)
 			end
 		elseif current_action.type == "place_block" then
 			if not ws.can_place_at(current_action.action_pos) then
-				core.clear_task_node(current_action.action_pos)
 				Strata.get_next_action()
 				return
 			else

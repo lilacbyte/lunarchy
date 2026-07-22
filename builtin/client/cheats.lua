@@ -7,7 +7,6 @@
 		["hud"] = { setting = "hud.enabled", order = 7 },
 		["chatplus"] = { setting = "chatplus.enabled", order = 9 },
 		["coords"] = { setting = "coords", order = 10 },
-		["luna-stats"] = { setting = "luna_stats.enabled", order = 11 },
 		["fps"] = { setting = "fps", order = 12 },
 		["totems"] = { setting = "totems", order = 13 },
 		["WAILA"] = { setting = "waila", order = 14 },
@@ -33,8 +32,6 @@
 		["nohurtcam"] = "no_hurt_cam",
 		["nodrowncam"] = "no_drown_cam",
 		["nofire"] = "no_fire",
-		["tasktracers"] = "enable_task_tracers",
-		["tasknodes"] = "enable_task_nodes",
 		["targethud"] = "enable_combat_target_hud",
 		["lefthand"] = "left_hand",
 		["handview"] = "hand_view",
@@ -60,9 +57,10 @@
 		["autojump"] = "autojump",
 		["noclip"] = "noclip",
 		["fastmove"] = "fast_move",
-		["jesus"] = "jesus",
-		["noslow"] = "no_slow",
-		["jetpack"] = "jetpack",
+			["jesus"] = "jesus",
+			["noslow"] = "no_slow",
+			["noslowplus"] = "no_slow_plus",
+			["jetpack"] = "jetpack",
 		["jump"] = "jump",
 		["antislip"] = "antislip",
 		["airjump"] = "airjump",
@@ -92,7 +90,6 @@
 		["friends"] = { setting = "friends.middle_click", order = 4 },
 		["logoutspots"] = { setting = "logoutspots" },
 		["deathmarker"] = { setting = "deathmarker" },
-		["avoid"] = { setting = "avoid" },
 		["spammer+"] = "spammer_plus",
     }
 }
@@ -216,8 +213,6 @@ core.register_cheat_setting("Range", "Misc", "logoutspots", "logoutspots.range",
 core.register_cheat_setting("Limit", "Misc", "logoutspots", "logoutspots.limit", {type="slider_int", min=1, max=100, steps=100})
 core.register_cheat_setting("Scale", "Misc", "logoutspots", "logoutspots.scale", {type="slider_float", min=0.1, max=2.0, steps=20})
 core.register_cheat_description("deathmarker", "Misc", "deathmarker", "Marks your last death position as a waypoint")
-core.register_cheat_description("avoid", "Misc", "avoid", "Disconnect when a listed player is online on this server")
-core.register_cheat_setting("Players", "Misc", "avoid", "avoid.players", {type="text", size=80})
 core.register_cheat_description("friends", "Misc", "friends.middle_click", "Toggle a pointed player in the server friend list")
 core.register_cheat_setting("Middle click", "Misc", "friends.middle_click", "friends.middle_click", {type="bool"})
 core.register_cheat_setting("Friends", "Misc", "friends.middle_click", "friends.list", {type="text", size=80})
@@ -244,6 +239,8 @@ core.register_cheat_description("jump", "Movement", "jump", "Adjust normal jump 
 core.register_cheat_description("BHOP", "Movement", "BHOP", "Boost movement acceleration while moving")
 core.register_cheat_description("detachedcamera", "Movement", "detached_camera", "Detach the camera from the player")
 core.register_cheat_description("noslow", "Movement", "noslow", "Sneaking doesn't slow you down")
+core.register_cheat_description("noslowplus", "Movement", "no_slow_plus",
+	"Prevents cobweb, vine, liquid and node movement slowdown")
 core.register_cheat_description("noclip", "Movement", "noclip", "Walk through walls (req. PrivBypass)")
 core.register_cheat_description("overrides", "Movement", "overrides", "Movement overrides")
 core.register_cheat_description("pitchmove", "Movement", "pitch_move", "While flying, you move where you're pointing")
@@ -281,7 +278,6 @@ core.register_cheat_setting("y offset", "Client", "cheat_hud", "cheat_hud.offset
 core.register_cheat_setting("text align", "Client", "cheat_hud", "cheat_hud.align", {type="selectionbox", options={"Left", "Center", "Right"}})
 core.register_cheat_description("hud", "Client", "hud.enabled", "Configure HUD colors, backgrounds, and spacing")
 core.register_cheat_description("coords", "Client", "coords", "Render coordinates in the bottom left corner")
-core.register_cheat_description("luna-stats", "Client", "luna_stats.enabled", "Configure Luna API stat displays")
 core.register_cheat_description("fps", "Client", "fps", "Show current frames per second")
 core.register_cheat_description("totems", "Client", "totems", "Show total totems in inventory and offhand")
 core.register_cheat_description("WAILA", "Client", "waila", "Show the node or entity you are looking at")
@@ -362,7 +358,10 @@ core.register_cheat_setting("players only", "Render", "enable_health_esp", "enab
 core.register_cheat_setting("Solid", "Render", "enable_player_esp", "playeresp.solid", {type="bool"})
 core.register_cheat_setting("target highlight", "Render", "enable_combat_target_hud", "enable_combat_target_hud.target_highlight", {type="bool"})
 core.register_cheat_setting("target mode", "Combat", "crystalspam", "crystalspam.target_mode", {type="selectionbox", options={"Players", "Entities", "Both"}})
+core.register_cheat_setting("target radius", "Combat", "crystalspam", "crystalspam.target_radius",
+	{type="slider_int", min=5, max=50, steps=46})
 core.register_cheat_setting("safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
+core.register_cheat_setting("3x3", "Combat", "crystalspam", "crystalspam.3x3", {type="bool"})
 core.register_cheat_setting("hp", "Render", "nametags", "nametags.hp", {type="bool"})
 core.register_cheat_setting("status marker", "Render", "nametags", "nametags.status", {type="bool"})
 core.register_cheat_setting("distance", "Render", "nametags", "nametags.distance", {type="bool"})
@@ -376,16 +375,6 @@ core.register_cheat_setting("height", "Render", "nametags", "nametags.height", {
 core.register_cheat_setting("field of view", "Render", "fov_setting", "fov.step", {type="slider_int", min=72, max=160, steps = 89});
 core.register_cheat_setting("background", "Client", "equipment_hud", "equipment_hud.background", {type="bool"})
 core.register_cheat_setting("background", "Client", "coords", "coords.background", {type="bool"})
-core.register_cheat_setting("enabled", "Client", "luna_stats.enabled", "luna_stats.enabled", {type="bool"})
-core.register_cheat_setting("HUD", "Client", "luna_stats.enabled", "luna_stats.hud", {type="bool"})
-core.register_cheat_setting("HUD background", "Client", "luna_stats.enabled", "luna_stats.hud.background", {type="bool"})
-core.register_cheat_setting("HUD pvp", "Client", "luna_stats.enabled", "luna_stats.hud.pvp", {type="bool"})
-core.register_cheat_setting("HUD messages", "Client", "luna_stats.enabled", "luna_stats.hud.messages", {type="bool"})
-core.register_cheat_setting("HUD joined", "Client", "luna_stats.enabled", "luna_stats.hud.joined", {type="bool"})
-core.register_cheat_setting("HUD joins", "Client", "luna_stats.enabled", "luna_stats.hud.joins", {type="bool"})
-core.register_cheat_setting("HUD leaves", "Client", "luna_stats.enabled", "luna_stats.hud.leaves", {type="bool"})
-core.register_cheat_setting("nametags", "Client", "luna_stats.enabled", "luna_stats.nametags", {type="bool"})
-core.register_cheat_setting("client list online", "Client", "luna_stats.enabled", "luna_stats.client_list.online", {type="bool"})
 core.register_cheat_setting("background", "Client", "fps", "fps.background", {type="bool"})
 core.register_cheat_setting("background", "Client", "totems", "totems.background", {type="bool"})
 core.register_cheat_setting("background", "Client", "waila", "waila.background", {type="bool"})

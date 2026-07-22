@@ -1093,6 +1093,12 @@ lag_optimizer.no_view_bobbing (LagOptimizer no view bobbing) bool true
 #    Disable digging and block-break particles while LagOptimizer is active.
 lag_optimizer.no_break_particles (LagOptimizer no break particles) bool true
 
+#    Disable smooth-light mesh calculations and use reduced neighbor updates for faster chunks.
+lag_optimizer.fast_chunks (LagOptimizer fast chunks) bool true
+
+#    Disable shader waving for seagrass and other plantlike nodes while LagOptimizer is active.
+lag_optimizer.no_plant_animation (LagOptimizer no plant animation) bool true
+
 #    Disable water texture and wave animation while LagOptimizer is active.
 lag_optimizer.no_water_animation (LagOptimizer no water animation) bool true
 
@@ -1113,6 +1119,9 @@ lag_optimizer.no_achievement_overlay (LagOptimizer no achievement overlay) bool 
 
 #    Hide Mineclonia boss bar HUD overlays while LagOptimizer is active.
 lag_optimizer.no_bossbar (LagOptimizer no bossbar) bool true
+
+#    Hide Mineclonia auxiliary block-entity visuals without adding work to static chunk meshes.
+lag_optimizer.suppress_tiles (LagOptimizer suppress tiles) bool true
 
 #    Border alpha for the chat overlay.
 chatplus_border_alpha (ChatPlus border alpha) int 255 0 255

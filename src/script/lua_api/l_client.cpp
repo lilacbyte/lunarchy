@@ -26,7 +26,6 @@
 #include "l_clientobject.h"
 #include "client/keycode.h"
 #include "client/game.h"
-#include "client/render/plain.h"
 #include "client/pathfind.h"
 #include <cstdint>
 
@@ -958,51 +957,6 @@ int ModApiClient::l_get_node_name(lua_State *L)
 
 
 
-// add_task_node(pos, color)
-int ModApiClient::l_add_task_node(lua_State *L)
-{	
-	v3f pos = checkFloatPos(L, 1);
-	video::SColor color = read_ARGB8(L, 2);
-	
-	DrawTaskBlocksAndTracers::addTaskNode(TaskNode{pos, color});
-
-	return 0;
-}
-
-// clear_task_node(pos)
-int ModApiClient::l_clear_task_node(lua_State *L)
-{
-	v3f pos = checkFloatPos(L, 1);
-	
-	DrawTaskBlocksAndTracers::removeTaskNode(TaskNode{pos});
-
-	return 0;
-}
-
-// add_task_tracer(start_pos, end_pos, color)
-int ModApiClient::l_add_task_tracer(lua_State *L)
-{
-	v3f start_pos = checkFloatPos(L, 1);
-	v3f end_pos = checkFloatPos(L, 2);
-	video::SColor color = read_ARGB8(L, 3);
-	
-	DrawTaskBlocksAndTracers::addTaskTracer(TaskTracer{start_pos, end_pos, color});
-
-	return 0;
-}
-
-// clear_task_tracer(start_pos, end_pos)
-int ModApiClient::l_clear_task_tracer(lua_State *L)
-{
-	v3f start_pos = checkFloatPos(L, 1);
-	v3f end_pos = checkFloatPos(L, 2);
-	
-	DrawTaskBlocksAndTracers::removeTaskTracer(TaskTracer{start_pos, end_pos});
-
-	return 0;
-}
-
-
 StringMap *table_to_stringmap(lua_State *L, int index)
 {
 	StringMap *m = new StringMap;
@@ -1176,10 +1130,6 @@ void ModApiClient::Initialize(lua_State *L, int top)
 	API_FCT(file_write);
 	API_FCT(file_append);
 	API_FCT(get_node_name);
-	API_FCT(add_task_node);
-	API_FCT(clear_task_node);
-	API_FCT(add_task_tracer);
-	API_FCT(clear_task_tracer);
 	API_FCT(send_inventory_fields);
 	API_FCT(send_nodemeta_fields);
 	API_FCT(update_infotexts);

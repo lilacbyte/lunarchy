@@ -39,7 +39,6 @@ QueuedMeshUpdate::~QueuedMeshUpdate()
 MeshUpdateQueue::MeshUpdateQueue(Client *client):
 	m_client(client)
 {
-	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_water_reflections = g_settings->getBool("enable_water_reflections");
 }
 
@@ -193,7 +192,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 
 	data->setCrack(q->crack_level, q->crack_pos);
 	data->m_generate_minimap = !!m_client->getMinimap();
-	data->m_smooth_lighting = m_cache_smooth_lighting;
+	data->m_smooth_lighting = g_settings->getBool("smooth_lighting");
 	data->m_enable_water_reflections = m_cache_enable_water_reflections;
 }
 
@@ -259,7 +258,7 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
 		bool urgent, bool update_neighbors)
 {
-	static thread_local const bool many_neighbors =
+	const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");
 	if (!m_queue_in.addBlock(map, p, ack_block_to_server, urgent)) {

@@ -228,6 +228,8 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 	CachedPixelShaderSetting<float> m_animation_timer_pixel{"animationTimer"};
 	CachedVertexShaderSetting<float>
 		m_animation_timer_delta_vertex{"animationTimerDelta"};
+	CachedVertexShaderSetting<float>
+		m_lag_optimizer_no_plant_animation{"lagOptimizerNoPlantAnimation"};
 	CachedPixelShaderSetting<float>
 		m_animation_timer_delta_pixel{"animationTimerDelta"};
 	CachedPixelShaderSetting<float, 3> m_day_light{"dayLight"};
@@ -312,6 +314,11 @@ public:
 		float animation_timer_delta_f = (float)m_client->getEnv().getFrameTimeDelta() / 100000.f;
 		m_animation_timer_delta_vertex.set(&animation_timer_delta_f, services);
 		m_animation_timer_delta_pixel.set(&animation_timer_delta_f, services);
+
+		float suppress_plant_animation =
+				g_settings->getBool("lag_optimizer") &&
+				g_settings->getBool("lag_optimizer.no_plant_animation") ? 1.0f : 0.0f;
+		m_lag_optimizer_no_plant_animation.set(&suppress_plant_animation, services);
 
 		if (m_client->getMinimap()) {
 			v3f minimap_yaw = m_client->getMinimap()->getYawVec();

@@ -145,7 +145,9 @@ void ClientEnvironment::step(float dtime)
 				lplayer->gravity = 2 * lplayer->movement_liquid_sink * lplayer->physics_override.liquid_sink;
 
 			// Movement resistance
-			if (lplayer->move_resistance > 0 && !g_settings->getBool("no_slow")) {
+			if (lplayer->move_resistance > 0 &&
+					!g_settings->getBool("no_slow") &&
+					!g_settings->getBool("no_slow_plus")) {
 				v3f speed = lplayer->getLegitSpeed();
 
 				// How much the node's move_resistance blocks movement, ranges

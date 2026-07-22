@@ -26,10 +26,6 @@ local deathmarker_owner_key = nil
 local spammer_plus_timer = 0
 local spammer_plus_index = 1
 local spammer_plus_file_warned = false
-local avoid_timer = 0
-local avoid_server_key = nil
-local avoid_editor_value = nil
-local avoid_disconnect_pending = false
 
 local function remove_waypoint(id)
     if id and core.localplayer then
@@ -268,66 +264,6 @@ local function get_spammer_plus_messages()
     return messages
 end
 
-local function normalize_avoid_list(value)
-    local names = {}
-    local targets = {}
-    for entry in tostring(value or ""):gmatch("[^,]+") do
-        local name = entry:match("^%s*(.-)%s*$")
-        if name ~= "" then
-            local key = name:lower()
-            if not targets[key] then
-                targets[key] = true
-                names[#names + 1] = name
-            end
-        end
-    end
-    return table.concat(names, ","), targets
-end
-
-local function sync_avoid()
-    local server_key = core.get_server_url and core.get_server_url() or nil
-    if not server_key then
-        avoid_server_key = nil
-        avoid_editor_value = nil
-        avoid_disconnect_pending = false
-        return
-    end
-
-    local data = core.settings:get_json("avoid.players_by_server") or {}
-    if avoid_server_key ~= server_key then
-        avoid_server_key = server_key
-        avoid_editor_value = data[server_key] or ""
-        core.settings:set("avoid.players", avoid_editor_value)
-        avoid_disconnect_pending = false
-    end
-
-    local edited = core.settings:get("avoid.players") or ""
-    local normalized, targets = normalize_avoid_list(edited)
-    if normalized ~= avoid_editor_value then
-        avoid_editor_value = normalized
-        data[server_key] = normalized
-        core.settings:set_json("avoid.players_by_server", data)
-        if edited ~= normalized then
-            core.settings:set("avoid.players", normalized)
-        end
-    end
-
-    if not core.settings:get_bool("avoid") or avoid_disconnect_pending or next(targets) == nil then
-        return
-    end
-
-    local local_name = core.localplayer and core.localplayer:get_name():lower() or ""
-    for _, name in ipairs(core.get_player_names() or {}) do
-        local key = name:lower()
-        if key ~= local_name and targets[key] then
-            avoid_disconnect_pending = true
-            core.display_chat_message("Avoid: disconnecting because " .. name .. " is online.")
-            core.disconnect()
-            return
-        end
-    end
-end
-
 local function format_player_message(template, name)
     template = template or ""
     template = template:gsub("%%player%%", function()
@@ -552,12 +488,6 @@ core.register_globalstep(function(dtime)
 
         greeter_last_online_players = current_set
         sync_logoutspots()
-    end
-    --Avoid
-    avoid_timer = avoid_timer + dtime
-    if avoid_timer >= 0.2 then
-        avoid_timer = 0
-        sync_avoid()
     end
     --HUD elements advice thing
     if minetest.settings:get_bool("enable_combat_target_hud") and minetest.settings:get_bool("hud_elements_advice") then
