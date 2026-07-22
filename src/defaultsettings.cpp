@@ -199,7 +199,7 @@ void set_default_settings()
 	settings->setDefault("killaura.simtime", "false");
 	settings->setDefault("killaura.highlight", "false");
 	settings->setDefault("killaura.mace", "false");
-	settings->setDefault("killaura.mace_target_radius", "20");
+	settings->setDefault("killaura.mace_target_radius", "15");
 	settings->setDefault("killaura.mace_height", "5");
 	settings->setDefault("killaura.mace_jump_suppress", "true");
 	settings->setDefault("killaura.mace_suppress_jump_multiplier", "false");
@@ -403,6 +403,8 @@ void set_default_settings()
 	settings->setDefault("ignore.whitelist", "");
 	settings->setDefault("ignore.whitelist_only", "false");
 	settings->setDefault("ignore.mineclonia", "true");
+	settings->setDefault("autotoxic", "false");
+	settings->setDefault("autotoxic.message", "ez");
 	settings->setDefault("avoid_movement", "false");
 	settings->setDefault("avoid_movement.range", "6");
 	settings->setDefault("enable_combat_target_hud", "false");

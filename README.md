@@ -10,6 +10,7 @@ Difference from CloakV4:
   it and its size from `Client` -> `HUD`; the selection is used by menus, HUDs, chat, formspecs,
   the console, and the cheat UI
 - More modules geared for Mineclonia
+- Mineclonia-only modules are content-checked and refuse to activate on other games
     - ElytraTakeoff - hold your rockets and double press space
     - ContentPreviewer - shulkerbox, map, enderchest preview when hovering over them
     - CrystalSpam - auto crystal
@@ -35,6 +36,9 @@ Difference from CloakV4:
     - Ignore - hides messages from saved players and supports a priority
       whitelist, whitelist-only mode, Mineclonia `<player>` chat, and `/msg`
       replies; lists can also be managed with `.ignore`
+    - AutoToxic - sends a configurable message when Mineclonia reports that
+      you directly killed another player; defaults to `ez` and supports
+      `{player}` in the message
     - bhop - bunny hop movement
     - FastFall - fall faster
     - Visuals - contains HandView (with full -100 to 100 positioning), NoFire,

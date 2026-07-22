@@ -127,6 +127,45 @@ function core.get_server_game()
 	end
 end
 
+function core.is_mineclonia_server()
+	local server_game = core.get_server_game()
+	if not core.localplayer and server_game == "not_initialized" then
+		return nil
+	end
+	if server_game ~= "not_initialized" then
+		local normalized = tostring(server_game):lower()
+		if normalized:find("mineclonia", 1, true) or
+				normalized:find("mineclone", 1, true) then
+			return true
+		end
+	end
+
+	local signatures = {
+		"mcl_core:stone",
+		"mcl_core:dirt",
+		"mcl_chests:chest",
+	}
+	for _, node_name in ipairs(signatures) do
+		if core.get_node_def(node_name) then
+			return true
+		end
+	end
+
+	local inventory = core.localplayer and core.get_inventory("current_player") or nil
+	if inventory and inventory.offhand and inventory.armor and inventory.enderchest then
+		return true
+	end
+	return false
+end
+
+function core.require_mineclonia(feature_name)
+	if core.is_mineclonia_server() == true then
+		return true
+	end
+	core.display_chat_message((feature_name or "This feature") .. " is Mineclonia only.")
+	return false
+end
+
 core.register_on_receiving_chat_message(function(message)
 	message = string.gsub(string.gsub(string.gsub(message, "(T@ctf_teams)", ""), "F", ""), "E", "")
 

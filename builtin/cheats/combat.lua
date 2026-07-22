@@ -203,20 +203,6 @@ is_mace_item = function(item_name)
 	return item_name:find("mace", 1, true) ~= nil
 end
 
-local function is_maceaura_active()
-	if not core.settings:get_bool("killaura.mace") then
-		return false
-	end
-
-	local player = core.localplayer
-	local wielded = player and player:get_wielded_item()
-	return wielded and is_mace_item(wielded:get_name()) or false
-end
-
-local function is_combat_aura_active()
-	return core.settings:get_bool("killaura") or is_maceaura_active()
-end
-
 local function is_elytra(stack)
 	if not stack or stack:is_empty() then
 		return false
@@ -307,8 +293,8 @@ local function get_mace_height()
 end
 
 local function get_mace_target_radius()
-	local radius = tonumber(core.settings:get("killaura.mace_target_radius")) or 20
-	return math.max(5, math.min(50, radius))
+	local radius = tonumber(core.settings:get("killaura.mace_target_radius")) or 15
+	return math.max(5, math.min(20, radius))
 end
 
 local function get_target_upward_speed(target)
@@ -448,7 +434,7 @@ local function get_best_mace_target(objects, target_mode, target_type, max_dista
 end
 
 core.get_send_pitch = function(pitch)
-	if is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target then
+	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
 		local target_pos = killaura_target:get_pos()
 		local player_pos = core.localplayer:get_pos()
 		local direction = vector.direction(player_pos, target_pos)
@@ -459,7 +445,7 @@ core.get_send_pitch = function(pitch)
 end
 
 core.get_send_yaw = function(yaw)
-	if is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target then
+	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
 		local target_pos = killaura_target:get_pos()
 		local player_pos = core.localplayer:get_pos()
 		local direction = vector.direction(player_pos, target_pos)
@@ -499,7 +485,7 @@ core.get_send_speed = function(critspeed)
 end
 
 core.get_send_controls = function(controls)
-	if (is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target) then
+	if (core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target) then
 		local player = core.localplayer
 		local wielded = player and player:get_wielded_item()
 		local wield_name = wielded and wielded:get_name() or ""
@@ -675,7 +661,8 @@ core.register_globalstep(function(dtime)
 		local max_distance = (tonumber(core.settings:get("targeting.distance")) or 5) + 0.5
 			local wielded = player:get_wielded_item()
 			local wield_name = wielded and wielded:get_name() or ""
-			local mace_mode = core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
+			local mace_mode = core.settings:get_bool("killaura") and
+				core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
 			if mace_mode then
 				max_distance = get_mace_target_radius()
 			end
@@ -704,7 +691,7 @@ core.register_globalstep(function(dtime)
 			core.set_combat_target(target_enemy:get_id())
 		end
 
-			if target_enemy and (core.settings:get_bool("killaura") or mace_mode) then
+			if target_enemy and core.settings:get_bool("killaura") then
 				killaura_target = target_enemy
 				local mace_wall_target = mace_mode and target_is_in_wall(target_enemy)
 				if mace_mode then

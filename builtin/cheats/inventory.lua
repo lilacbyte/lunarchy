@@ -178,6 +178,9 @@ local enderchest_formspec = "size[9,8.75]"..
 	"listring[current_player;main]"
 
 function core.open_enderchest()
+	if not core.require_mineclonia("enderchest") then
+		return
+	end
 	close_cheat_menu()
 	core.show_formspec("inventory:enderchest", enderchest_formspec)
 end
@@ -197,6 +200,9 @@ local hand_formspec = "size[9,8.75]"..
 	"listring[current_player;main]"
 	
 function core.open_handslot()
+	if not core.require_mineclonia("hand") then
+		return
+	end
 	close_cheat_menu()
 	core.show_formspec("inventory:hand", hand_formspec)
 end
@@ -224,6 +230,9 @@ local portable_enchanting_formspec = "formspec_version[4]" ..
 	"listring[current_player;main]"
 
 function core.open_enchanting_table()
+	if not core.require_mineclonia("enchanting table") then
+		return
+	end
 	close_cheat_menu()
 	core.show_formspec("mcl_enchanting:table", portable_enchanting_formspec)
 end

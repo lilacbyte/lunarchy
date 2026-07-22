@@ -2756,3 +2756,11 @@ friend_esp_color (Friend ESP color) string (255, 0, 255)
 allied_esp_color (Allied ESP color) string (0, 0, 255)
 
 enemy_esp_color (Enemy ESP color) string (255, 0, 0)
+
+[**AutoToxic] [client]
+
+#    Automatically reply after a Mineclonia death message says you killed a player.
+autotoxic (AutoToxic) bool false
+
+#    Message sent by AutoToxic. Use {player} for the defeated player's name.
+autotoxic.message (AutoToxic message) string ez
