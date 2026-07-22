@@ -5,14 +5,10 @@ local lag_optimizer_state = {
 
 local forced_settings = {
 	{ option = "lag_optimizer.no_inventory_animations", target = "inventory_items_animations", value = false },
-	{ option = "lag_optimizer.no_particles", target = "norender.particles", value = true },
-	{ option = "lag_optimizer.no_clouds", target = "no_clouds", value = true },
-	{ option = "lag_optimizer.no_fog", target = "no_fog", value = true },
 	{ option = "lag_optimizer.no_view_bobbing", target = "nobob", value = true },
 	{ option = "lag_optimizer.fast_chunks", target = "smooth_lighting", value = false },
 	{ option = "lag_optimizer.fast_chunks", target = "performance_tradeoffs", value = true },
 	{ option = "lag_optimizer.no_water_animation", target = "enable_waving_water", value = false },
-	{ option = "lag_optimizer.clearer_water", target = "translucent_liquids", value = true },
 	{ option = "lag_optimizer.low_fx", target = "enable_post_processing", value = false },
 	{ option = "lag_optimizer.low_fx", target = "enable_bloom", value = false },
 	{ option = "lag_optimizer.low_fx", target = "enable_volumetric_lighting", value = false },
@@ -62,10 +58,7 @@ core.register_cheat_setting("No Inventory Animations", "Client", "lag_optimizer"
 core.register_cheat_setting("No Item Spin", "Client", "lag_optimizer", "lag_optimizer.no_item_spin", {type="bool"})
 core.register_cheat_setting("No Hand Animation", "Client", "lag_optimizer",
 	"lag_optimizer.no_hand_animation", {type="bool"})
-core.register_cheat_setting("No Particles", "Client", "lag_optimizer", "lag_optimizer.no_particles", {type="bool"})
 core.register_cheat_setting("No Ground Items", "Client", "lag_optimizer", "lag_optimizer.no_ground_items", {type="bool"})
-core.register_cheat_setting("No Clouds", "Client", "lag_optimizer", "lag_optimizer.no_clouds", {type="bool"})
-core.register_cheat_setting("No Fog", "Client", "lag_optimizer", "lag_optimizer.no_fog", {type="bool"})
 core.register_cheat_setting("No View Bob", "Client", "lag_optimizer", "lag_optimizer.no_view_bobbing", {type="bool"})
 core.register_cheat_setting("No Break Particles", "Client", "lag_optimizer", "lag_optimizer.no_break_particles", {type="bool"})
 core.register_cheat_setting("Fast Chunks", "Client", "lag_optimizer",
@@ -74,7 +67,6 @@ core.register_cheat_setting("No Plant Animation", "Client", "lag_optimizer",
 	"lag_optimizer.no_plant_animation", {type="bool"})
 core.register_cheat_setting("No Water Animation", "Client", "lag_optimizer", "lag_optimizer.no_water_animation", {type="bool"})
 core.register_cheat_setting("No Lava Animation", "Client", "lag_optimizer", "lag_optimizer.no_lava_animation", {type="bool"})
-core.register_cheat_setting("Clearer Water", "Client", "lag_optimizer", "lag_optimizer.clearer_water", {type="bool"})
 core.register_cheat_setting("Low FX", "Client", "lag_optimizer", "lag_optimizer.low_fx", {type="bool"})
 core.register_cheat_setting("No Minimap", "Client", "lag_optimizer", "lag_optimizer.no_minimap", {type="bool"})
 core.register_cheat_setting("No Achievement Overlay", "Client", "lag_optimizer",

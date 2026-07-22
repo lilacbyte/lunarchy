@@ -2307,63 +2307,6 @@ enable_bloom_debug (Enable Bloom Debug) bool false
 #    Useful for testing. See al_extensions.[h,cpp] for details.
 sound_extensions_blacklist (Sound Extensions Blacklist) string
 
-[**Font] [client]
-
-font_bold (Font bold by default) bool false
-
-font_italic (Font italic by default) bool false
-
-#    Shadow offset (in pixels) of the default font. If 0, then shadow will not be drawn.
-font_shadow (Font shadow) int 1 0 65535
-
-#    Opaqueness (alpha) of the shadow behind the default font, between 0 and 255.
-font_shadow_alpha (Font shadow alpha) int 127 0 255
-
-#    Font size of the default font where 1 unit = 1 pixel at 96 DPI
-font_size (Font size) int 16 5 72
-
-#    For pixel-style fonts that do not scale well, this ensures that font sizes used
-#    with this font will always be divisible by this value, in pixels. For instance,
-#    a pixel font 16 pixels tall should have this set to 16, so it will only ever be
-#    sized 16, 32, 48, etc., so a mod requesting a size of 25 will get 32.
-font_size_divisible_by (Font size divisible by) int 1 1
-
-#    Path to the default font. Must be a TrueType font.
-#    The fallback font will be used if the font cannot be loaded.
-font_path (Regular font path) filepath fonts/Arimo-Regular.ttf
-
-font_path_bold (Bold font path) filepath fonts/Arimo-Bold.ttf
-font_path_italic (Italic font path) filepath fonts/Arimo-Italic.ttf
-font_path_bold_italic (Bold and italic font path) filepath fonts/Arimo-BoldItalic.ttf
-
-#    Global client font size where 1 unit = 1 pixel at 96 DPI.
-hd_font_size (Client font size) int 16 5 72
-
-#    Path to the global client font. Must be a TrueType font.
-#    Relative paths are resolved from Lunarchy's shared data directory.
-font_path_hd (Client font path) filepath fonts/hd.ttf
-
-#    Font size of the monospace font where 1 unit = 1 pixel at 96 DPI
-mono_font_size (Monospace font size) int 16 5 72
-
-#    For pixel-style fonts that do not scale well, this ensures that font sizes used
-#    with this font will always be divisible by this value, in pixels. For instance,
-#    a pixel font 16 pixels tall should have this set to 16, so it will only ever be
-#    sized 16, 32, 48, etc., so a mod requesting a size of 25 will get 32.
-mono_font_size_divisible_by (Monospace font size divisible by) int 1 1
-
-#    Path to the monospace font. Must be a TrueType font.
-#    This font is used for e.g. the console and profiler screen.
-mono_font_path (Monospace font path) filepath fonts/Cousine-Regular.ttf
-
-mono_font_path_bold (Bold monospace font path) filepath fonts/Cousine-Bold.ttf
-mono_font_path_italic (Italic monospace font path) filepath fonts/Cousine-Italic.ttf
-mono_font_path_bold_italic (Bold and italic monospace font path) filepath fonts/Cousine-BoldItalic.ttf
-
-#    Path of the fallback font. Must be a TrueType font.
-#    This font will be used for certain languages or if the default font is unavailable.
-fallback_font_path (Fallback font path) filepath fonts/DroidSansFallbackFull.ttf
-
 [**Lighting] [client]
 
 #    Gradient of light curve at minimum light level.

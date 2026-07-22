@@ -11,12 +11,15 @@ core.register_cheat_setting("Many Punches", "Combat", "killaura", "killaura.many
 core.register_cheat_setting("Mode", "Combat", "killaura", "killaura.mode", {type="selectionbox", options={"Blatant", "Silent"}})
 core.register_cheat_setting("Fake aiming time", "Combat", "killaura", "killaura.simtime", {type="bool"})
 core.register_cheat_setting("Highlight", "Combat", "killaura", "killaura.highlight", {type="bool"})
-core.register_cheat_setting("Mace", "Combat", "killaura", "killaura.mace", {type="bool"})
-core.register_cheat_setting("Mace Target Radius", "Combat", "killaura", "killaura.mace_target_radius",
-	{type="slider_int", min=5, max=50, steps=46})
-core.register_cheat_setting("Mace Height", "Combat", "killaura", "killaura.mace_height",
+
+-------------- MaceAura -----------------
+
+core.register_cheat_with_infotext("maceaura", "Combat", "killaura.mace", "")
+core.register_cheat_setting("Target Radius", "Combat", "killaura.mace", "killaura.mace_target_radius",
+	{type="slider_int", min=5, max=20, steps=16})
+core.register_cheat_setting("Height", "Combat", "killaura.mace", "killaura.mace_height",
 	{type="slider_int", min=5, max=10, steps=6})
-core.register_cheat_setting("Mace Jump Suppress", "Combat", "killaura", "killaura.mace_jump_suppress", {type="bool"})
+core.register_cheat_setting("Jump Suppress", "Combat", "killaura.mace", "killaura.mace_jump_suppress", {type="bool"})
 
 -------------- Auto Aim -----------------
 
@@ -198,6 +201,20 @@ is_mace_item = function(item_name)
 	end
 
 	return item_name:find("mace", 1, true) ~= nil
+end
+
+local function is_maceaura_active()
+	if not core.settings:get_bool("killaura.mace") then
+		return false
+	end
+
+	local player = core.localplayer
+	local wielded = player and player:get_wielded_item()
+	return wielded and is_mace_item(wielded:get_name()) or false
+end
+
+local function is_combat_aura_active()
+	return core.settings:get_bool("killaura") or is_maceaura_active()
 end
 
 local function is_elytra(stack)
@@ -431,7 +448,7 @@ local function get_best_mace_target(objects, target_mode, target_type, max_dista
 end
 
 core.get_send_pitch = function(pitch)
-	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
+	if is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target then
 		local target_pos = killaura_target:get_pos()
 		local player_pos = core.localplayer:get_pos()
 		local direction = vector.direction(player_pos, target_pos)
@@ -442,7 +459,7 @@ core.get_send_pitch = function(pitch)
 end
 
 core.get_send_yaw = function(yaw)
-	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
+	if is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target then
 		local target_pos = killaura_target:get_pos()
 		local player_pos = core.localplayer:get_pos()
 		local direction = vector.direction(player_pos, target_pos)
@@ -482,7 +499,7 @@ core.get_send_speed = function(critspeed)
 end
 
 core.get_send_controls = function(controls)
-	if (core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target) then
+	if (is_combat_aura_active() and core.settings:get("killaura.mode") == "Silent" and killaura_target) then
 		local player = core.localplayer
 		local wielded = player and player:get_wielded_item()
 		local wield_name = wielded and wielded:get_name() or ""
@@ -613,12 +630,15 @@ core.register_globalstep(function(dtime)
 	clamp_mace_upward_velocity()
 	if core.settings:get_bool("killaura") then
 		local infotext = core.settings:get("killaura.mode") == "Silent" and "Silent" or "Blatant"
-		if core.settings:get_bool("killaura.mace") then
-			infotext = infotext .. ", Mace"
-		end
 		core.update_infotext("killaura", "Combat", "killaura", infotext)
 	else
 		core.update_infotext("killaura", "Combat", "killaura", "")
+	end
+	if core.settings:get_bool("killaura.mace") then
+		core.update_infotext("maceaura", "Combat", "killaura.mace",
+			core.settings:get("killaura.mace_height") .. " blocks")
+	else
+		core.update_infotext("maceaura", "Combat", "killaura.mace", "")
 	end
 
 	if core.settings:get_bool("autoaim") then
@@ -655,8 +675,7 @@ core.register_globalstep(function(dtime)
 		local max_distance = (tonumber(core.settings:get("targeting.distance")) or 5) + 0.5
 			local wielded = player:get_wielded_item()
 			local wield_name = wielded and wielded:get_name() or ""
-			local mace_mode = core.settings:get_bool("killaura") and
-				core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
+			local mace_mode = core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
 			if mace_mode then
 				max_distance = get_mace_target_radius()
 			end
@@ -685,7 +704,7 @@ core.register_globalstep(function(dtime)
 			core.set_combat_target(target_enemy:get_id())
 		end
 
-			if target_enemy and core.settings:get_bool("killaura") then
+			if target_enemy and (core.settings:get_bool("killaura") or mace_mode) then
 				killaura_target = target_enemy
 				local mace_wall_target = mace_mode and target_is_in_wall(target_enemy)
 				if mace_mode then
@@ -734,7 +753,7 @@ core.register_globalstep(function(dtime)
 						end
 						return
 					elseif cooldown_left > 0 then
-					core.update_infotext("killaura", "Combat", "killaura", ("Mace cd %.1fs"):format(cooldown_left))
+					core.update_infotext("maceaura", "Combat", "killaura.mace", ("Cooldown %.1fs"):format(cooldown_left))
 				end
 			end
 

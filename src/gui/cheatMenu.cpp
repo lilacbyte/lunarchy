@@ -145,7 +145,7 @@ void CheatMenu::drawEntry(video::IVideoDriver *driver, std::string name, int num
 	} else {
 		bool is_category = entry_type == CHEAT_MENU_ENTRY_TYPE_CATEGORY;
 		y += m_head_height +	
-			 (number + (is_category ? 0 : m_selected_category)) *
+			 (number + (is_category ? 0 : m_selected_category_row)) *
 					 (m_entry_height);
 		x += (is_category ? 0 : m_gap + m_entry_width);
 		if (active)
@@ -195,13 +195,31 @@ void CheatMenu::draw(video::IVideoDriver *driver, bool show_debug)
 		min_row_height);
 	m_entry_height = std::max<int>(g_settings->getU32("cheat_menu_entry_height"), min_row_height);
 
-    int category_count = 0;
+	const int category_total = static_cast<int>(script->m_cheat_categories.size());
+	if (m_selected_category < 0 || m_selected_category >= category_total ||
+			script->m_cheat_categories[m_selected_category]->m_name == "Client") {
+		for (int i = 0; i < category_total; ++i) {
+			if (script->m_cheat_categories[i]->m_name != "Client") {
+				m_selected_category = i;
+				m_selected_cheat = 0;
+				break;
+			}
+		}
+	}
+
+	int visible_category_count = 0;
+	for (const auto *category : script->m_cheat_categories) {
+		if (category->m_name != "Client")
+			++visible_category_count;
+	}
+
+	int category_count = 0;
 
     // Calculate dimensions for the category section outline
     int category_section_x = m_gap+5; // Starting X position
     int category_section_y = m_gap+5+m_head_height; // Starting Y position
     int category_section_width = m_entry_width; // Width of categories
-    int category_section_height = ((m_head_height + (m_entry_height * script->m_cheat_categories.size()))-m_head_height)-m_entry_height; // Total height based on number of categories
+    int category_section_height = m_entry_height * visible_category_count;
 
     // Define padding for the outline and thickness
 	const int padding = 0; // Space between outline and categories
@@ -218,11 +236,14 @@ void CheatMenu::draw(video::IVideoDriver *driver, bool show_debug)
             m_active_bg_color); // Use selected font color for outline
     }
 
-    for (auto category = script->m_cheat_categories.begin();
-             category != script->m_cheat_categories.end(); category++) {
+	int category_index = 0;
+	for (auto category = script->m_cheat_categories.begin();
+			 category != script->m_cheat_categories.end(); category++, category_index++) {
 		if ((*category)->m_name == "Client")
-		continue;
-        bool is_selected = category_count == m_selected_category;
+			continue;
+		bool is_selected = category_index == m_selected_category;
+		if (is_selected)
+			m_selected_category_row = category_count;
         drawEntry(driver, (*category)->m_name, category_count, is_selected, false,
                     CHEAT_MENU_ENTRY_TYPE_CATEGORY);
         

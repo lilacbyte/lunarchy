@@ -76,12 +76,12 @@ void WailaHUD::draw(video::IVideoDriver *driver, gui::IGUIFont *font, float dtim
 		return;
 
 	const std::optional<WailaInfo> info = editing
-		? std::optional<WailaInfo>(WailaInfo{"WAILA", "default:stone", true})
+		? std::optional<WailaInfo>(WailaInfo{"waila", "default:stone", true})
 		: getWailaInfo(m_client, env);
 	if (!info && !editing)
 		return;
 
-	const std::wstring text = utf8_to_wide(info ? info->name : "WAILA");
+	const std::wstring text = utf8_to_wide(info ? info->name : "waila");
 	const core::dimension2d<u32> dim_u32 = font->getDimension(text.c_str());
 	const core::dimension2d<s32> dim(dim_u32.Width, dim_u32.Height);
 

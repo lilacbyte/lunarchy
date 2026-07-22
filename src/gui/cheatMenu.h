@@ -76,6 +76,7 @@ public:
 private:
 	int m_selected_cheat = 0;
 	int m_selected_category = 0;
+	int m_selected_category_row = 0;
 
 	int m_head_height = 50;
 	int m_entry_height = 40;

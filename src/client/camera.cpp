@@ -803,9 +803,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 	if (g_settings->getBool("hand_view")) {
 		const v3f hand_view_offset(
-			core::clamp(g_settings->getFloat("hand_view.x", -100.0f, 100.0f), -12.0f, 12.0f),
-			core::clamp(g_settings->getFloat("hand_view.y", -100.0f, 100.0f), -12.0f, 12.0f),
-			core::clamp(g_settings->getFloat("hand_view.z", -100.0f, 100.0f), -24.0f, 24.0f));
+			core::clamp(g_settings->getFloat("hand_view.x", -100.0f, 100.0f), -100.0f, 100.0f),
+			core::clamp(g_settings->getFloat("hand_view.y", -100.0f, 100.0f), -100.0f, 100.0f),
+			core::clamp(g_settings->getFloat("hand_view.z", -100.0f, 100.0f), -100.0f, 100.0f));
 		wield_position += hand_view_offset;
 	}
 	// Apply left-hand mirroring using quaternions

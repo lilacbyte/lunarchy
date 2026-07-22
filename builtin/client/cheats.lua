@@ -9,7 +9,7 @@
 		["coords"] = { setting = "coords", order = 10 },
 		["fps"] = { setting = "fps", order = 12 },
 		["totems"] = { setting = "totems", order = 13 },
-		["WAILA"] = { setting = "waila", order = 14 },
+		["waila"] = { setting = "waila", order = 14 },
 		["equipmenthud"] = { setting = "equipment_hud", order = 15 },
 		["lagoptimizer"] = { setting = "lag_optimizer", order = 16 },
 	},
@@ -19,7 +19,6 @@
 		["xray"] = "xray",
 		["entityesp"] = "enable_entity_esp",
 		["entitytracers"] = "enable_entity_tracers",
-		["noarmor"] = "no_armor",
 		["playeresp"] = "enable_player_esp",
 		["playertracers"] = "enable_player_tracers",
 		["nodeesp"] = "enable_node_esp",
@@ -29,16 +28,23 @@
 		["tunneltracers"] = "enable_tunnel_tracers",
 	--	["hudbypass"] = "hud_flags_bypass", dont wanna work, will fix later
 		["healthesp"] = "enable_health_esp",
-		["nohurtcam"] = "no_hurt_cam",
-		["nodrowncam"] = "no_drown_cam",
-		["nofire"] = "no_fire",
 		["targethud"] = "enable_combat_target_hud",
 		["lefthand"] = "left_hand",
-		["handview"] = "hand_view",
 		["contentpreviewer"] = "content_previewer",
 		["nametags"] = "nametags",
 	["fov"] = "fov_setting",
     },
+	["Visuals"] = {
+		["nodrowncam"] = "no_drown_cam",
+		["nohurtcam"] = "no_hurt_cam",
+		["nofire"] = "no_fire",
+		["handview"] = "hand_view",
+		["noarmor"] = "no_armor",
+		["no clouds"] = "no_clouds",
+		["no fog"] = "no_fog",
+		["clearer water"] = "translucent_liquids",
+		["no particles"] = "norender.particles",
+	},
 	["Player"] = {
 		["privbypass"] = "priv_bypass",
 		["nofalldamage"] = "prevent_natural_damage",
@@ -48,7 +54,7 @@
 		["noforcerotate"] = "no_force_rotate",
     },
 	["Movement"] = {
-		["BHOP"] = { setting = "BHOP", order = 0 },
+		["bhop"] = { setting = "BHOP", order = 0 },
 		["freecam"] = { setting = "freecam", order = 1 },
 		["flight"] = "free_move",
 		["invmove"] = "invmove",
@@ -121,8 +127,9 @@ function core.register_cheat_setting(setting_name, parent_category, parent_setti
         min = setting_data.min,
         max = setting_data.max,
         steps = setting_data.steps,
-        size = setting_data.size,
-		options = setting_data.options
+		size = setting_data.size,
+		options = setting_data.options,
+		options_from = setting_data.options_from
     }
 end
 -----------------------------------------------------------CHEAT INFOTEXTS-----------------------------------------------------------
@@ -187,6 +194,7 @@ core.register_cheat_description("attachmentfloat", "Combat", "float_above_parent
 core.register_cheat_description("autowither", "Combat", "autowither", "Completes a wither structure and places the skulls")
 core.register_cheat_setting("nametag", "Combat", "autowither", "autowither.nametag", {type="bool"})
 core.register_cheat_description("killaura", "Combat", "killaura", "Attacks a specified target. Silent mode is recommended in PVP servers, as it makes Killaura undetectable")
+core.register_cheat_description("maceaura", "Combat", "killaura.mace", "Enable Killaura's mace attack mode")
 core.register_cheat_description("orbit", "Combat", "orbit", "Moves around a specified target")
 core.register_cheat_description("triggerbot", "Combat", "tbot", "Automatically punch when aiming at an entity")
 --Interact
@@ -208,12 +216,14 @@ core.register_cheat_description("antiafk", "Misc", "anti_afk", "Prevent afk by m
 core.register_cheat_description("autostaff", "Misc", "autostaff", "Automatically check player privs and assign them as a staff. WARNING: can be detected easily")
 core.register_cheat_setting("warn staff", "Misc", "autostaff", "autostaff.warn_staff", {type="bool"})
 core.register_cheat_description("autoteam", "Misc", "autoteam", "Sets allied players to your team in ctf. It might require you to run /team in some servers")
-core.register_cheat_description("logoutspots", "Misc", "logoutspots", "Records logout positions as waypoints in your current session")
+core.register_cheat_description("logoutspots", "Misc", "logoutspots", "Displays recorded logout positions as waypoints")
 core.register_cheat_setting("Range", "Misc", "logoutspots", "logoutspots.range", {type="slider_int", min=32, max=256, steps=29})
 core.register_cheat_setting("Limit", "Misc", "logoutspots", "logoutspots.limit", {type="slider_int", min=1, max=100, steps=100})
 core.register_cheat_setting("Scale", "Misc", "logoutspots", "logoutspots.scale", {type="slider_float", min=0.1, max=2.0, steps=20})
-core.register_cheat_description("deathmarker", "Misc", "deathmarker", "Always records your last death position as a waypoint")
+core.register_cheat_setting("Display", "Misc", "logoutspots", "logoutspots.display", {type="bool"})
+core.register_cheat_description("deathmarker", "Misc", "deathmarker", "Displays your latest recorded death position as a waypoint")
 core.register_cheat_setting("Display", "Misc", "deathmarker", "deathmarker.display", {type="bool"})
+core.register_cheat_setting("Limit", "Misc", "deathmarker", "deathmarker.limit", {type="slider_int", min=1, max=100, steps=100})
 core.register_cheat_description("friends", "Misc", "friends.middle_click", "Toggle a pointed player in the server friend list")
 core.register_cheat_setting("Middle click", "Misc", "friends.middle_click", "friends.middle_click", {type="bool"})
 core.register_cheat_setting("Friends", "Misc", "friends.middle_click", "friends.list", {type="text", size=80})
@@ -237,7 +247,7 @@ core.register_cheat_with_infotext("jetpack", "Movement", "jetpack", "")
 core.register_cheat_description("jetpack", "Movement", "jetpack", "AirJump with adjustable speed")
 core.register_cheat_with_infotext("jump", "Movement", "jump", "")
 core.register_cheat_description("jump", "Movement", "jump", "Adjust normal jump height")
-core.register_cheat_description("BHOP", "Movement", "BHOP", "Boost movement acceleration while moving")
+core.register_cheat_description("bhop", "Movement", "BHOP", "Boost movement acceleration while moving")
 core.register_cheat_description("detachedcamera", "Movement", "detached_camera", "Detach the camera from the player")
 core.register_cheat_description("noslow", "Movement", "noslow", "Sneaking doesn't slow you down")
 core.register_cheat_description("noslowplus", "Movement", "no_slow_plus",
@@ -281,7 +291,7 @@ core.register_cheat_description("hud", "Client", "hud.enabled", "Configure HUD c
 core.register_cheat_description("coords", "Client", "coords", "Render coordinates in the bottom left corner")
 core.register_cheat_description("fps", "Client", "fps", "Show current frames per second")
 core.register_cheat_description("totems", "Client", "totems", "Show total totems in inventory and offhand")
-core.register_cheat_description("WAILA", "Client", "waila", "Show the node or entity you are looking at")
+core.register_cheat_description("waila", "Client", "waila", "Show the node or entity you are looking at")
 core.register_cheat_description("equipmenthud", "Client", "equipment_hud", "Shows armor and held item durability")
 core.register_cheat_description("lagoptimizer", "Client", "lag_optimizer", "Reduce visual lag, first-person motion, inventory animations, and item motion")
 --Render
@@ -294,10 +304,6 @@ core.register_cheat_with_infotext("fov", "Render", "fov_setting", "FOV")
 core.register_cheat_description("fov", "Render", "fov_setting", "Have your FOV set to a custom value")
 --core.register_cheat_description("HUDBypass", "Render", "hudbypass", "Allows player to toggle hud elements disabled by the game")
 core.register_cheat_description("healthesp", "Render", "show_players_hp", "Shows player and entity HP")
-core.register_cheat_description("nodrowncam", "Render", "no_drown_cam", "Disables drowning camera effect")
-core.register_cheat_description("nofire", "Render", "no_fire", "Disables the burning fire HUD")
-core.register_cheat_description("noarmor", "Render", "no_armor", "Hide armor on player models and nametags")
-core.register_cheat_description("nohurtcam", "Render", "no_hurt_cam", "Disables hurt camera effect")
 core.register_cheat_description("nodeesp", "Render", "enable_node_esp", "See specified nodes through walls")
 core.register_cheat_description("nodetracers", "Render", "enable_node_tracers", "Draw tracers to specified nodes")
 core.register_cheat_description("nodehighlight", "Render", "nodehighlight", "Style the node you are looking at with the HUD theme")
@@ -309,7 +315,16 @@ core.register_cheat_description("xray", "Render", "xray", "Don't render specific
 core.register_cheat_description("targethud", "Render", "enable_combat_target_hud", "Shows best target on a HUD (depends on your combat settings)")
 core.register_cheat_description("nametags", "Render", "nametags", "Customize players nametags, equipment, wielded items, and item names. Doesn't work well in CTF")
 core.register_cheat_description("lefthand", "Render", "left_hand", "Switch to left hand")
-core.register_cheat_description("handview", "Render", "hand_view", "Adjust the wielded hand position and scale")
+--Visuals
+core.register_cheat_description("nodrowncam", "Visuals", "no_drown_cam", "Disables drowning camera effect")
+core.register_cheat_description("nohurtcam", "Visuals", "no_hurt_cam", "Disables hurt camera effect")
+core.register_cheat_description("nofire", "Visuals", "no_fire", "Disables the burning fire HUD")
+core.register_cheat_description("handview", "Visuals", "hand_view", "Adjust the wielded hand position and scale")
+core.register_cheat_description("noarmor", "Visuals", "no_armor", "Hide armor on player models and nametags")
+core.register_cheat_description("no clouds", "Visuals", "no_clouds", "Disables cloud rendering")
+core.register_cheat_description("no fog", "Visuals", "no_fog", "Disables fog rendering")
+core.register_cheat_description("clearer water", "Visuals", "translucent_liquids", "Makes liquids clearer")
+core.register_cheat_description("no particles", "Visuals", "norender.particles", "Disables particle rendering")
 --World
 core.register_cheat_description("autotnt", "World", "autotnt", "Puts TNT on the ground")
 core.register_cheat_description("blocklava", "World", "blocklava", "Replace lava with the block you're holding")
@@ -344,23 +359,27 @@ core.register_cheat_setting("border color", "Client", "hud.enabled", "hud.border
 core.register_cheat_setting("border alpha", "Client", "hud.enabled", "hud.border_alpha", {type="slider_int", min=0, max=255, steps=256})
 core.register_cheat_setting("padding", "Client", "hud.enabled", "hud.padding", {type="slider_int", min=0, max=20, steps=21})
 core.register_cheat_setting("tooltips theme", "Client", "hud.enabled", "hud.tooltips_theme", {type="bool"})
+core.register_cheat_setting("font", "Client", "hud.enabled", "font_path_hd",
+	{type="selectionbox", options_from="fonts"})
+core.register_cheat_setting("font size", "Client", "hud.enabled", "hd_font_size",
+	{type="slider_int", min=5, max=72, steps=68})
 core.register_cheat_setting("background", "Client", "cheat_hud", "cheat_hud.background", {type="bool"})
 core.register_cheat_setting("background color", "Client", "cheat_hud", "hud.background_color", {type="text", size=18})
 core.register_cheat_setting("background alpha", "Client", "cheat_hud", "hud.background_alpha", {type="slider_int", min=0, max=255, steps=256})
 core.register_cheat_setting("reset", "Client", "cheat_hud", "cheat_hud.reset", {type="bool"})
-core.register_cheat_setting("handview", "Render", "hand_view", "hand_view", {type="bool"})
-core.register_cheat_setting("x offset", "Render", "hand_view", "hand_view.x", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("y offset", "Render", "hand_view", "hand_view.y", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("z offset", "Render", "hand_view", "hand_view.z", {type="slider_float", min=-100.0, max=100.0, steps=200})
-core.register_cheat_setting("scale", "Render", "hand_view", "hand_view.scale", {type="slider_float", min=0.10, max=3.00, steps=58})
-core.register_cheat_setting("color", "Render", "hand_view", "hand_view.color", {type="text", size=18})
+core.register_cheat_setting("handview", "Visuals", "hand_view", "hand_view", {type="bool"})
+core.register_cheat_setting("x offset", "Visuals", "hand_view", "hand_view.x", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("y offset", "Visuals", "hand_view", "hand_view.y", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("z offset", "Visuals", "hand_view", "hand_view.z", {type="slider_float", min=-100.0, max=100.0, steps=200})
+core.register_cheat_setting("scale", "Visuals", "hand_view", "hand_view.scale", {type="slider_float", min=0.10, max=3.00, steps=58})
+core.register_cheat_setting("color", "Visuals", "hand_view", "hand_view.color", {type="text", size=18})
 core.register_cheat_setting("type", "Render", "enable_health_esp", "enable_health_esp.type", {type="selectionbox", options={"Health Bar", "Above Head"}})
 core.register_cheat_setting("players only", "Render", "enable_health_esp", "enable_health_esp.players_only", {type="bool"})
 core.register_cheat_setting("Solid", "Render", "enable_player_esp", "playeresp.solid", {type="bool"})
 core.register_cheat_setting("target highlight", "Render", "enable_combat_target_hud", "enable_combat_target_hud.target_highlight", {type="bool"})
 core.register_cheat_setting("target mode", "Combat", "crystalspam", "crystalspam.target_mode", {type="selectionbox", options={"Players", "Entities", "Both"}})
 core.register_cheat_setting("target radius", "Combat", "crystalspam", "crystalspam.target_radius",
-	{type="slider_int", min=5, max=50, steps=46})
+	{type="slider_int", min=5, max=20, steps=16})
 core.register_cheat_setting("safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
 core.register_cheat_setting("3x3", "Combat", "crystalspam", "crystalspam.3x3", {type="bool"})
 core.register_cheat_setting("hp", "Render", "nametags", "nametags.hp", {type="bool"})

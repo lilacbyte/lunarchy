@@ -2,6 +2,7 @@ name: macos
 
 # build on c/cpp changes or workflow changes
 on:
+  workflow_call:
   push:
     paths:
       - 'lib/**.[ch]'

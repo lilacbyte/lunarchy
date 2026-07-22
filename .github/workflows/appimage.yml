@@ -1,6 +1,7 @@
 name: appimage
 
 on:
+  workflow_call:
   push:
     paths:
       - 'lib/**.[ch]'
@@ -29,17 +30,16 @@ jobs:
       - name: Install deps
         run: |
           source ./util/ci/common.sh
-          install_linux_deps clang gdb ninja-build python3-pip python3-venv patchelf desktop-file-utils libgdk-pixbuf2.0-dev fakeroot strace fuse sshpass
+          install_linux_deps clang gdb ninja-build patchelf desktop-file-utils libgdk-pixbuf2.0-dev fakeroot strace fuse sshpass
           sudo wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O /usr/local/bin/appimagetool
           sudo chmod +x /usr/local/bin/appimagetool
-          python3 -m venv "$RUNNER_TEMP/appimage-builder-venv"
-          "$RUNNER_TEMP/appimage-builder-venv/bin/python" -m pip install --upgrade "pip<26" "setuptools<70" wheel
-          "$RUNNER_TEMP/appimage-builder-venv/bin/python" -m pip install --only-binary=appimage-builder "appimage-builder==1.1.0"
-          "$RUNNER_TEMP/appimage-builder-venv/bin/appimage-builder" --version
+          sudo wget https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage -O /usr/local/bin/appimage-builder
+          sudo chmod +x /usr/local/bin/appimage-builder
+          appimage-builder --version
 
       - name: Compile AppImage
         run: |
-          "$RUNNER_TEMP/appimage-builder-venv/bin/appimage-builder" --recipe misc/AppImageBuilder.yml
+          appimage-builder --recipe misc/AppImageBuilder.yml
 
       - uses: actions/upload-artifact@v4
         id: artifact-upload-step

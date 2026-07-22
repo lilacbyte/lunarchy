@@ -1,0 +1,106 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lunarchy-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux:
+    uses: ./.github/workflows/linux.yml
+
+  windows:
+    uses: ./.github/workflows/windows.yml
+
+  macos:
+    uses: ./.github/workflows/macos.yml
+
+  appimage:
+    uses: ./.github/workflows/appimage.yml
+
+  draft-release:
+    name: Create draft release
+    runs-on: ubuntu-24.04
+    needs: [linux, windows, macos, appimage]
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Prepare release files
+        run: |
+          set -euo pipefail
+
+          mkdir -p packaged
+
+          copy_one() {
+            local source_dir="$1"
+            local pattern="$2"
+            local output="$3"
+            local source_file
+
+            source_file="$(find "$source_dir" -type f -name "$pattern" -print -quit)"
+            if [ -z "$source_file" ]; then
+              echo "Missing release artifact: $source_dir/$pattern" >&2
+              find release-assets -type f -print | sort >&2
+              exit 1
+            fi
+
+            cp -v "$source_file" "packaged/$output"
+          }
+
+          copy_one release-assets/Lunarchy-Windows-32bit '*.zip' Lunarchy-Windows-32bit.zip
+          copy_one release-assets/Lunarchy-Windows-64bit '*.zip' Lunarchy-Windows-64bit.zip
+
+          appimage="$(find release-assets/appimage -type f -name '*.AppImage' -print -quit)"
+          if [ -z "$appimage" ]; then
+            echo "Missing release artifact: AppImage" >&2
+            find release-assets -type f -print | sort >&2
+            exit 1
+          fi
+          cp -v "$appimage" packaged/
+
+          test -d release-assets/macos-intel-build
+          test -d release-assets/macos-arm-build
+          (cd release-assets/macos-intel-build && zip -qry "$GITHUB_WORKSPACE/packaged/Lunarchy-macOS-x86_64.zip" .)
+          (cd release-assets/macos-arm-build && zip -qry "$GITHUB_WORKSPACE/packaged/Lunarchy-macOS-arm64.zip" .)
+
+          (cd packaged && sha256sum ./* > SHA256SUMS)
+          find packaged -maxdepth 1 -type f -printf '%f\n' | sort
+
+      - name: Create or update draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          short_sha="${GITHUB_SHA::7}"
+          tag="lunarchy-release-$short_sha"
+          notes="Automated Lunarchy builds for commit $GITHUB_SHA."
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$tag" \
+              --notes "$notes" \
+              --draft
+          else
+            gh release create "$tag" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "$tag" \
+              --notes "$notes" \
+              --draft
+          fi
+
+          gh release upload "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            packaged/* \
+            --clobber

@@ -1337,26 +1337,26 @@ void NewMenu::create()
         ScriptApiCheatsCheat *hints_cheat = nullptr;
 
         for (auto *cheat : client_category->m_cheats) {
-            if (cheat && cheat->m_name == "MenuGrid") {
+            if (cheat && cheat->m_name == "menugrid") {
                 grid = cheat;
                 break;
             }
         }
 
         for (auto *cheat : client_category->m_cheats) {
-            if (cheat && cheat->m_name == "Hints") {
+            if (cheat && cheat->m_name == "hints") {
                 hints_cheat = cheat;
                 break;
             }
         }
 
         if (!grid) {
-            grid = new ScriptApiCheatsCheat("MenuGrid", "use_menu_grid", "");
+            grid = new ScriptApiCheatsCheat("menugrid", "use_menu_grid", "");
             client_category->m_cheats.push_back(grid);
         }
 
         if (!hints_cheat) {
-            hints_cheat = new ScriptApiCheatsCheat("Hints", "use_hints", "");
+            hints_cheat = new ScriptApiCheatsCheat("hints", "use_hints", "");
             client_category->m_cheats.push_back(hints_cheat);
         }
 
@@ -2162,6 +2162,7 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
 
     const video::SColor rainbow_category_color = video::SColor(255, 21, 21, 21);
     const video::SColor rainbow_cheat_color = getNextRainbowColor();
+    const video::SColor rainbow_cheat_color_enabled = video::SColor(255, 21, 21, 21);
     const video::SColor rainbow_outline_color = getNextRainbowColor();
     
     ///////////////////////// DRAW CATEGORY HEADER /////////////////////////
@@ -2220,9 +2221,11 @@ void NewMenu::drawCategory(video::IVideoDriver* driver, gui::IGUIFont* font, con
             } else if (script->m_cheat_categories[i]->m_cheats[cheat_index]->is_enabled() && cheatRectAnimationProgress[i][cheat_index] >= 0) {
                 cheatRectAnimationProgress[i][cheat_index] -= dtime * 8;
             }
-            drawInterpolatedRectangle(driver, cheatRects[i][cheat_index],
-                    readModuleBackgroundColor(), current_theme.background_bottom,
-                    cheatRectAnimationProgress[i][cheat_index]);
+            if (g_settings->get("ColorTheme") == "Rainbow") {
+                drawInterpolatedRectangle(driver, cheatRects[i][cheat_index], rainbow_cheat_color, rainbow_cheat_color_enabled, cheatRectAnimationProgress[i][cheat_index]);
+            } else {
+                drawInterpolatedRectangle(driver, cheatRects[i][cheat_index], current_theme.primary, current_theme.background_bottom, cheatRectAnimationProgress[i][cheat_index]);
+            }
 
             const std::string& cheatName = script->m_cheat_categories[i]->m_cheats[cheat_index]->m_name;
             const std::wstring &wCheatName = cachedWideFromUtf8(cheatName);

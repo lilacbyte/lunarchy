@@ -22,9 +22,35 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "cpp_api/s_internal.h"
 #include "settings.h"
 #include "log.h"
+#include "filesys.h"
+#include "porting.h"
+#include "util/string.h"
 #include <algorithm>
 #include <iostream>
 #include "s_cheats.h"
+
+namespace {
+void appendFontOptions(std::vector<std::string *> &options)
+{
+	std::vector<std::string> font_paths;
+	const std::string fonts_dir = porting::getDataPath("fonts");
+	for (const fs::DirListNode &entry : fs::GetDirListing(fonts_dir)) {
+		if (entry.dir)
+			continue;
+		const std::string lower_name = lowercase(entry.name);
+		if (!str_ends_with(lower_name, ".ttf") &&
+				!str_ends_with(lower_name, ".otf") &&
+				!str_ends_with(lower_name, ".woff"))
+			continue;
+		font_paths.emplace_back("fonts/" + entry.name);
+	}
+
+	std::sort(font_paths.begin(), font_paths.end());
+	font_paths.erase(std::unique(font_paths.begin(), font_paths.end()), font_paths.end());
+	for (const std::string &font_path : font_paths)
+		options.push_back(new std::string(font_path));
+}
+} // namespace
 
 ScriptApiCheatsCheat::ScriptApiCheatsCheat(
 		const std::string &name, const std::string &setting, const std::string &info_text = "") :
@@ -320,7 +346,13 @@ void ScriptApiCheats::init_cheat_settings()
 											lua_pop(L, 1); // Pop value (string)
 										}
 									}
-									lua_pop(L, 2); // Pop 'options' and setting table
+									lua_pop(L, 1); // Pop 'options'
+
+									lua_getfield(L, -1, "options_from");
+									if (lua_isstring(L, -1) &&
+											std::string(lua_tostring(L, -1)) == "fonts")
+										appendFontOptions(cheat_setting->m_options);
+									lua_pop(L, 2); // Pop 'options_from' and setting table
 									cheat_setting->m_parent = parent_name;
 									ScriptApiCheatsCheat *parent_cheat = category->get_cheat_by_id(parent_name);
 									if (!parent_cheat) {

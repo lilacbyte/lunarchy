@@ -19,11 +19,14 @@ local logoutspots_marker_ids = {}
 local logoutspots_markers_by_name = {}
 local logoutspots_marker_names = {}
 local logoutspots_server_key = nil
+local logoutspots_history = {}
+local logoutspots_display_active = false
 local deathmarker_id = nil
 local deathmarker_pos = nil
 local deathmarker_last_alive_pos = nil
 local deathmarker_was_dead = false
 local deathmarker_owner_key = nil
+local deathspots_history = {}
 local spammer_plus_timer = 0
 local spammer_plus_index = 1
 local spammer_plus_file_warned = false
@@ -61,6 +64,7 @@ local function clear_logoutspot_markers()
     logoutspots_marker_ids = {}
     logoutspots_markers_by_name = {}
     logoutspots_marker_names = {}
+    logoutspots_display_active = false
 end
 
 local function trim_logoutspot_markers()
@@ -115,22 +119,73 @@ local function add_logoutspot_marker(name, pos, scale)
     })
 end
 
+local function marker_history_limit(setting_name)
+    local limit = tonumber(core.settings:get(setting_name)) or 20
+    return math.max(1, math.min(100, math.floor(limit)))
+end
+
+local function trim_marker_history(history, setting_name)
+    local limit = marker_history_limit(setting_name)
+    while #history > limit do
+        table.remove(history, 1)
+    end
+end
+
+local function record_logoutspot(name, pos)
+    pos = marker_pos_from(pos)
+    if not pos then
+        return
+    end
+    table.insert(logoutspots_history, {name = name, pos = pos})
+    trim_marker_history(logoutspots_history, "logoutspots.limit")
+end
+
+local function logoutspots_should_display()
+    return core.settings:get_bool("logoutspots") and
+        core.settings:get_bool("logoutspots.display")
+end
+
+local function refresh_logoutspots_display()
+    if not logoutspots_should_display() or not core.localplayer then
+        if logoutspots_display_active or #logoutspots_marker_ids > 0 then
+            clear_logoutspot_markers()
+        end
+        return
+    end
+
+    local scale = logoutspot_scale()
+    if not logoutspots_display_active then
+        local displayed_names = {}
+        for i = #logoutspots_history, 1, -1 do
+            local spot = logoutspots_history[i]
+            if not displayed_names[spot.name] then
+                local id = add_logoutspot_marker(spot.name, spot.pos, scale)
+                if id then
+                    displayed_names[spot.name] = true
+                    logoutspots_markers_by_name[spot.name] = id
+                    table.insert(logoutspots_marker_ids, id)
+                    table.insert(logoutspots_marker_names, spot.name)
+                end
+            end
+        end
+        trim_logoutspot_markers()
+        logoutspots_display_active = true
+    end
+
+    for _, id in ipairs(logoutspots_marker_ids) do
+        core.localplayer:hud_change(id, "scale", {x = scale, y = scale})
+    end
+end
+
 local function sync_logoutspots()
     local server_key = marker_server_key()
     if logoutspots_server_key ~= server_key then
         logoutspots_last_online_players = {}
         logoutspots_seen_positions = {}
         clear_logoutspot_markers()
+        logoutspots_history = {}
         logoutspots_initialized = false
         logoutspots_server_key = server_key
-    end
-
-    if not core.settings:get_bool("logoutspots") then
-        logoutspots_last_online_players = {}
-        logoutspots_seen_positions = {}
-        clear_logoutspot_markers()
-        logoutspots_initialized = false
-        return
     end
 
     local current_set = {}
@@ -139,9 +194,7 @@ local function sync_logoutspots()
     local range = tonumber(core.settings:get("logoutspots.range")) or 132
     local scale = logoutspot_scale()
 
-    for _, id in ipairs(logoutspots_marker_ids) do
-        core.localplayer:hud_change(id, "scale", {x = scale, y = scale})
-    end
+    refresh_logoutspots_display()
 
     for _, name in ipairs(core.get_player_names() or {}) do
         if name ~= local_name then
@@ -185,13 +238,16 @@ local function sync_logoutspots()
         if not current_set[name] then
             local pos = logoutspots_seen_positions[name]
             if pos then
+                record_logoutspot(name, pos)
                 clear_logoutspot_marker(name)
-                local id = add_logoutspot_marker(name, pos, scale)
-                if id then
-                    logoutspots_markers_by_name[name] = id
-                    table.insert(logoutspots_marker_ids, id)
-                    table.insert(logoutspots_marker_names, name)
-                    trim_logoutspot_markers()
+                if logoutspots_should_display() then
+                    local id = add_logoutspot_marker(name, pos, scale)
+                    if id then
+                        logoutspots_markers_by_name[name] = id
+                        table.insert(logoutspots_marker_ids, id)
+                        table.insert(logoutspots_marker_names, name)
+                        trim_logoutspot_markers()
+                    end
                 end
             end
             logoutspots_seen_positions[name] = nil
@@ -228,6 +284,11 @@ end
 
 local function set_deathmarker(pos)
     deathmarker_pos = marker_pos_from(pos)
+    if not deathmarker_pos then
+        return
+    end
+    table.insert(deathspots_history, {pos = deathmarker_pos})
+    trim_marker_history(deathspots_history, "deathmarker.limit")
     clear_deathmarker()
     refresh_deathmarker_display()
 end
@@ -382,6 +443,7 @@ core.register_globalstep(function(dtime)
     if deathmarker_owner_key ~= owner_key then
         clear_deathmarker()
         deathmarker_pos = nil
+        deathspots_history = {}
         deathmarker_last_alive_pos = nil
         deathmarker_was_dead = false
         deathmarker_owner_key = owner_key
@@ -564,6 +626,66 @@ core.register_on_shutdown(function()
 end)
 
 --Commands
+
+local function normalized_command_param(param)
+    return tostring(param or ""):match("^%s*(.-)%s*$"):lower()
+end
+
+local function format_spot_position(pos)
+    return string.format("(%d, %d, %d)", pos.x, pos.y, pos.z)
+end
+
+minetest.register_chatcommand("deathspots", {
+    params = "[clear]",
+    description = "List or clear recent death positions",
+    func = function(param)
+        param = normalized_command_param(param)
+        if param == "clear" then
+            deathspots_history = {}
+            deathmarker_pos = nil
+            clear_deathmarker()
+            return true, "Death spots cleared."
+        elseif param ~= "" then
+            return false, "Usage: .deathspots [clear]"
+        elseif #deathspots_history == 0 then
+            return true, "No death spots recorded this session."
+        end
+
+        local lines = {"Recent death spots (newest first):"}
+        for i = #deathspots_history, 1, -1 do
+            local number = #deathspots_history - i + 1
+            lines[#lines + 1] = string.format("%d. %s", number,
+                format_spot_position(deathspots_history[i].pos))
+        end
+        return true, table.concat(lines, "\n")
+    end,
+})
+
+minetest.register_chatcommand("logoutspots", {
+    params = "[clear]",
+    description = "List or clear recent player logout positions",
+    func = function(param)
+        param = normalized_command_param(param)
+        if param == "clear" then
+            logoutspots_history = {}
+            clear_logoutspot_markers()
+            return true, "Logout spots cleared."
+        elseif param ~= "" then
+            return false, "Usage: .logoutspots [clear]"
+        elseif #logoutspots_history == 0 then
+            return true, "No logout spots recorded this session."
+        end
+
+        local lines = {"Recent logout spots (newest first):"}
+        for i = #logoutspots_history, 1, -1 do
+            local spot = logoutspots_history[i]
+            local number = #logoutspots_history - i + 1
+            lines[#lines + 1] = string.format("%d. %s: %s", number,
+                spot.name, format_spot_position(spot.pos))
+        end
+        return true, table.concat(lines, "\n")
+    end,
+})
 
 minetest.register_chatcommand("hide_hud_elements_advice", {
     func = function()

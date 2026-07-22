@@ -394,8 +394,10 @@ void set_default_settings()
 	settings->setDefault("logoutspots.range", "132");
 	settings->setDefault("logoutspots.limit", "20");
 	settings->setDefault("logoutspots.scale", "1.0");
+	settings->setDefault("logoutspots.display", "true");
 	settings->setDefault("deathmarker", "false");
 	settings->setDefault("deathmarker.display", "true");
+	settings->setDefault("deathmarker.limit", "20");
 	settings->setDefault("ignore", "false");
 	settings->setDefault("ignore.players", "");
 	settings->setDefault("ignore.whitelist", "");
