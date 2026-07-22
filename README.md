@@ -1,8 +1,4 @@
-Lunarchy (fork of CloakV4)
-
-Version 2
-
-==============
+# Lunarchy v2 (fork of CloakV4) 
 
 Difference from CloakV4:
 
