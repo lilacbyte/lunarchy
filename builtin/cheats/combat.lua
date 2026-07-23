@@ -153,7 +153,7 @@ local last_time_aimed_at_target = 0
 local time_aimed_at_target = 0
 local target_aimed_at = nil
 local is_mace_item
-local MACE_COOLDOWN = 2.05
+local MACE_COOLDOWN = 0.45
 local MACE_MIN_HEIGHT = 1.0
 local MACE_USE_DISTANCE = 5.0
 local last_mace_punch_time = 0
@@ -161,6 +161,9 @@ local mace_jump_suppress_until = 0
 local mace_drop_target = nil
 local mace_drop_started_at = 0
 local mace_noclip_active = false
+local mace_movement_suppressed = false
+local restore_free_move = false
+local restore_airjump = false
 local target_is_in_wall
 
 local function set_mace_jump_suppress(active)
@@ -172,7 +175,7 @@ local function suppress_jump_multiplier_for_mace_hit()
 		return
 	end
 
-	mace_jump_suppress_until = os.clock() + 0.75
+	mace_jump_suppress_until = os.clock() + 0.2
 	set_mace_jump_suppress(true)
 end
 
@@ -316,19 +319,43 @@ end
 -- value left in minetest.conf by an interrupted previous session.
 core.settings:set_bool("killaura.mace_noclip_active", false)
 
+local function disable_mace_movement()
+	if not mace_movement_suppressed then
+		restore_free_move = core.settings:get_bool("free_move")
+		restore_airjump = core.settings:get_bool("airjump")
+		mace_movement_suppressed = true
+	end
+
+	if restore_free_move then
+		core.settings:set_bool("free_move", false)
+	end
+	if restore_airjump then
+		core.settings:set_bool("airjump", false)
+	end
+end
+
+local function restore_mace_movement()
+	if not mace_movement_suppressed then
+		return
+	end
+
+	if restore_free_move then
+		core.settings:set_bool("free_move", true)
+	end
+	if restore_airjump then
+		core.settings:set_bool("airjump", true)
+	end
+
+	mace_movement_suppressed = false
+	restore_free_move = false
+	restore_airjump = false
+end
+
 local function clear_mace_drop()
 	mace_drop_target = nil
 	mace_drop_started_at = 0
 	set_mace_noclip(false)
-end
-
-local function disable_mace_movement()
-	if core.settings:get_bool("free_move") then
-		core.settings:set_bool("free_move", false)
-	end
-	if core.settings:get_bool("airjump") then
-		core.settings:set_bool("airjump", false)
-	end
+	restore_mace_movement()
 end
 
 local function start_mace_drop(player, target)
@@ -584,6 +611,29 @@ local function is_block_between(pos1, pos2, step)
     return false -- No solid blocks found.
 end
 
+local function is_walkable_block_between(pos1, pos2, step)
+	step = step or 0.25
+	local diff = vector.subtract(pos2, pos1)
+	local total_distance = vector.length(diff)
+	if total_distance <= step then
+		return false
+	end
+
+	local direction = vector.normalize(diff)
+	local steps = math.floor(total_distance / step)
+	-- Exclude both endpoints: only an intervening block should trigger path noclip.
+	for i = 1, steps - 1 do
+		local sample_pos = vector.add(pos1, vector.multiply(direction, i * step))
+		local node = core.get_node_or_nil(sample_pos)
+		local node_def = node and core.get_node_def(node.name) or nil
+		if node_def and node_def.walkable then
+			return true
+		end
+	end
+
+	return false
+end
+
 target_is_in_wall = function(target)
 	local target_pos = target and target:get_pos() or nil
 	if not target_pos then
@@ -599,6 +649,20 @@ target_is_in_wall = function(target)
 		local node_def = node and core.get_node_def(node.name) or nil
 		if node_def and node_def.walkable then
 			return true
+		end
+	end
+
+	local player = core.localplayer
+	local player_pos = player and player:get_pos() or nil
+	if player_pos and math.abs(target_pos.y - player_pos.y) >= 0.5 then
+		-- Scan through the middle and upper body so floors and ceilings between
+		-- vertically separated players activate the temporary mace noclip.
+		for _, y_offset in ipairs({0.75, 1.4}) do
+			local from = vector.offset(player_pos, 0, y_offset, 0)
+			local to = vector.offset(target_pos, 0, y_offset, 0)
+			if is_walkable_block_between(from, to, 0.25) then
+				return true
+			end
 		end
 	end
 
@@ -694,9 +758,6 @@ core.register_globalstep(function(dtime)
 			if target_enemy and core.settings:get_bool("killaura") then
 				killaura_target = target_enemy
 				local mace_wall_target = mace_mode and target_is_in_wall(target_enemy)
-				if mace_mode then
-					disable_mace_movement()
-				end
 				-- if using killaura silent mode then wait atleast 0.5 seconds to start attacking after simulating aiming at target and pressing attack
 			if (core.settings:get("killaura.mode") == "Silent" and core.settings:get_bool("killaura.simtime") and time_aimed_at_target < 0.5) or (core.settings:get("killaura.mode") == "Silent" and target_aimed_at ~= target_enemy:get_id()) then
 				return
@@ -723,8 +784,11 @@ core.register_globalstep(function(dtime)
 				if mace_mode then
 					local ready, cooldown_left = mace_ready()
 					if ready then
+						disable_mace_movement()
 						if mace_wall_target then
-							start_mace_drop(player, target_enemy)
+							if not start_mace_drop(player, target_enemy) then
+								restore_mace_movement()
+							end
 						elseif can_mace_special(player, target_enemy) then
 							local target_pos = target_enemy:get_pos()
 							if target_pos then
@@ -735,8 +799,11 @@ core.register_globalstep(function(dtime)
 							suppress_jump_multiplier_for_mace_hit()
 							core.interact("use", {type = "object", ref = target_enemy})
 							last_mace_punch_time = os.clock()
+							restore_mace_movement()
 						else
-							start_mace_drop(player, target_enemy)
+							if not start_mace_drop(player, target_enemy) then
+								restore_mace_movement()
+							end
 						end
 						return
 					elseif cooldown_left > 0 then

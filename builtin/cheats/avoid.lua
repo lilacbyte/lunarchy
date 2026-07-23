@@ -1,9 +1,14 @@
 local MODULE_KEY = "avoid_movement"
 local RANGE_KEY = "avoid_movement.range"
+local TARGET_TYPE_KEY = "avoid_movement.target_type"
 local DEFAULT_RANGE = 6
 local MIN_ESCAPE_DISTANCE = 10
 local MAX_ESCAPE_DISTANCE = 15
 local TELEPORT_COOLDOWN = 0.75
+local WITHER_SKULLS = {
+	["mobs_mc:wither_skull"] = true,
+	["mobs_mc:wither_skull_strong"] = true,
+}
 
 local cooldown = 0
 
@@ -35,12 +40,42 @@ local function safe_destination(pos)
 	return nil
 end
 
-local function nearest_player(origin, radius)
+local function is_target(object, target_type)
+	if not object or (object.is_local_player and object:is_local_player()) then
+		return false
+	end
+
+	local is_player = object.is_player and object:is_player() or false
+	local name = object.get_name and object:get_name() or ""
+	if target_type == "Wither Skulls" then
+		return WITHER_SKULLS[name] or false
+	end
+
+	if target_type == "Players" then
+		return is_player
+	end
+
+	if target_type == "Entities" and is_player then
+		return false
+	end
+	if target_type ~= "Entities" and target_type ~= "Both" then
+		return is_player
+	end
+
+	if is_player then
+		return true
+	end
+
+	local hp = object.get_hp and object:get_hp() or 0
+	return hp > 0 and (not core.can_attack or core.can_attack(object:get_id()))
+end
+
+local function nearest_target(origin, radius, target_type)
 	local nearest
 	local nearest_distance = radius
 
 	for _, object in ipairs(core.get_nearby_objects(radius) or {}) do
-		if object:is_player() and not object:is_local_player() then
+		if is_target(object, target_type) then
 			local pos = object:get_pos()
 			if pos then
 				local distance = vector.distance(origin, pos)
@@ -109,13 +144,19 @@ core.register_globalstep(function(dtime)
 
 	local range = tonumber(core.settings:get(RANGE_KEY)) or DEFAULT_RANGE
 	range = math.max(1, math.min(20, range))
-	local threat, threat_distance = nearest_player(player_pos, range)
+	local target_type = core.settings:get(TARGET_TYPE_KEY) or "Players"
+	local threat, threat_distance = nearest_target(player_pos, range, target_type)
 	if not threat then
 		core.update_infotext("avoid", "Movement", MODULE_KEY, "")
 		return
 	end
 
-	local name = threat:get_name() or "player"
+	local name = threat:get_name()
+	if WITHER_SKULLS[name] then
+		name = "Wither Skull"
+	elseif not name or name == "" then
+		name = threat:is_player() and "player" or "entity"
+	end
 	core.update_infotext("avoid", "Movement", MODULE_KEY,
 		("%s (%.1fm)"):format(name, threat_distance))
 	if cooldown > 0 then
@@ -138,6 +179,8 @@ end)
 
 core.register_cheat_with_infotext("avoid", "Movement", MODULE_KEY, "")
 core.register_cheat_description("avoid", "Movement", MODULE_KEY,
-	"Teleports 10-15 blocks away when another player enters the configured range.")
+	"Teleports 10-15 blocks away from players, entities, or Mineclonia wither skulls.")
+core.register_cheat_setting("Target Type", "Movement", MODULE_KEY, TARGET_TYPE_KEY,
+	{type = "selectionbox", options = {"Players", "Entities", "Both", "Wither Skulls"}})
 core.register_cheat_setting("Range", "Movement", MODULE_KEY, RANGE_KEY,
 	{type = "slider_int", min = 1, max = 20, steps = 20})

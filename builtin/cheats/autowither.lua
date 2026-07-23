@@ -1,5 +1,7 @@
 local WITHER_SKULL = "mcl_heads:wither_skeleton"
 local NAMETAG_ITEM = "mcl_mobitems:nametag"
+local TELEPORT_MIN_DISTANCE = 10
+local TELEPORT_MAX_DISTANCE = 15
 
 local WITHER_LAYOUTS = {
 	x = {
@@ -66,6 +68,68 @@ local function get_player_eye_pos(player)
 	local props = player and player.get_properties and player:get_properties() or nil
 	local eye_height = props and props.eye_height or 1.625
 	return vector.offset(player:get_pos(), 0, eye_height, 0)
+end
+
+local function is_walkable(pos)
+	local node = core.get_node_or_nil(vector.round(pos))
+	local def = node and core.get_node_def(node.name) or nil
+	return def and def.walkable or false
+end
+
+local function is_clear(pos)
+	local node = core.get_node_or_nil(vector.round(pos))
+	local def = node and core.get_node_def(node.name) or nil
+	return def and not def.walkable or false
+end
+
+local function safe_destination(pos)
+	for y_offset = 2, -2, -1 do
+		local candidate = vector.offset(pos, 0, y_offset, 0)
+		if is_walkable(vector.offset(candidate, 0, -1, 0))
+				and is_clear(candidate)
+				and is_clear(vector.offset(candidate, 0, 1, 0)) then
+			return candidate
+		end
+	end
+	return nil
+end
+
+local function teleport_to_next_wither()
+	local player = core.localplayer
+	local player_pos = player and player:get_pos() or nil
+	if not player_pos then
+		return false
+	end
+
+	local look = player:get_look_dir() or {x = 1, y = 0, z = 0}
+	local horizontal_length = math.sqrt(look.x * look.x + look.z * look.z)
+	local dir_x, dir_z
+	if horizontal_length > 0.001 then
+		dir_x = look.x / horizontal_length
+		dir_z = look.z / horizontal_length
+	else
+		local angle = math.random() * math.pi * 2
+		dir_x = math.cos(angle)
+		dir_z = math.sin(angle)
+	end
+
+	local distance = math.random(TELEPORT_MIN_DISTANCE, TELEPORT_MAX_DISTANCE)
+	local direct = {
+		x = player_pos.x + dir_x * distance,
+		y = player_pos.y,
+		z = player_pos.z + dir_z * distance,
+	}
+
+	-- Flying keeps the current altitude. On foot, prefer Avoid's safe-floor search.
+	local destination = direct
+	local airborne = player.is_touching_ground and not player:is_touching_ground()
+	if not core.settings:get_bool("free_move") and not airborne then
+		destination = safe_destination(direct) or direct
+	end
+
+	player:set_pos(destination)
+	player:set_velocity({x = 0, y = 0, z = 0})
+	return true
 end
 
 local function choose_axis(player)
@@ -279,7 +343,12 @@ local function step_session(dtime)
 	if autowither_state.disable_timer > 0 then
 		autowither_state.disable_timer = math.max(autowither_state.disable_timer - dtime, 0)
 		if autowither_state.disable_timer == 0 then
-			core.settings:set_bool("autowither", false)
+			local keep_spamming = core.settings:get_bool("autowither.teleport")
+			if keep_spamming then
+				teleport_to_next_wither()
+			else
+				core.settings:set_bool("autowither", false)
+			end
 			core.settings:set_bool("placing_node", false)
 			autowither_state.queue = nil
 			autowither_state.tag_timer = 0
@@ -287,6 +356,9 @@ local function step_session(dtime)
 			autowither_state.axis = nil
 			autowither_state.base_pos = nil
 			autowither_state.spawn_hint = nil
+			if keep_spamming then
+				autowither_state.cooldown = 0.35
+			end
 		end
 		return
 	end

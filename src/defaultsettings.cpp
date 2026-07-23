@@ -107,8 +107,10 @@ void set_default_settings()
 	settings->setDefault("mesh_buffer_min_vertices", "300");
 	settings->setDefault("free_move", "false");
 	settings->setDefault("free_move.speed", "1.0");
+	settings->setDefault("free_move.mineclonia", "false");
 	settings->setDefault("jump", "false");
 	settings->setDefault("jump.multiplier", "1.0");
+	settings->setDefault("jump.mineclonia", "false");
 	settings->setDefault("fastfall", "false");
 	settings->setDefault("fastfall.multiplier", "1.0");
 	settings->setDefault("pitch_move", "false");
@@ -117,6 +119,8 @@ void set_default_settings()
 	settings->setDefault("BHOP.jump", "false");
 	settings->setDefault("BHOP.sprint", "false");
 	settings->setDefault("BHOP.speed", "false");
+	settings->setDefault("BHOP.mineclonia", "false");
+	settings->setDefault("jetpack.mineclonia", "false");
 	settings->setDefault("noclip", "false");
 	settings->setDefault("detached_camera", "false");
 	settings->setDefault("screenshot_path", "screenshots");
@@ -405,8 +409,10 @@ void set_default_settings()
 	settings->setDefault("ignore.mineclonia", "true");
 	settings->setDefault("autotoxic", "false");
 	settings->setDefault("autotoxic.message", "ez");
+	settings->setDefault("autowither.teleport", "false");
 	settings->setDefault("avoid_movement", "false");
 	settings->setDefault("avoid_movement.range", "6");
+	settings->setDefault("avoid_movement.target_type", "Players");
 	settings->setDefault("enable_combat_target_hud", "false");
 	settings->setDefault("enable_combat_target_hud.target_highlight", "true");
 	settings->setDefault("hud_elements_advice", "true");

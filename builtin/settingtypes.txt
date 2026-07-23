@@ -198,6 +198,9 @@ keymap_toggle_autowither (AutoWither) key KEY_MINUS
 #    Automatically name the spawned wither when AutoWither nametag is enabled.
 autowither.nametag_text (AutoWither Nametag Text) string Wither
 
+#    Teleport 10-15 blocks after each completed wither and continue building.
+autowither.teleport (AutoWither Teleport) bool false
+
 #    Key for toggling Killaura.
 keymap_toggle_killaura (Killaura) key SYSTEM_SCANCODE_27
 

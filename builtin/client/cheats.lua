@@ -193,6 +193,7 @@ core.register_cheat_description("attachmentfloat", "Combat", "float_above_parent
 	core.register_cheat_description("crystalspam", "Combat", "crystalspam", "Puts end crystals under nearby players or entities")
 core.register_cheat_description("autowither", "Combat", "autowither", "Completes a wither structure and places the skulls")
 core.register_cheat_setting("nametag", "Combat", "autowither", "autowither.nametag", {type="bool"})
+core.register_cheat_setting("Teleport", "Combat", "autowither", "autowither.teleport", {type="bool"})
 core.register_cheat_description("killaura", "Combat", "killaura", "Attacks a specified target. Silent mode is recommended in PVP servers, as it makes Killaura undetectable")
 core.register_cheat_description("maceaura", "Combat", "killaura.mace", "Enable Killaura's mace attack mode")
 core.register_cheat_description("orbit", "Combat", "orbit", "Moves around a specified target")
@@ -247,6 +248,7 @@ core.register_cheat_with_infotext("jetpack", "Movement", "jetpack", "")
 core.register_cheat_description("jetpack", "Movement", "jetpack", "AirJump with adjustable speed")
 core.register_cheat_with_infotext("jump", "Movement", "jump", "")
 core.register_cheat_description("jump", "Movement", "jump", "Adjust normal jump height")
+core.register_cheat_with_infotext("bhop", "Movement", "BHOP", "")
 core.register_cheat_description("bhop", "Movement", "BHOP", "Boost movement acceleration while moving")
 core.register_cheat_description("detachedcamera", "Movement", "detached_camera", "Detach the camera from the player")
 core.register_cheat_description("noslow", "Movement", "noslow", "Sneaking doesn't slow you down")
@@ -344,13 +346,17 @@ core.register_cheat_setting("range", "Player", "reach", "reach.range",
 core.register_cheat_setting("jump", "Movement", "BHOP", "BHOP.jump", {type="bool"})
 core.register_cheat_setting("sprint", "Movement", "BHOP", "BHOP.sprint", {type="bool"})
 core.register_cheat_setting("speed", "Movement", "BHOP", "BHOP.speed", {type="bool"})
+core.register_cheat_setting("Mineclonia", "Movement", "BHOP", "BHOP.mineclonia", {type="bool"})
 core.register_cheat_setting("disable on damage", "Movement", "freecam", "freecam.disable_on_damage", {type="bool"})
 core.register_cheat_setting("flight speed", "Movement", "free_move", "free_move.speed",
 	{type="slider_float", min=0.25, max=8.00, steps=155})
+core.register_cheat_setting("Mineclonia", "Movement", "free_move", "free_move.mineclonia", {type="bool"})
 core.register_cheat_setting("jetpack speed", "Movement", "jetpack", "jetpack.speed",
 	{type="slider_float", min=0.25, max=8.00, steps=155})
+core.register_cheat_setting("Mineclonia", "Movement", "jetpack", "jetpack.mineclonia", {type="bool"})
 core.register_cheat_setting("multiplier", "Movement", "jump", "jump.multiplier",
 	{type="slider_float", min=0.25, max=8.00, steps=155})
+core.register_cheat_setting("Mineclonia", "Movement", "jump", "jump.mineclonia", {type="bool"})
 core.register_cheat_setting("accent color", "Client", "hud.enabled", "hud.accent_color", {type="text", size=18})
 core.register_cheat_setting("text color", "Client", "hud.enabled", "hud.text_color", {type="text", size=18})
 core.register_cheat_setting("background color", "Client", "hud.enabled", "hud.background_color", {type="text", size=18})
@@ -518,17 +524,31 @@ minetest.register_globalstep(function(dtime)
             return text
         end
 
+        local function movement_info(value, mineclonia_setting, mineclonia_cap)
+            local amount = tonumber(value) or 0
+            if core.settings:get_bool(mineclonia_setting) then
+                return format_amount(math.min(amount, mineclonia_cap or 1)) .. ", Mineclonia"
+            end
+            return format_amount(amount)
+        end
+
         -- Step infotext
         core.update_infotext("step", "Movement", "step",
             core.settings:get_bool("step") and format_amount(core.settings:get("step.mult")) or "")
         core.update_infotext("reach", "Player", "reach",
             core.settings:get_bool("reach") and format_amount(core.settings:get("reach.range")) or "")
         core.update_infotext("flight", "Movement", "free_move",
-            core.settings:get_bool("free_move") and format_amount(core.settings:get("free_move.speed")) or "")
+            core.settings:get_bool("free_move") and
+                movement_info(core.settings:get("free_move.speed"), "free_move.mineclonia", 1.5) or "")
         core.update_infotext("jetpack", "Movement", "jetpack",
-            core.settings:get_bool("jetpack") and format_amount(core.settings:get("jetpack.speed")) or "")
+            core.settings:get_bool("jetpack") and
+                movement_info(core.settings:get("jetpack.speed"), "jetpack.mineclonia") or "")
         core.update_infotext("jump", "Movement", "jump",
-            core.settings:get_bool("jump") and format_amount(core.settings:get("jump.multiplier")) or "")
+            core.settings:get_bool("jump") and
+                movement_info(core.settings:get("jump.multiplier"), "jump.mineclonia") or "")
+        core.update_infotext("bhop", "Movement", "BHOP",
+            core.settings:get_bool("BHOP") and
+                (core.settings:get_bool("BHOP.mineclonia") and "Mineclonia" or "") or "")
 
         -- CombatLog infotext
         core.update_infotext("combatlog", "Combat", "combatlog", "Min HP: " .. core.settings:get("combatlog.hp"))

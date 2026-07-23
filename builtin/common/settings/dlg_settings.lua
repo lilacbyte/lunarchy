@@ -115,7 +115,6 @@ local function load()
 		content = {
 			"language",
 			{ heading = fgettext_ne("General") },
-			"font_size",
 			"chat_font_size",
 			"gui_scaling",
 			"hud_scaling",

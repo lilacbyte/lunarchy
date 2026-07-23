@@ -695,17 +695,30 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	bool free_move = fly_allowed && player_settings.free_move;
 	bool fast_move = fast_allowed && player_settings.fast_move;
 	bool pitch_move = (free_move || in_liquid) && player_settings.pitch_move;
+	const bool mineclonia_flight = g_settings->getBool("free_move.mineclonia");
+	const bool mineclonia_bhop = g_settings->getBool("BHOP.mineclonia");
+	const bool mineclonia_jetpack = g_settings->getBool("jetpack.mineclonia");
+	const bool mineclonia_jump = g_settings->getBool("jump.mineclonia");
+	const bool jetpack_enabled = g_settings->getBool("jetpack");
+	const bool jetpack_active = jetpack_enabled && (!mineclonia_jetpack || m_can_jump);
 	// When aux1_descends is enabled the fast key is used to go down, so fast isn't possible
 	bool fast_climb = fast_move && correct_control.aux1 && !player_settings.aux1_descends;
 	bool always_fly_fast = player_settings.always_fly_fast;
+	const f32 configured_fly_speed = g_settings->getFloat("free_move.speed", 0.25f, 8.0f);
 	const f32 fly_speed_mult = free_move
-		? g_settings->getFloat("free_move.speed", 0.25f, 8.0f)
+		? (mineclonia_flight ? std::min(configured_fly_speed, 1.5f) : configured_fly_speed)
 		: 1.0f;
-	const f32 jetpack_speed_mult = g_settings->getFloat("jetpack.speed", 0.25f, 8.0f);
+	const f32 configured_jetpack_speed =
+		g_settings->getFloat("jetpack.speed", 0.25f, 8.0f);
+	const f32 jetpack_speed_mult = mineclonia_jetpack
+		? std::min(configured_jetpack_speed, 1.0f)
+		: configured_jetpack_speed;
 	const bool jump_enabled = g_settings->getBool("jump");
 	const f32 jump_speed_mult = jump_enabled
 		&& !g_settings->getBool("killaura.mace_suppress_jump_multiplier")
-		? g_settings->getFloat("jump.multiplier", 0.25f, 8.0f)
+		? (mineclonia_jump
+			? std::min(g_settings->getFloat("jump.multiplier", 0.25f, 8.0f), 1.0f)
+			: g_settings->getFloat("jump.multiplier", 0.25f, 8.0f))
 		: 1.0f;
 
 	// Whether superspeed mode is used or not
@@ -719,22 +732,24 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 
 	f32 new_speed_fast = g_settings->getFloat("movement_speed_fast") * BS;
 	const f32 flight_speed_walk = speed_walk * fly_speed_mult;
-	const f32 flight_speed_fast = new_speed_fast * fly_speed_mult;
+	const f32 flight_speed_fast = mineclonia_flight
+		? flight_speed_walk
+		: new_speed_fast * fly_speed_mult;
 
-	if (always_fly_fast && free_move && fast_move)
+	if (always_fly_fast && free_move && fast_move && !mineclonia_flight)
 		superspeed = true;
 
 	// Old descend control
 	if (player_settings.aux1_descends) {
 		// If free movement and fast movement, always move fast
-		if (free_move && fast_move)
+		if (free_move && fast_move && !mineclonia_flight)
 			superspeed = true;
 
 		// Auxiliary button 1 (E)
 		if (correct_control.aux1) {
 			if (free_move) {
 				// In free movement mode, aux1 descends
-				if (fast_move)
+				if (fast_move && !mineclonia_flight)
 					speedV.Y = -flight_speed_fast;
 				else
 					speedV.Y = -flight_speed_walk;
@@ -757,7 +772,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		if (correct_control.aux1) {
 			if (!is_climbing) {
 				// aux1 is "Turbo button"
-				if (fast_move)
+				if (fast_move && (!free_move || !mineclonia_flight))
 					superspeed = true;
 			}
 		}
@@ -766,7 +781,8 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			// Descend player in freemove mode, liquids and climbable nodes by sneak key, only if jump key is released
 			if (free_move) {
 				// In free movement mode, sneak descends
-				if (fast_move && (correct_control.aux1 || always_fly_fast))
+				if (fast_move && !mineclonia_flight &&
+						(correct_control.aux1 || always_fly_fast))
 					speedV.Y = -flight_speed_fast;
 				else
 					speedV.Y = -flight_speed_walk;
@@ -808,29 +824,29 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			if (!correct_control.sneak) {
 				// Don't fly up if sneak key is pressed
 				if (player_settings.aux1_descends || always_fly_fast) {
-					if (fast_move)
+					if (fast_move && !mineclonia_flight)
 						speedV.Y = flight_speed_fast;
 					else
 						speedV.Y = flight_speed_walk;
 				} else {
-					if (fast_move && correct_control.aux1)
+					if (fast_move && !mineclonia_flight && correct_control.aux1)
 						speedV.Y = flight_speed_fast;
 					else
 						speedV.Y = flight_speed_walk;
 				}
 			}
-		} else if (m_can_jump || g_settings->getBool("jetpack")) {
+		} else if (m_can_jump || jetpack_active) {
 			/*
 				NOTE: The d value in move() affects jump height by
 				raising the height at which the jump speed is kept
 				at its starting value
 			*/
 			v3f speedJ = getLegitSpeed();
-			if (speedJ.Y >= -0.5f * BS || g_settings->getBool("jetpack")) {
+			if (speedJ.Y >= -0.5f * BS || jetpack_active) {
 				speedJ.Y = movement_speed_jump * physics_override.jump;
 				if (m_can_jump)
 					speedJ.Y *= jump_speed_mult;
-				if (g_settings->getBool("jetpack"))
+				if (jetpack_active)
 					speedJ.Y *= jetpack_speed_mult;
 				setLegitSpeed(speedJ);
 				m_client->getEventManager()->put(new SimpleTriggerEvent(MtEvent::PLAYER_JUMP));
@@ -859,7 +875,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		speedH = speedH.normalize() * (free_move ? flight_speed_walk : speed_walk);
 
 	speedH *= correct_control.movement_speed; /* Apply analog input */
-	if (!free_move && g_settings->getBool("jetpack") && correct_control.jump)
+	if (!free_move && jetpack_active && correct_control.jump)
 		speedH *= jetpack_speed_mult;
 
 	// Acceleration increase
@@ -871,7 +887,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		if (superspeed || (fast_move && correct_control.aux1))
 			incH = movement_acceleration_fast * physics_override.acceleration_fast * BS * dtime;
 		else
-			if (g_settings->getBool("BHOP")) {
+			if (g_settings->getBool("BHOP") && !mineclonia_bhop) {
 				incH = (movement_acceleration_air*100) * (physics_override.acceleration_air*100) * BS * dtime;
 			} else {
 				incH = movement_acceleration_air * physics_override.acceleration_air * BS * dtime;
@@ -881,7 +897,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			((in_liquid || in_liquid_stable) && fast_climb)) {
 		incH = incV = movement_acceleration_fast * physics_override.acceleration_fast * BS * dtime;
 	} else {
-		if (g_settings->getBool("BHOP")) {
+		if (g_settings->getBool("BHOP") && !mineclonia_bhop) {
 			incH = incV = (movement_acceleration_default*100) * (physics_override.acceleration_default*100) * BS * dtime;
 		} else {
 			incH = incV = movement_acceleration_default * physics_override.acceleration_default * BS * dtime;
@@ -900,7 +916,8 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	}
 
 	// Accelerate to target speed with maximum increment
-	if (g_settings->getBool("BHOP") && control.jump && g_settings->getBool("BHOP.speed")) {
+	if (g_settings->getBool("BHOP") && !mineclonia_bhop &&
+			control.jump && g_settings->getBool("BHOP.speed")) {
 		accelerate((speedH*1.2 + speedV*1.2) * physics_override.speed, incH * physics_override.speed * slip_factor, incV * physics_override.speed, pitch_move);
 	} else {
  	accelerate((speedH + speedV) * physics_override.speed, incH * physics_override.speed * slip_factor, incV * physics_override.speed, pitch_move);
