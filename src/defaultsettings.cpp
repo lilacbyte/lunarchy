@@ -409,6 +409,8 @@ void set_default_settings()
 	settings->setDefault("ignore.mineclonia", "true");
 	settings->setDefault("autotoxic", "false");
 	settings->setDefault("autotoxic.message", "ez");
+	settings->setDefault("autowither", "false");
+	settings->setDefault("autowither.nametag", "false");
 	settings->setDefault("autowither.teleport", "false");
 	settings->setDefault("avoid_movement", "false");
 	settings->setDefault("avoid_movement.range", "6");
