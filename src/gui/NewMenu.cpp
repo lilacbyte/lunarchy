@@ -267,7 +267,12 @@ static bool isHudColorSetting(const ScriptApiCheatsCheatSetting *setting)
 			setting->m_setting == "hud.border_color" ||
 			setting->m_setting == "hand_view.color" ||
 			setting->m_setting == "chatplus_background_color" ||
-			setting->m_setting == "chatplus_border_color");
+			setting->m_setting == "chatplus_border_color" ||
+			setting->m_setting == "inventory_hud.background_color" ||
+			setting->m_setting == "inventory_hud.border_color" ||
+			setting->m_setting == "inventory_hud.slot_color" ||
+			setting->m_setting == "inventory_hud.slot_border_color" ||
+			setting->m_setting == "inventory_hud.text_color");
 }
 
 static bool isHudAccentColorSetting(const ScriptApiCheatsCheatSetting *setting)
@@ -700,6 +705,10 @@ static void syncHudColorTargets(const std::string &setting_id)
 	g_settings->set("hud.border_color", color);
 	g_settings->set("chatplus_background_color", color);
 	g_settings->set("chatplus_border_color", color);
+	g_settings->set("inventory_hud.background_color", color);
+	g_settings->set("inventory_hud.border_color", color);
+	g_settings->set("inventory_hud.slot_border_color", color);
+	g_settings->set("inventory_hud.text_color", color);
 	g_settings->set("cheat_menu_active_bg_color", quickmenu_color.str());
 }
 
@@ -1291,6 +1300,26 @@ void NewMenu::create()
         }
 
         hudElements.back()->elementName = "equipment_hud";
+
+        {
+            core::rect<s32> inventory_bounds;
+            if (loadHudBounds("inventoryhud", "inventory_hud", inventory_bounds)) {
+                if (g_settings->exists("use_menu_grid") && g_settings->getBool("use_menu_grid")) {
+                    hudElements.push_back(new InventoryHUD(m_client, core::rect<s32>(
+                        roundToGrid(inventory_bounds.UpperLeftCorner.X),
+                        roundToGrid(inventory_bounds.UpperLeftCorner.Y),
+                        roundToGrid(inventory_bounds.LowerRightCorner.X),
+                        roundToGrid(inventory_bounds.LowerRightCorner.Y))));
+                } else {
+                    hudElements.push_back(new InventoryHUD(m_client, inventory_bounds));
+                }
+            } else {
+                hudElements.push_back(new InventoryHUD(m_client,
+                    core::rect<s32>(lastScreenSize.Width / 2 - 160, 10,
+                        lastScreenSize.Width / 2 + 160, 160)));
+            }
+        }
+        hudElements.back()->elementName = "inventoryhud";
 
         {
             core::rect<s32> chat_bounds;

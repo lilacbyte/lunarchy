@@ -42,6 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/cheatHUD.h"
 #include "gui/chatHUD.h"
 #include "gui/equipmentHUD.h"
+#include "gui/inventoryHUD.h"
 #include "client/color_theme.h"
 
 using namespace irr;

@@ -40,5 +40,6 @@ set(gui_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/totemsHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wailaHUD.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/equipmentHUD.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/inventoryHUD.cpp
 	PARENT_SCOPE
 )

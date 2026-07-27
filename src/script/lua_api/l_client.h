@@ -72,6 +72,9 @@ private:
 	// send_damage(damage)
 	static int l_send_damage(lua_State *L);
 
+	// send_player_pos_packet(pos, velocity)
+	static int l_send_player_pos_packet(lua_State *L);
+
 	// start_dig(pos)
 	static int l_start_dig(lua_State *L);
 

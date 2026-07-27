@@ -242,6 +242,9 @@ void set_default_settings()
 	settings->setDefault("crystalspam.target_radius", "20");
 	settings->setDefault("crystalspam.safe", "false");
 	settings->setDefault("crystalspam.3x3", "false");
+	settings->setDefault("crystalavoid", "false");
+	settings->setDefault("crystalavoid.trigger_radius", "6");
+	settings->setDefault("crystalavoid.escape_distance", "9");
 	settings->setDefault("tbot", "false");
 	settings->setDefault("tbot_is_attacking", "false");
 	settings->setDefault("throughwalls", "false");
@@ -441,6 +444,22 @@ void set_default_settings()
 	settings->setDefault("equipment_hud", "false");
 	settings->setDefault("equipment_hud.background", "true");
 	settings->setDefault("equipment_hud.durability_mode", "Both");
+	settings->setDefault("inventory_hud", "false");
+	settings->setDefault("inventory_hud.background", "true");
+	settings->setDefault("inventory_hud.background_color", "#191919");
+	settings->setDefault("inventory_hud.background_alpha", "180");
+	settings->setDefault("inventory_hud.border", "true");
+	settings->setDefault("inventory_hud.border_color", "#000000");
+	settings->setDefault("inventory_hud.border_alpha", "255");
+	settings->setDefault("inventory_hud.text_color", "#ffffff");
+	settings->setDefault("inventory_hud.padding", "5");
+	settings->setDefault("inventory_hud.columns", "9");
+	settings->setDefault("inventory_hud.slot_size", "32");
+	settings->setDefault("inventory_hud.slot_gap", "2");
+	settings->setDefault("inventory_hud.slot_background", "true");
+	settings->setDefault("inventory_hud.slot_color", "#2d2d2d");
+	settings->setDefault("inventory_hud.slot_alpha", "100");
+	settings->setDefault("inventory_hud.slot_border_color", "#787878");
 	settings->setDefault("fov.step", "72.0f");
 
 	//WORLD

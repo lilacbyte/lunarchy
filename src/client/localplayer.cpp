@@ -714,11 +714,13 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		? std::min(configured_jetpack_speed, 1.0f)
 		: configured_jetpack_speed;
 	const bool jump_enabled = g_settings->getBool("jump");
+	const bool mace_jump_suppressed =
+		g_settings->getBool("killaura.mace_suppress_jump_multiplier");
 	const f32 jump_speed_mult = jump_enabled
-		&& !g_settings->getBool("killaura.mace_suppress_jump_multiplier")
-		? (mineclonia_jump
-			? std::min(g_settings->getFloat("jump.multiplier", 0.25f, 8.0f), 1.0f)
-			: g_settings->getFloat("jump.multiplier", 0.25f, 8.0f))
+			&& !mace_jump_suppressed
+			? (mineclonia_jump
+				? std::min(g_settings->getFloat("jump.multiplier", 0.25f, 8.0f), 1.0f)
+				: g_settings->getFloat("jump.multiplier", 0.25f, 8.0f))
 		: 1.0f;
 
 	// Whether superspeed mode is used or not
@@ -819,7 +821,15 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		control.aux1 = true;
 	}
 
-	if (correct_control.jump) {
+	if (mace_jump_suppressed) {
+		v3f suppressed_speed = getLegitSpeed();
+		if (suppressed_speed.Y > 0.0f) {
+			suppressed_speed.Y = 0.0f;
+			setLegitSpeed(suppressed_speed);
+		}
+	}
+
+	if (correct_control.jump && !mace_jump_suppressed) {
 		if (free_move) {
 			if (!correct_control.sneak) {
 				// Don't fly up if sneak key is pressed

@@ -1,3 +1,31 @@
+local runtime_setting_defaults = {
+	["inventory_hud"] = "false",
+	["inventory_hud.background"] = "true",
+	["inventory_hud.background_color"] = "#191919",
+	["inventory_hud.background_alpha"] = "180",
+	["inventory_hud.border"] = "true",
+	["inventory_hud.border_color"] = "#000000",
+	["inventory_hud.border_alpha"] = "255",
+	["inventory_hud.text_color"] = "#ffffff",
+	["inventory_hud.padding"] = "5",
+	["inventory_hud.columns"] = "9",
+	["inventory_hud.slot_size"] = "32",
+	["inventory_hud.slot_gap"] = "2",
+	["inventory_hud.slot_background"] = "true",
+	["inventory_hud.slot_color"] = "#2d2d2d",
+	["inventory_hud.slot_alpha"] = "100",
+	["inventory_hud.slot_border_color"] = "#787878",
+	["crystalavoid"] = "false",
+	["crystalavoid.trigger_radius"] = "6",
+	["crystalavoid.escape_distance"] = "9",
+}
+
+for setting, default in pairs(runtime_setting_defaults) do
+	if core.settings:get(setting) == nil then
+		core.settings:set(setting, default)
+	end
+end
+
 	core.cheats = {
 	["Client"] = {
 		["quickmenu"] = { setting = "use_old_menu", order = 0 },
@@ -11,7 +39,8 @@
 		["totems"] = { setting = "totems", order = 13 },
 		["waila"] = { setting = "waila", order = 14 },
 		["equipmenthud"] = { setting = "equipment_hud", order = 15 },
-		["lagoptimizer"] = { setting = "lag_optimizer", order = 16 },
+		["inventoryhud"] = { setting = "inventory_hud", order = 16 },
+		["lagoptimizer"] = { setting = "lag_optimizer", order = 17 },
 	},
 	["Render"] = {
 		["fullbright"] = "fullbright",
@@ -189,8 +218,9 @@ core.register_cheat_description("attachmentfloat", "Combat", "float_above_parent
 	core.register_cheat_description("autototem", "Combat", "autototem", "Automatically puts a totem in your offhand")
 	core.register_cheat_description("autoaim", "Combat", "autoaim", "Aims at a specified target")
 	core.register_cheat_description("combatlog", "Combat", "be_a_bitch", "Logs off when certain HP is reached")
-	core.register_cheat_description("criticals", "Combat", "critical_hits", "Does critical hits in mcl2/mcla")
-	core.register_cheat_description("crystalspam", "Combat", "crystalspam", "Puts end crystals under nearby players or entities")
+		core.register_cheat_description("criticals", "Combat", "critical_hits", "Does critical hits in mcl2/mcla")
+		core.register_cheat_description("crystalavoid", "Combat", "crystalavoid", "Packet-teleports away from nearby end crystals on the X axis")
+		core.register_cheat_description("crystalspam", "Combat", "crystalspam", "Puts end crystals under nearby players or entities")
 core.register_cheat_description("autowither", "Combat", "autowither", "Completes a wither structure and places the skulls")
 core.register_cheat_setting("nametag", "Combat", "autowither", "autowither.nametag", {type="bool"})
 core.register_cheat_setting("Teleport", "Combat", "autowither", "autowither.teleport", {type="bool"})
@@ -295,6 +325,7 @@ core.register_cheat_description("fps", "Client", "fps", "Show current frames per
 core.register_cheat_description("totems", "Client", "totems", "Show total totems in inventory and offhand")
 core.register_cheat_description("waila", "Client", "waila", "Show the node or entity you are looking at")
 core.register_cheat_description("equipmenthud", "Client", "equipment_hud", "Shows armor and held item durability")
+core.register_cheat_description("inventoryhud", "Client", "inventory_hud", "Shows your inventory in a movable HUD grid")
 core.register_cheat_description("lagoptimizer", "Client", "lag_optimizer", "Reduce visual lag, first-person motion, inventory animations, and item motion")
 --Render
 core.register_cheat_description("brightnight", "Render", "no_night", "Always daytime")
@@ -388,6 +419,10 @@ core.register_cheat_setting("target radius", "Combat", "crystalspam", "crystalsp
 	{type="slider_int", min=5, max=20, steps=16})
 core.register_cheat_setting("safe", "Combat", "crystalspam", "crystalspam.safe", {type="bool"})
 core.register_cheat_setting("3x3", "Combat", "crystalspam", "crystalspam.3x3", {type="bool"})
+core.register_cheat_setting("trigger radius", "Combat", "crystalavoid", "crystalavoid.trigger_radius",
+	{type="slider_int", min=2, max=12, steps=11})
+core.register_cheat_setting("escape distance", "Combat", "crystalavoid", "crystalavoid.escape_distance",
+	{type="slider_int", min=7, max=16, steps=10})
 core.register_cheat_setting("hp", "Render", "nametags", "nametags.hp", {type="bool"})
 core.register_cheat_setting("status marker", "Render", "nametags", "nametags.status", {type="bool"})
 core.register_cheat_setting("distance", "Render", "nametags", "nametags.distance", {type="bool"})
@@ -400,6 +435,21 @@ core.register_cheat_setting("background", "Render", "nametags", "show_nametag_ba
 core.register_cheat_setting("height", "Render", "nametags", "nametags.height", {type="slider_int", min=1, max=9, steps = 9});
 core.register_cheat_setting("field of view", "Render", "fov_setting", "fov.step", {type="slider_int", min=72, max=160, steps = 89});
 core.register_cheat_setting("background", "Client", "equipment_hud", "equipment_hud.background", {type="bool"})
+core.register_cheat_setting("background", "Client", "inventory_hud", "inventory_hud.background", {type="bool"})
+core.register_cheat_setting("background color", "Client", "inventory_hud", "inventory_hud.background_color", {type="text", size=18})
+core.register_cheat_setting("background alpha", "Client", "inventory_hud", "inventory_hud.background_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("border", "Client", "inventory_hud", "inventory_hud.border", {type="bool"})
+core.register_cheat_setting("border color", "Client", "inventory_hud", "inventory_hud.border_color", {type="text", size=18})
+core.register_cheat_setting("border alpha", "Client", "inventory_hud", "inventory_hud.border_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("text color", "Client", "inventory_hud", "inventory_hud.text_color", {type="text", size=18})
+core.register_cheat_setting("padding", "Client", "inventory_hud", "inventory_hud.padding", {type="slider_int", min=0, max=20, steps=21})
+core.register_cheat_setting("columns", "Client", "inventory_hud", "inventory_hud.columns", {type="slider_int", min=1, max=12, steps=12})
+core.register_cheat_setting("slot size", "Client", "inventory_hud", "inventory_hud.slot_size", {type="slider_int", min=16, max=64, steps=49})
+core.register_cheat_setting("slot gap", "Client", "inventory_hud", "inventory_hud.slot_gap", {type="slider_int", min=0, max=8, steps=9})
+core.register_cheat_setting("slot background", "Client", "inventory_hud", "inventory_hud.slot_background", {type="bool"})
+core.register_cheat_setting("slot color", "Client", "inventory_hud", "inventory_hud.slot_color", {type="text", size=18})
+core.register_cheat_setting("slot alpha", "Client", "inventory_hud", "inventory_hud.slot_alpha", {type="slider_int", min=0, max=255, steps=256})
+core.register_cheat_setting("slot border", "Client", "inventory_hud", "inventory_hud.slot_border_color", {type="text", size=18})
 core.register_cheat_setting("background", "Client", "coords", "coords.background", {type="bool"})
 core.register_cheat_setting("background", "Client", "fps", "fps.background", {type="bool"})
 core.register_cheat_setting("background", "Client", "totems", "totems.background", {type="bool"})

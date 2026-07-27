@@ -474,6 +474,10 @@ Call these functions only at load time!
     * Clears the out chat queue
 * `core.localplayer`
     * Reference to the LocalPlayer object. See [`LocalPlayer`](#localplayer) class reference for methods.
+* `core.send_player_pos_packet(pos[, velocity])`
+    * Immediately synchronizes the local player to `pos` and sends that position
+      to the server in a player-position packet.
+    * If supplied, `velocity` is applied locally and included in the packet.
 
 ### Privileges
 * `core.get_privilege_list()`

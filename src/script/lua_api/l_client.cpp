@@ -10,6 +10,7 @@
 #include "chatmessage.h"
 #include "client/client.h"
 #include "client/clientevent.h"
+#include "client/localplayer.h"
 #include "client/sound.h"
 #include "client/clientenvironment.h"
 #include "client/game.h"
@@ -631,6 +632,22 @@ int ModApiClient::l_send_damage(lua_State *L)
 	return 0;
 }
 
+// send_player_pos_packet(pos, velocity)
+int ModApiClient::l_send_player_pos_packet(lua_State *L)
+{
+	Client *client = getClient(L);
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+	if (!player)
+		return 0;
+
+	const v3f pos = checkFloatPos(L, 1);
+	player->setLegitPosition(pos);
+	if (lua_istable(L, 2))
+		player->setLegitSpeed(checkFloatPos(L, 2));
+	client->sendPlayerPos(pos);
+	return 0;
+}
+
 // set_fast_speed(speed)
 int ModApiClient::l_set_fast_speed(lua_State *L)
 {
@@ -1106,6 +1123,7 @@ void ModApiClient::Initialize(lua_State *L, int top)
 	API_FCT(get_language);
 	API_FCT(get_csm_restrictions);
 	API_FCT(send_damage);
+	API_FCT(send_player_pos_packet);
 	API_FCT(dig_node);
 	API_FCT(start_dig);
 	API_FCT(get_inv_item_damage);

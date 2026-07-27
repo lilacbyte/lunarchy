@@ -56,6 +56,9 @@ core.register_cheat("triggerbot", "Combat", "tbot")
 --------------- Functions -------------------
 function is_valid_target(obj, target_type, max_distance, ppos)
     local target_pos = obj:get_pos()
+    if not target_pos then
+        return false
+    end
     local distance = vector.distance(ppos, target_pos)
     if distance > max_distance then
         return false
@@ -85,11 +88,13 @@ function is_valid_target(obj, target_type, max_distance, ppos)
         end
     end
 
-    if obj:get_hp() <= 0 then
+    local hp = obj:get_hp()
+    local id = obj:get_id()
+    if not hp or hp <= 0 or not id then
         return false
     end
 
-    if not core.can_attack(obj:get_id()) then
+    if not core.can_attack(id) then
         return false
     end
 
@@ -153,18 +158,91 @@ local last_time_aimed_at_target = 0
 local time_aimed_at_target = 0
 local target_aimed_at = nil
 local is_mace_item
-local MACE_COOLDOWN = 0.45
+-- Mineclonia compares its nominal 1.6s cooldown using integer game time, so
+-- two seconds is the first interval that is always accepted by the server.
+local MACE_COOLDOWN = 2.0
 local MACE_MIN_HEIGHT = 1.0
 local MACE_USE_DISTANCE = 5.0
+local MACE_LAUNCH_SPEED = 8.0
+local MACE_DROP_SPEED = -8.0
+local MACE_HORIZONTAL_SPEED = 3.0
+local MACE_DROP_TIMEOUT = 2.5
+local MACE_TARGET_LEAD_TIME = 0.12
+local MACE_TARGET_LEAD_MAX = 3.0
+local MACE_HIT_DISTANCE = 4.5
 local last_mace_punch_time = 0
 local mace_jump_suppress_until = 0
 local mace_drop_target = nil
 local mace_drop_started_at = 0
+local mace_drop_last_height = nil
+local mace_drop_phase = nil
 local mace_noclip_active = false
 local mace_movement_suppressed = false
 local restore_free_move = false
 local restore_airjump = false
 local target_is_in_wall
+
+local function safe_object_call(obj, method)
+	if not obj then
+		return nil
+	end
+
+	local ok, value = pcall(function()
+		local fn = obj[method]
+		return fn and fn(obj) or nil
+	end)
+	return ok and value or nil
+end
+
+local function get_object_pos(obj)
+	return safe_object_call(obj, "get_pos")
+end
+
+local function get_object_id(obj)
+	return safe_object_call(obj, "get_id")
+end
+
+-- Mineclonia fall-flying attaches the player to a moving
+-- mcl_armor:elytra_entity. Track that parent for movement prediction, but keep
+-- the player object itself as the interaction target.
+local function get_mace_target_motion(target)
+	local pos = get_object_pos(target)
+	local velocity = safe_object_call(target, "get_velocity")
+	local attached = safe_object_call(target, "is_player") and
+			safe_object_call(target, "get_attach") or nil
+
+	if safe_object_call(attached, "get_name") == "mcl_armor:elytra_entity" then
+		pos = get_object_pos(attached) or pos
+		velocity = safe_object_call(attached, "get_velocity") or velocity
+	end
+
+	return pos, velocity, attached
+end
+
+local function get_mace_intercept_pos(target)
+	local pos, velocity, attached = get_mace_target_motion(target)
+	if not pos or not velocity then
+		return pos, velocity, attached
+	end
+
+	-- Mineclonia moves a fall-flying player through its attached elytra
+	-- entity. Lead its velocity slightly so the drop intersects the player
+	-- instead of continuously steering toward an old position.
+	local lead = vector.multiply(velocity, MACE_TARGET_LEAD_TIME)
+	local lead_length = vector.length(lead)
+	if lead_length > MACE_TARGET_LEAD_MAX then
+		lead = vector.multiply(lead, MACE_TARGET_LEAD_MAX / lead_length)
+	end
+
+	return vector.add(pos, lead), velocity, attached
+end
+
+local function target_can_still_be_attacked(target)
+	local id = get_object_id(target)
+	local hp = safe_object_call(target, "get_hp")
+	return id ~= nil and get_object_pos(target) ~= nil and
+			hp ~= nil and hp > 0 and core.can_attack(id) == true
+end
 
 local function set_mace_jump_suppress(active)
 	core.settings:set_bool("killaura.mace_suppress_jump_multiplier", active)
@@ -175,7 +253,7 @@ local function suppress_jump_multiplier_for_mace_hit()
 		return
 	end
 
-	mace_jump_suppress_until = os.clock() + 0.2
+	mace_jump_suppress_until = os.clock() + 1.0
 	set_mace_jump_suppress(true)
 end
 
@@ -268,7 +346,7 @@ end
 
 local function player_is_above_target(player, target, min_blocks)
 	local player_pos = player and player:get_pos()
-	local target_pos = target and target:get_pos()
+	local target_pos = get_mace_target_motion(target)
 	if not player_pos or not target_pos then
 		return false
 	end
@@ -277,7 +355,7 @@ end
 
 local function mace_target_is_near(player, target)
 	local player_pos = player and player:get_pos()
-	local target_pos = target and target:get_pos()
+	local target_pos = get_mace_target_motion(target)
 	if not player_pos or not target_pos then
 		return false
 	end
@@ -298,11 +376,6 @@ end
 local function get_mace_target_radius()
 	local radius = tonumber(core.settings:get("killaura.mace_target_radius")) or 15
 	return math.max(5, math.min(20, radius))
-end
-
-local function get_target_upward_speed(target)
-	local velocity = target and target:get_velocity() or nil
-	return velocity and math.max(0, velocity.y or 0) or 0
 end
 
 local function set_mace_noclip(active)
@@ -351,29 +424,48 @@ local function restore_mace_movement()
 	restore_airjump = false
 end
 
-local function clear_mace_drop()
+local function clear_mace_drop(player)
 	mace_drop_target = nil
 	mace_drop_started_at = 0
+	mace_drop_last_height = nil
+	mace_drop_phase = nil
 	set_mace_noclip(false)
 	restore_mace_movement()
 end
 
+local function get_mace_steering_velocity(player_pos, target_pos, vertical_speed)
+	local dx = target_pos.x - player_pos.x
+	local dz = target_pos.z - player_pos.z
+	local horizontal_distance = math.sqrt(dx * dx + dz * dz)
+	if horizontal_distance <= 0.001 then
+		return {x = 0, y = vertical_speed, z = 0}
+	end
+
+	local speed = math.min(MACE_HORIZONTAL_SPEED, horizontal_distance * 2)
+	return {
+		x = dx / horizontal_distance * speed,
+		y = vertical_speed,
+		z = dz / horizontal_distance * speed,
+	}
+end
+
 local function start_mace_drop(player, target)
-	local target_pos = target and target:get_pos() or nil
-	if not player or not target_pos then
+	local player_pos = player and player:get_pos() or nil
+	local target_pos = get_mace_target_motion(target)
+	local intercept_pos = get_mace_intercept_pos(target) or target_pos
+	if not player_pos or not target_pos or not target_can_still_be_attacked(target) then
 		return false
 	end
 
-	local height = get_mace_height()
-	local upward_lead = math.min(3, get_target_upward_speed(target) * 0.2)
-	player:set_pos({
-		x = target_pos.x,
-		y = target_pos.y + height + upward_lead,
-		z = target_pos.z,
-	})
-	player:set_velocity({x = 0, y = -10, z = 0})
+	local height = player_pos.y - target_pos.y
+	local already_above = height >= MACE_MIN_HEIGHT
+	local vertical_speed = already_above and MACE_DROP_SPEED or MACE_LAUNCH_SPEED
+	player:set_velocity(get_mace_steering_velocity(player_pos, intercept_pos, vertical_speed))
+	set_mace_noclip(target_is_in_wall(target))
 	mace_drop_target = target
 	mace_drop_started_at = os.clock()
+	mace_drop_last_height = height
+	mace_drop_phase = already_above and "dropping" or "rising"
 	last_mace_punch_time = mace_drop_started_at
 	equip_best_torso_armor()
 	return true
@@ -386,16 +478,20 @@ local function continue_mace_drop(player, mace_mode)
 
 	local target = mace_drop_target
 	local player_pos = player and player:get_pos() or nil
-	local target_pos = target and target:get_pos() or nil
-	if not mace_mode or not player_pos or not target_pos or target:get_hp() <= 0 or
-			not core.can_attack(target:get_id()) or os.clock() - mace_drop_started_at > 2 then
-			clear_mace_drop()
+	local target_pos = get_mace_target_motion(target)
+	local intercept_pos = get_mace_intercept_pos(target) or target_pos
+	if not mace_mode or not player_pos or not target_pos or
+			not target_can_still_be_attacked(target) or
+			os.clock() - mace_drop_started_at > MACE_DROP_TIMEOUT then
+			clear_mace_drop(player)
 			return false
 	end
 
+	-- Keep noclip scoped to the active mace drop and only while the target or
+	-- path is obstructed. clear_mace_drop() restores normal collision.
 	set_mace_noclip(target_is_in_wall(target))
 
-	local aim_pos = vector.new(target_pos)
+	local aim_pos = vector.new(intercept_pos)
 	aim_pos.y = aim_pos.y - 0.6
 	ws.aim(aim_pos)
 
@@ -403,31 +499,60 @@ local function continue_mace_drop(player, mace_mode)
 	local dz = player_pos.z - target_pos.z
 	local horizontal_distance = math.sqrt(dx * dx + dz * dz)
 	local height = player_pos.y - target_pos.y
+	local target_distance = vector.distance(player_pos, target_pos)
+	local velocity = player:get_velocity() or {x = 0, y = 0, z = 0}
 
-	if get_target_upward_speed(target) > 0.1 and height < -0.5 then
-		player:set_pos({
-			x = target_pos.x,
-			y = target_pos.y + get_mace_height(),
-			z = target_pos.z,
-		})
-		player:set_velocity({x = 0, y = -10, z = 0})
-		mace_drop_started_at = os.clock()
+	if mace_drop_phase == "rising" then
+		local launch_height = math.min(get_mace_height(), 3)
+		if height >= launch_height or
+				(velocity.y <= 0 and os.clock() - mace_drop_started_at > 0.15) then
+			mace_drop_phase = "dropping"
+			player:set_velocity(get_mace_steering_velocity(
+				player_pos, intercept_pos, MACE_DROP_SPEED))
+		else
+			player:set_velocity(get_mace_steering_velocity(
+				player_pos, intercept_pos, math.max(0, velocity.y)))
+		end
+		mace_drop_last_height = height
 		return true
 	end
 
-	if horizontal_distance <= 3 and height <= 3 and height >= -0.5 then
+	local crossed_target = mace_drop_last_height and
+		mace_drop_last_height >= -0.5 and height < -0.5
+	mace_drop_last_height = height
+
+	-- Complete a swept hit before considering another launch. Elytra targets
+	-- can rise past the player between steps; relaunching first causes an
+	-- endless up/down loop and never sends the interaction.
+	-- Mineclonia calculates mace damage directly from the attacker's downward
+	-- velocity in the on_use callback. Do not consume the hit while still
+	-- rising, and allow a swept crossing for fast elytra targets.
+	local descending = velocity.y < -0.5
+	local in_hit_range = target_distance <= MACE_HIT_DISTANCE or
+			(crossed_target and horizontal_distance <= 3)
+	if descending and in_hit_range and height <= 3 and
+			(height >= -0.5 or crossed_target) then
 		suppress_jump_multiplier_for_mace_hit()
 		core.interact("use", {type = "object", ref = target})
+		player:set_velocity({x = 0, y = 0, z = 0})
 		last_mace_punch_time = os.clock()
-		clear_mace_drop()
+		clear_mace_drop(player)
+		return true
 	end
 
+	if height < -1.5 then
+		player:set_velocity({x = 0, y = 0, z = 0})
+		clear_mace_drop(player)
+		return false
+	end
+
+	player:set_velocity(get_mace_steering_velocity(player_pos, intercept_pos, velocity.y))
 	return true
 end
 
 local function get_mace_target_score(player, target)
 	local player_pos = player:get_pos()
-	local target_pos = target:get_pos()
+	local target_pos = get_mace_target_motion(target)
 	if not player_pos or not target_pos then
 		return math.huge
 	end
@@ -462,8 +587,13 @@ end
 
 core.get_send_pitch = function(pitch)
 	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
-		local target_pos = killaura_target:get_pos()
-		local player_pos = core.localplayer:get_pos()
+		local target_pos = get_mace_target_motion(killaura_target)
+		local player = core.localplayer
+		local player_pos = player and player:get_pos() or nil
+		if not target_pos or not player_pos or not get_object_id(killaura_target) then
+			killaura_target = nil
+			return pitch
+		end
 		local direction = vector.direction(player_pos, target_pos)
 		local angle = math.atan2(direction.y, math.sqrt(direction.x^2 + direction.z^2))
 		pitch = math.deg(angle)
@@ -473,8 +603,17 @@ end
 
 core.get_send_yaw = function(yaw)
 	if core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target then
-		local target_pos = killaura_target:get_pos()
-		local player_pos = core.localplayer:get_pos()
+		local target_pos = get_mace_target_motion(killaura_target)
+		local player = core.localplayer
+		local player_pos = player and player:get_pos() or nil
+		local target_id = get_object_id(killaura_target)
+		if not target_pos or not player_pos or not target_id then
+			killaura_target = nil
+			time_aimed_at_target = 0
+			target_aimed_at = nil
+			last_time_aimed_at_target = 0
+			return yaw
+		end
 		local direction = vector.direction(player_pos, target_pos)
 		if direction.x < 0 then
 			yaw = math.deg(math.atan2(-direction.x, direction.z)) + (math.pi * 2)
@@ -486,9 +625,9 @@ core.get_send_yaw = function(yaw)
 			last_time_aimed_at_target = os.clock()
 		end
 
-		if target_aimed_at ~= killaura_target:get_id() then
+		if target_aimed_at ~= target_id then
 			time_aimed_at_target = 0
-			target_aimed_at = killaura_target:get_id()
+			target_aimed_at = target_id
 		else
 			time_aimed_at_target = os.clock() - last_time_aimed_at_target
 		end
@@ -514,6 +653,10 @@ end
 core.get_send_controls = function(controls)
 	if (core.settings:get_bool("killaura") and core.settings:get("killaura.mode") == "Silent" and killaura_target) then
 		local player = core.localplayer
+		if not player or not get_object_pos(killaura_target) or not get_object_id(killaura_target) then
+			killaura_target = nil
+			return controls
+		end
 		local wielded = player and player:get_wielded_item()
 		local wield_name = wielded and wielded:get_name() or ""
 		local mace_mode = core.settings:get_bool("killaura.mace") and is_mace_item(wield_name)
@@ -635,7 +778,7 @@ local function is_walkable_block_between(pos1, pos2, step)
 end
 
 target_is_in_wall = function(target)
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_mace_target_motion(target)
 	if not target_pos then
 		return false
 	end
@@ -716,9 +859,17 @@ core.register_globalstep(function(dtime)
 	end
 
 		local player = core.localplayer
-		if not player then return end
+		if not player then
+			killaura_target = nil
+			clear_mace_drop()
+			return
+		end
 		local ppos = player:get_pos()
-		if not ppos then return end
+		if not ppos then
+			killaura_target = nil
+			clear_mace_drop()
+			return
+		end
 		local target_enemy = nil
 		local target_mode = core.settings:get("targeting.target_mode")
 		local target_type = core.settings:get("targeting.target_type")
@@ -750,6 +901,7 @@ core.register_globalstep(function(dtime)
 		end
 		if not target_enemy then
 			core.clear_combat_target()
+			killaura_target = nil
 			set_mace_noclip(false)
 		else
 			core.set_combat_target(target_enemy:get_id())
@@ -764,11 +916,11 @@ core.register_globalstep(function(dtime)
 			end
 		local interval = mace_mode and get_mace_combo_interval() or get_punch_interval(player)
 
-			if mace_wall_target then
-				set_mace_noclip(true)
-			else
-				set_mace_noclip(false)
-			end
+				-- Noclip is enabled by start/continue_mace_drop only when its
+				-- wall scan finds an obstructed mace target.
+				if not mace_wall_target then
+					set_mace_noclip(false)
+				end
 
 			if (not mace_wall_target and not core.settings:get_bool("killaura.throughwalls") and target_enemy) then
 				local pos = truncate_pos(player:get_pos())
@@ -790,7 +942,7 @@ core.register_globalstep(function(dtime)
 								restore_mace_movement()
 							end
 						elseif can_mace_special(player, target_enemy) then
-							local target_pos = target_enemy:get_pos()
+							local target_pos = get_mace_target_motion(target_enemy)
 							if target_pos then
 								target_pos.y = target_pos.y - 0.6
 								ws.aim(target_pos)
@@ -849,7 +1001,9 @@ core.register_globalstep(function(dtime)
 		end
 	end
 
-	if target_enemy and core.settings:get_bool("orbit") then
+	-- Orbit repositions with set_pos(), which Mineclonia's movement validator
+	-- corrects. Never let it run while MaceAura is active.
+	if target_enemy and core.settings:get_bool("orbit") and not mace_mode then
 		local opos = target_enemy:get_pos()
 		if not opos then
 			Strata.clear_controls()

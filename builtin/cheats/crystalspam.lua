@@ -20,6 +20,12 @@ local CRYSTAL_ENTITY_NAMES = {
 	["mcl_end_crystal:end_crystal"] = true,
 }
 
+local ELYTRA_ENTITY_NAMES = {
+	["mcl_armor:elytra_entity"] = true,
+}
+
+local ELYTRA_LEAD_TIME = 0.1
+
 core.register_cheat_with_infotext("crystalspam", "Combat", "crystalspam", "")
 
 local spam_state = {
@@ -116,6 +122,35 @@ local function get_target_key(target)
 	return target
 end
 
+local function get_target_position(target)
+	if not target then
+		return nil
+	end
+
+	local position_source = target
+	if target.is_player and target:is_player() and target.get_attach then
+		local parent = target:get_attach()
+		local parent_name = parent and parent.get_name and parent:get_name() or nil
+		if parent_name and ELYTRA_ENTITY_NAMES[parent_name] then
+			position_source = parent
+		end
+	end
+
+	local pos = position_source.get_pos and position_source:get_pos() or nil
+	if not pos then
+		return target.get_pos and target:get_pos() or nil
+	end
+
+	if position_source ~= target and position_source.get_velocity then
+		local velocity = position_source:get_velocity()
+		if velocity then
+			return vector.add(pos, vector.multiply(velocity, ELYTRA_LEAD_TIME))
+		end
+	end
+
+	return pos
+end
+
 local function pulse_placing_node()
 	spam_state.placing_node_token = spam_state.placing_node_token + 1
 	local token = spam_state.placing_node_token
@@ -149,7 +184,7 @@ local function get_nearest_target(max_distance)
 					safe_target = player:get_entity_relationship(obj:get_id()) ==
 						core.EntityRelationship.ENEMY
 				end
-				local obj_pos = safe_target and obj:get_pos() or nil
+				local obj_pos = safe_target and get_target_position(obj) or nil
 				if obj_pos then
 					local distance = vector.distance(player_pos, obj_pos)
 					if distance <= best_distance then
@@ -199,7 +234,7 @@ local function get_crystals_near(center, radius)
 end
 
 local function get_target_support_candidates(target)
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_target_position(target)
 	if not target_pos then
 		return {}
 	end
@@ -241,7 +276,7 @@ local function get_target_support_candidates(target)
 end
 
 local function advance_pattern(target, support_pos)
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_target_position(target)
 	if not target_pos or not support_pos then
 		spam_state.pattern_index = (spam_state.pattern_index % 9) + 1
 		return
@@ -264,7 +299,7 @@ local function move_below_obsidian(target)
 	end
 
 	local player = core.localplayer
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_target_position(target)
 	if player and target_pos then
 		player:set_pos(vector.add(target_pos, {x = 0, y = -5, z = 0}))
 	end
@@ -273,7 +308,7 @@ end
 local function move_to_target_for_placement(target)
 	local player = core.localplayer
 	local player_pos = player and player:get_pos() or nil
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_target_position(target)
 	if not player or not player_pos or not target_pos then
 		return false
 	end
@@ -405,7 +440,7 @@ local function try_place_spam(target)
 	end
 
 	local support_pos = spam_state.support_pos
-	local target_pos = target and target:get_pos() or nil
+	local target_pos = get_target_position(target)
 	local target_support_pos = target_pos and
 		vector.add(vector.round(target_pos), {x = 0, y = -1, z = 0}) or nil
 	if support_pos and target_support_pos and vector.distance(support_pos, target_support_pos) > 1.5 then

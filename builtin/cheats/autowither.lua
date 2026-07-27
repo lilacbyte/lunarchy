@@ -94,6 +94,11 @@ local function safe_destination(pos)
 	return nil
 end
 
+local function get_look_dir()
+	local camera = core.camera
+	return camera and camera.get_look_dir and camera:get_look_dir() or nil
+end
+
 local function teleport_to_next_wither()
 	local player = core.localplayer
 	local player_pos = player and player:get_pos() or nil
@@ -101,7 +106,7 @@ local function teleport_to_next_wither()
 		return false
 	end
 
-	local look = player:get_look_dir() or {x = 1, y = 0, z = 0}
+	local look = get_look_dir() or {x = 1, y = 0, z = 0}
 	local horizontal_length = math.sqrt(look.x * look.x + look.z * look.z)
 	local dir_x, dir_z
 	if horizontal_length > 0.001 then
@@ -133,7 +138,7 @@ local function teleport_to_next_wither()
 end
 
 local function choose_axis(player)
-	local look = player and player.get_look_dir and player:get_look_dir() or nil
+	local look = get_look_dir()
 	if not look then
 		return "x"
 	end

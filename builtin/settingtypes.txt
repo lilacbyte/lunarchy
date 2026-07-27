@@ -192,6 +192,13 @@ keymap_toggle_freecam (Freecam) key SYSTEM_SCANCODE_10
 #    Key for toggling CrystalSpam.
 keymap_toggle_crystalspam (CrystalSpam) key SYSTEM_SCANCODE_6
 
+#    Teleport away on the X axis when an end crystal enters this radius.
+crystalavoid (CrystalAvoid) bool false
+crystalavoid.trigger_radius (CrystalAvoid trigger radius) int 6 2 12
+
+#    Horizontal distance maintained from the detected end crystal.
+crystalavoid.escape_distance (CrystalAvoid escape distance) int 9 7 16
+
 #    Key for toggling AutoWither.
 keymap_toggle_autowither (AutoWither) key KEY_MINUS
 
@@ -1131,6 +1138,25 @@ chatplus_border_alpha (ChatPlus border alpha) int 255 0 255
 
 #    Inner padding between the border/background and chat text.
 chatplus_padding (ChatPlus padding) int 0 0 20
+
+[InventoryHUD] [client]
+
+inventory_hud (Enable InventoryHUD) bool false
+inventory_hud.background (InventoryHUD background) bool true
+inventory_hud.background_color (InventoryHUD background color) string #191919
+inventory_hud.background_alpha (InventoryHUD background alpha) int 180 0 255
+inventory_hud.border (InventoryHUD border) bool true
+inventory_hud.border_color (InventoryHUD border color) string #000000
+inventory_hud.border_alpha (InventoryHUD border alpha) int 255 0 255
+inventory_hud.text_color (InventoryHUD stack text color) string #ffffff
+inventory_hud.padding (InventoryHUD padding) int 5 0 20
+inventory_hud.columns (InventoryHUD columns) int 9 1 12
+inventory_hud.slot_size (InventoryHUD slot size) int 32 16 64
+inventory_hud.slot_gap (InventoryHUD slot gap) int 2 0 8
+inventory_hud.slot_background (InventoryHUD slot backgrounds) bool true
+inventory_hud.slot_color (InventoryHUD slot color) string #2d2d2d
+inventory_hud.slot_alpha (InventoryHUD slot alpha) int 100 0 255
+inventory_hud.slot_border_color (InventoryHUD slot border color) string #787878
 
 [**Content Repository]
 
@@ -2760,7 +2786,7 @@ allied_esp_color (Allied ESP color) string (0, 0, 255)
 
 enemy_esp_color (Enemy ESP color) string (255, 0, 0)
 
-[**AutoToxic] [client]
+[AutoToxic] [client]
 
 #    Automatically reply after a Mineclonia death message says you killed a player.
 autotoxic (AutoToxic) bool false
